@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --max-container-width: 1440px;
+  /* 컨테이너 최대 너비 */
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: var(--max-container-width);
+  /* 최대 너비 설정 */
+  margin-left: auto;
+  margin-right: auto;
+}
