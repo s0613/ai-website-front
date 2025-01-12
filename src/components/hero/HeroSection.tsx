@@ -5,18 +5,22 @@ import { useRouter } from "next/navigation";
 import { FiSearch } from "react-icons/fi";
 import { FaCamera } from "react-icons/fa";
 
-type CollectionItem = {
+type CategoryItem = {
     title: string;
     subtitle: string;
 };
 
-const CollectionBox = ({ items }: { items: CollectionItem[] }) => {
+const CategoryBox = ({ items, onSelect }: { items: CategoryItem[], onSelect: (item: CategoryItem) => void }) => {
     return (
         <div className="p-4 rounded-md border border-gray-300 flex flex-col justify-between h-full w-full md:w-10/12">
             {items.map((item, index) => (
-                <div key={index} className="mb-4 last:mb-0">
-                    <h2 className="text-lg font-semibold text-gray-800">{item.title}</h2>
-                    <p className="text-sm text-gray-600">{item.subtitle}</p>
+                <div
+                    key={index}
+                    className="cursor-pointer hover:bg-gray-100 p-2 rounded"
+                    onClick={() => onSelect(item)}
+                >
+                    <h2 className="text-lg font-semibold text-gray-800 hover:text-gray-500">{item.title}</h2>
+                    <p className="text-sm text-gray-600 hover:text-gray-400">{item.subtitle}</p>
                 </div>
             ))}
         </div>
@@ -29,14 +33,19 @@ const HeroSection = () => {
 
     const handleSearch = async (e: { preventDefault: () => void; }) => {
         e.preventDefault();
-        router.push(`/search?query=${searchTerm}`);
+        router.push(`/gallery/search?query=${searchTerm}`);
     };
 
-    const collectionItems = [
-        { title: "Nights Like These", subtitle: "600 이미지" },
-        { title: "Holiday Party", subtitle: "97 이미지" },
-        { title: "Workout Foods", subtitle: "350 이미지" },
-        { title: "Where Holidays Gather", subtitle: "550 이미지" },
+    const handleCategorySelect = (item: CategoryItem) => {
+        setSearchTerm(item.title);
+        router.push(`/gallery/search?category=${item.title}`);
+    };
+
+    const categoryItems = [
+        { title: "AI 현실적 이미지", subtitle: "더 현실적으로, 현실보다 더 현실같게" },
+        { title: "AI 일러스트 이미지", subtitle: "아름답게 만들어진 일러스트를 만나기 위해서" },
+        { title: "AI 영상", subtitle: "위대한 여정의 시작 AI영상" },
+        { title: "기타", subtitle: "원하는 것을 무한대로 찾아보기" },
     ];
 
     return (
@@ -69,9 +78,9 @@ const HeroSection = () => {
                     </div>
                 </div>
 
-                {/* 공통 Collection Box 영역 */}
+                {/* 공통 Category Box 영역 */}
                 <div className="flex-1 flex justify-center items-center">
-                    <CollectionBox items={collectionItems} />
+                    <CategoryBox items={categoryItems} onSelect={handleCategorySelect} />
                 </div>
             </div>
         </section>

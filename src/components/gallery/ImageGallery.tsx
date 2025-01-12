@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 
 const testImages = [
     { src: "/images/image1.jpg", alt: "Test Image 1" },
@@ -20,21 +20,8 @@ const ImageGallery = () => {
         setSelectedImage(null);
     };
 
-    useEffect(() => {
-        const handleKeyDown = (event: { key: string; }) => {
-            if (event.key === 'Escape') {
-                handleCloseModal();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, []);
-
     return (
-        <section className="p-8 bg-white">
+        <section className="px-4 pt-6 pb-12 bg-white text-black md:px-16 md:pt-12 md:pb-14">
             <div className="container mx-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {testImages.map((image, index) => (

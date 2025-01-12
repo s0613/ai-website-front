@@ -6,7 +6,7 @@ import './styles/globals.css';
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className="bg-gray-50 text-gray-800">
+      <body className="bg-white text-gray-800">
         <AuthProvider>
           <Navbar />
           <div className="container mx-auto px-4 lg:px-8">{children}</div> {/* 컨테이너 중앙 정렬 */}
