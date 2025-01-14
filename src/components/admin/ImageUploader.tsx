@@ -1,13 +1,15 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 const ImageUploader = () => {
-    const [file, setFile] = useState<File | null>(null);
-    const [category, setCategory] = useState('');
+    const [files, setFiles] = useState<File[]>([]);
+    const [category, setCategory] = useState("");
+    const [isLoading, setIsLoading] = useState(false); // 로딩 상태 관리
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
+        if (e.target.files) {
+            const selectedFiles = Array.from(e.target.files); // 여러 파일을 배열로 변환
+            setFiles(selectedFiles);
         }
     };
 
@@ -16,36 +18,63 @@ const ImageUploader = () => {
     };
 
     const handleUpload = async () => {
-        if (!file || !category) {
-            alert('파일과 카테고리를 선택해주세요.');
+        if (files.length === 0 || !category) {
+            alert("파일과 카테고리를 선택해주세요.");
             return;
         }
 
         const formData = new FormData();
-        formData.append('images', file);
-        formData.append('category', category);
+        files.forEach((file) => formData.append("images", file)); // 여러 파일 추가
+        formData.append("category", category);
 
+        setIsLoading(true); // 로딩 상태 시작
         try {
-            const res = await fetch('http://localhost:8080/api/images/upload', {
-                method: 'POST',
+            // 요청 보내기 전에 로그 추가
+            console.log("파일 업로드 요청 보내기:", {
+                files: files.map((file) => file.name),
+                category: category,
+            });
+
+            // ★ 스프링부트 서버로 요청 보내기 ★
+            const res = await fetch("http://localhost:8080/api/images/upload", {
+                method: "POST",
                 body: formData,
             });
 
             if (res.ok) {
-                alert('이미지 업로드 성공');
+                alert("이미지 업로드 성공");
+                setFiles([]); // 업로드 성공 시 파일 목록 초기화
+                setCategory(""); // 업로드 성공 시 카테고리 초기화
             } else {
-                alert('업로드 실패');
+                alert("업로드 실패");
             }
         } catch (error) {
-            alert('에러 발생');
+            alert("에러 발생");
+            console.error("업로드 중 에러 발생:", error);
+        } finally {
+            setIsLoading(false); // 로딩 상태 종료
         }
     };
 
     return (
-        <div className="border p-4 rounded">
+        <div className="border p-4 rounded relative">
+            {/* 로딩 팝업 */}
+            {isLoading && (
+                <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded shadow-lg">
+                        <p className="text-center text-lg font-semibold">업로드 중...</p>
+                        <div className="mt-4 flex justify-center">
+                            <div className="loader w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 파일 입력 및 카테고리 선택 */}
             <input
                 type="file"
                 onChange={handleFileChange}
+                multiple // 여러 파일 선택 가능
                 className="block mb-2"
             />
             <select

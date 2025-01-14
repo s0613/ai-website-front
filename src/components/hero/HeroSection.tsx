@@ -8,6 +8,7 @@ import { FaCamera } from "react-icons/fa";
 type CategoryItem = {
     title: string;
     subtitle: string;
+    value: string; // 백엔드에서 사용할 카테고리 값
 };
 
 const CategoryBox = ({ items, onSelect }: { items: CategoryItem[], onSelect: (item: CategoryItem) => void }) => {
@@ -31,28 +32,32 @@ const HeroSection = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const router = useRouter();
 
-    const handleSearch = async (e: { preventDefault: () => void; }) => {
+    // 검색 요청 처리
+    const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        router.push(`/gallery/search?query=${searchTerm}`);
+        if (searchTerm.trim()) {
+            router.push(`/gallery/search?query=${encodeURIComponent(searchTerm)}`);
+        }
     };
 
+    // 카테고리 선택 처리
     const handleCategorySelect = (item: CategoryItem) => {
-        setSearchTerm(item.title);
-        router.push(`/gallery/search?category=${item.title}`);
+        router.push(`/gallery/search?category=${encodeURIComponent(item.value)}`);
     };
 
-    const categoryItems = [
-        { title: "AI 현실적 이미지", subtitle: "더 현실적으로, 현실보다 더 현실같게" },
-        { title: "AI 일러스트 이미지", subtitle: "아름답게 만들어진 일러스트를 만나기 위해서" },
-        { title: "AI 영상", subtitle: "위대한 여정의 시작 AI영상" },
-        { title: "기타", subtitle: "원하는 것을 무한대로 찾아보기" },
+    // 카테고리 항목 정의
+    const categoryItems: CategoryItem[] = [
+        { title: "AI 현실적 이미지", subtitle: "더 현실적으로, 현실보다 더 현실같게", value: "REALITY" },
+        { title: "AI 일러스트 이미지", subtitle: "아름답게 만들어진 일러스트를 만나기 위해서", value: "ILLUSTRATION" },
+        { title: "AI 영상", subtitle: "위대한 여정의 시작 AI영상", value: "VIDEO" },
+        { title: "기타", subtitle: "원하는 것을 무한대로 찾아보기", value: "ETC" },
     ];
 
     return (
         <section className="px-4 pt-6 pb-12 bg-white text-black md:px-16 md:pt-12 md:pb-14">
             <div className="flex flex-col md:flex-row items-center justify-center md:items-start">
 
-                {/* 데스크톱(PC) 전용 영역: md 이상에서 보이도록 설정 */}
+                {/* 데스크톱(PC) 전용 영역 */}
                 <div className="hidden md:flex flex-1 flex-col justify-between text-center md:text-left mb-6 md:mb-0">
                     <div>
                         <h1 className="text-4xl md:text-5xl font-extrabold mt-8 md:mt-16 mb-4 leading-tight">
