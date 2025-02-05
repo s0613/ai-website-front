@@ -10,7 +10,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <Navbar />
           <div className="container mx-auto px-4 lg:px-8">{children}</div> {/* 컨테이너 중앙 정렬 */}
-          <Footer />
         </AuthProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { FiSearch, FiMenu, FiX } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import Link from 'next/link';
 
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,9 +16,9 @@ const Navbar = () => {
         <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
                 {/* 로고 */}
-                <a href="/" className="text-2xl font-bold text-gray-800">
+                <Link href="/" className="text-2xl font-bold text-gray-800">
                     RealFeel
-                </a>
+                </Link>
                 {/* 검색창 */}
                 <div className="flex-1 mx-4 relative">
                     <input

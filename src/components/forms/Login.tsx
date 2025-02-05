@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Button from '../../components/common/Button';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Card, CardHeader, CardFooter, CardTitle, CardContent } from '../../components/ui/card';
 import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
@@ -38,45 +40,50 @@ const Login = () => {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="w-full max-w-md p-8 space-y-6 bg-white rounded shadow-md">
-                <h2 className="text-2xl font-bold text-center text-gray-900">로그인</h2>
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                            Email address
-                        </label>
-                        <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            autoComplete="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                            Password
-                        </label>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autoComplete="current-password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                    </div>
-                    {error && <p className="text-sm text-red-600">{error}</p>}
-                    <div>
-                        <Button label="로그인" type="submit" />
-                    </div>
-                </form>
-            </div>
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="text-2xl font-bold text-center">로그인</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit}>
+                        <div className="mb-4">
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                이메일
+                            </label>
+                            <Input
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="mt-1 block w-full"
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                비밀번호
+                            </label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="mt-1 block w-full"
+                            />
+                        </div>
+                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                        <Button type="submit" className="w-full">
+                            로그인
+                        </Button>
+                    </form>
+                </CardContent>
+                <CardFooter className="text-center">
+                    <p className="text-sm text-gray-600">
+                        계정이 없으신가요? <a href="/signup" className="text-blue-500">회원가입</a>
+                    </p>
+                </CardFooter>
+            </Card>
         </div>
     );
 };
