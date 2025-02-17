@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 const BlogCard = ({
     image,
@@ -15,9 +16,11 @@ const BlogCard = ({
 }) => {
     return (
         <div className="max-w-sm bg-white rounded-lg shadow-md overflow-hidden">
-            <img
+            <Image
                 src={image}
                 alt={title}
+                width={500}
+                height={300}
                 className="w-full h-48 object-cover"
             />
             <div className="p-4">

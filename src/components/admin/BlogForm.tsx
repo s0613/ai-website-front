@@ -35,7 +35,7 @@ const BlogForm = () => {
             } else {
                 alert('등록 실패');
             }
-        } catch (error) {
+        } catch {
             alert('에러 발생');
         }
     };

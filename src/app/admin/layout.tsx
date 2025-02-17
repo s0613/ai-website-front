@@ -14,6 +14,7 @@ export default function AdminLayout({
                 <nav>
                     <ul className="space-y-2">
                         <li className="text-lg font-semibold border-b border-gray-600 pb-2">어드민 메뉴</li>
+                        <li><Link href="/admin">홈</Link></li>
                         <li><Link href="/admin/image">이미지 업로드</Link></li>
                         <li><Link href="/admin/blog">블로그 작성</Link></li>
                         <li><Link href="/admin/member">회원 확인</Link></li>
