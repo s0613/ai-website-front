@@ -10,7 +10,7 @@ export default function AdminLayout({
     return (
         <section className="min-h-screen flex">
             {/* 사이드바 예시 */}
-            <aside className="w-64 bg-gray-800 text-white p-4">
+            <aside className="w-64 bg-black text-white p-4">
                 <nav>
                     <ul className="space-y-2">
                         <li className="text-lg font-semibold border-b border-gray-600 pb-2">어드민 메뉴</li>

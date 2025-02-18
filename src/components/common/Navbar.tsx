@@ -30,7 +30,7 @@ const Navbar = () => {
                 </div>
                 {/* 내비게이션 링크 */}
                 <nav className="hidden md:flex space-x-8 text-gray-600">
-                    <a href="/blog" className="hover:text-gray-900">블로그</a>
+                    <a href="/blog/blogList" className="hover:text-gray-900">블로그</a>
                     <a href="/contact" className="hover:text-gray-900">광고</a>
                     {isLoggedIn ? (
                         <span className="text-gray-800">{email}</span>

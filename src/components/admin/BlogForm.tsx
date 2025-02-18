@@ -20,8 +20,8 @@ const BlogForm = () => {
                 formData.append('image', image);
             }
 
-            // 실제 서버 API로 전송 (예: /api/blog)
-            const res = await fetch('/api/blog', {
+            // 실제 서버 API로 전송
+            const res = await fetch('/api/admin/blog/blogPost', {
                 method: 'POST',
                 body: formData,
             });

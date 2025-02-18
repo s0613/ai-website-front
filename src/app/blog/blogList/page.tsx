@@ -1,4 +1,4 @@
-import BlogList from '../../components/blog/BlogList';
+import BlogList from '../../../components/blog/BlogList';
 
 const BlogPage = () => {
     return (
