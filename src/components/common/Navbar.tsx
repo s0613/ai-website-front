@@ -17,7 +17,7 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
                 {/* 로고 */}
                 <Link href="/" className="text-2xl font-bold text-gray-800">
-                    RealFeel
+                    Crazy Space
                 </Link>
                 {/* 검색창 */}
                 <div className="flex-1 mx-4 relative">
