@@ -57,7 +57,7 @@ const ImageGallery = () => {
   }, []);
 
   return (
-    <div className="image-gallery p-4">
+    <div className="image-gallery p-4 container mx-auto px-4 lg:px-8">
       {loading ? (
         <p>이미지 로딩 중...</p>
       ) : (

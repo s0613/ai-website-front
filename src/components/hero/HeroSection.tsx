@@ -73,19 +73,19 @@ const HeroSection = () => {
   // 카테고리 항목 정의
   const categoryItems: CategoryItem[] = [
     {
-      title: "AI 이미지 생성",
-      subtitle: "더 현실적으로, 현실보다 더 현실같게",
-      value: "REALITY",
-    },
-    {
       title: "AI 영상 생성",
       subtitle: "아름다운 영상 제작의 시작",
       value: "VIDEO",
     },
+    {
+      title: "AI 이미지 생성",
+      subtitle: "더 현실적으로, 현실보다 더 현실같게",
+      value: "REALITY",
+    },
   ];
 
   return (
-    <section className="bg-white text-black px-4 pt-6 pb-12 md:px-16 md:pt-12 md:pb-14">
+    <section className="bg-white text-black px-4 pt-3 pb-12 md:px-16 md:pt-6 md:pb-14">
       {/* min-h-screen: 화면 높이만큼 차지, items-center + justify-center로 중앙 정렬 */}
       <div className="flex flex-col md:flex-row items-center justify-center gap-8">
         {/* 좌측(PC 전용) 영역 */}

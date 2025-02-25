@@ -20,7 +20,7 @@ export default function RootLayout({
       <body className="bg-white text-gray-800">
         <AuthProvider>
           <Navbar />
-          <div className="container mx-auto px-4 lg:px-8">
+          <div className="">
             {children}
           </div>
         </AuthProvider>
