@@ -31,10 +31,10 @@ const CategoryBox = ({
       {items.map((item, index) => (
         <Card
           key={index}
-          className="flex-1 cursor-pointer hover:bg-gray-50 p-4 border border-gray-300 rounded-md min-h-[200px]"
+          className="flex-1 h-full cursor-pointer hover:bg-gray-50 p-4 border border-gray-300 rounded-md min-h-[200px]"
           onClick={() => onSelect(item)}
         >
-          <CardHeader className="p-0">
+          <CardHeader className="p-0 pt-10 items-center text-center">
             <CardTitle className="text-lg font-semibold text-gray-800 mb-1">
               {item.title}
             </CardTitle>
@@ -66,7 +66,7 @@ const HeroSection = () => {
   if (item.value === "VIDEO") {
     router.push("/video");
   } else {
-    router.push(`/gallery/search?category=${encodeURIComponent(item.value)}`);
+    router.push(`/image`);
   }
 };
 
@@ -80,7 +80,7 @@ const HeroSection = () => {
     {
       title: "AI 이미지 생성",
       subtitle: "더 현실적으로, 현실보다 더 현실같게",
-      value: "REALITY",
+      value: "IMAGE",
     },
   ];
 
