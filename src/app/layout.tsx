@@ -1,7 +1,6 @@
 // app/layout.tsx
 import "./styles/globals.css";
 import Navbar from "@/components/common/Navbar";
-import Footer from "@/components/common/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 import type { Metadata } from "next";
 
@@ -24,7 +23,6 @@ export default function RootLayout({
             {children}
           </div>
         </AuthProvider>
-        <Footer />
       </body>
     </html>
   );

@@ -58,6 +58,11 @@ const ImageGallery = () => {
 
   return (
     <div className="image-gallery p-4 container mx-auto px-4 lg:px-8">
+      {/* 제목을 더 눈에 띄게 스타일링 */}
+      <h2 className="text-xl font-bold text-gray-900 mb-6 pl-2 border-l-4 border-blue-500">
+        Trending generation result
+      </h2>
+      
       {loading ? (
         <p>이미지 로딩 중...</p>
       ) : (
@@ -76,16 +81,15 @@ const ImageGallery = () => {
                     gridRowEnd: `span ${Math.ceil((image.height / image.width) * 10)}`,
                   }}
                 >
+                  {/* 나머지 코드 유지 */}
                   <img
                     src={image.url}
                     alt={fileName}
                     className="w-full h-full object-cover"
                   />
 
-                  {/* 이미지 전체를 어둡게 하는 오버레이 */}
                   <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
 
-                  {/* 다운로드 아이콘 (배경 없음, 검은색) */}
                   <a
                     href={image.url}
                     download
@@ -107,7 +111,6 @@ const ImageGallery = () => {
                     </svg>
                   </a>
 
-                  {/* 왼쪽 하단에 이미지 이름 표시 */}
                   <div className="absolute bottom-2 left-2 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <p className="text-sm font-semibold">{fileName}</p>
                   </div>

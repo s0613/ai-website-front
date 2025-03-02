@@ -4,6 +4,7 @@ import { FiSearch, FiMenu, FiX } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -19,6 +20,11 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     router.push('/');
+  };
+
+  // Avatar를 위한 이니셜 생성
+  const getInitials = (email: string) => {
+    return email.split('@')[0].charAt(0).toUpperCase();
   };
 
   // Close dropdown when clicking outside
@@ -57,21 +63,38 @@ const Navbar = () => {
         {/* 내비게이션 링크 (데스크탑) */}
         <nav className="hidden md:flex space-x-8 text-gray-600 items-center">
           <Link href="/blog/blogList" className="hover:bg-gray-100 px-2 py-1 rounded">
-            블로그
+            BLOG
           </Link>
           <Link href="/contact" className="hover:bg-gray-100 px-2 py-1 rounded">
-            광고
+            Contact Us
           </Link>
           {isLoggedIn ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsDropdownOpen((prev) => !prev)}
-                className="text-gray-800 hover:bg-gray-100 px-2 py-1 rounded focus:outline-none"
+            <div 
+              className="relative" 
+              ref={dropdownRef}
+            >
+              {/* Avatar와 dropdown 메뉴 전체를 포함하는 div에 이벤트 처리 */}
+              <div 
+                className="cursor-pointer"
+                onMouseEnter={() => setIsDropdownOpen(true)}
               >
-                {email}
-              </button>
+                <Avatar className="hover:ring-2 hover:ring-gray-300">
+                  <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${email}`} alt={email} />
+                  <AvatarFallback className="bg-blue-500 text-white">
+                    {getInitials(email)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg">
+                <div 
+                  className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50"
+                  onMouseEnter={() => setIsDropdownOpen(true)}
+                  onMouseLeave={() => setIsDropdownOpen(false)}
+                >
+                  <div className="px-4 py-2 border-b border-gray-200">
+                    <p className="text-sm font-medium text-gray-900">{email}</p>
+                  </div>
                   <Link
                     href="/my"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -111,13 +134,22 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden px-4 pb-4">
           <Link href="/blog/blogList" className="block py-2 text-gray-600 hover:bg-gray-100 rounded">
-            블로그
+            BLOG
           </Link>
           <Link href="/contact" className="block py-2 text-gray-600 hover:bg-gray-100 rounded">
-            광고
+            Contact Us
           </Link>
           {isLoggedIn ? (
             <>
+              <div className="flex items-center gap-2 py-2 text-gray-600">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${email}`} alt={email} />
+                  <AvatarFallback className="bg-blue-500 text-white text-xs">
+                    {getInitials(email)}
+                  </AvatarFallback>
+                </Avatar>
+                <span>{email}</span>
+              </div>
               <Link href="/my" className="block py-2 text-gray-600 hover:bg-gray-100 rounded">
                 내정보
               </Link>
