@@ -34,8 +34,13 @@ const Login = () => {
         throw new Error('토큰이 전달되지 않았습니다.');
       }
 
+      // API 응답에서 role 정보 추출
+      const role = data.role || 'user'; // role이 없으면 기본값으로 'user' 설정
+      console.log('로그인 성공, 역할:', role);
+
       setError('');
-      login(email, token);
+      // role 정보를 login 함수에 전달
+      login(email, token, role);
       router.push('/');
     } catch (error) {
       setError((error as Error).message);

@@ -1,12 +1,18 @@
 "use client";
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const { isLoggedIn, userRole } = useAuth(); // userRole 값을 추가해야 함
+    const router = useRouter();
+
+
     return (
         <section className="min-h-screen flex">
             {/* 사이드바 예시 */}
