@@ -29,6 +29,23 @@ export function middleware(request: NextRequest) {
     console.log('권한 확인 완료: admin 페이지 접근 허용');
   }
 
+  // my 페이지 경로 체크 - 로그인 필요
+  if (request.nextUrl.pathname.startsWith('/my')) {
+    // auth-token 쿠키 확인하여 로그인 상태 체크
+    const token = request.cookies.get('auth-token')?.value;
+    
+    console.log('마이페이지 접근 시도:', request.nextUrl.pathname);
+    console.log('인증 토큰 확인:', token ? '존재함' : '없음');
+    
+    if (!token) {
+      console.log('로그인이 필요합니다: 로그인 페이지로 리다이렉트');
+      // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    
+    console.log('로그인 확인 완료: 마이페이지 접근 허용');
+  }
+
   // video API 경로 체크
   if (request.nextUrl.pathname.startsWith('/api/video')) {
     const userRole = request.cookies.get('userRole')?.value?.trim().toUpperCase() || '';
@@ -53,5 +70,5 @@ export function middleware(request: NextRequest) {
 
 // 미들웨어가 적용될 경로 설정
 export const config = {
-  matcher: ['/admin/:path*', '/api/video/:path*']
+  matcher: ['/admin/:path*', '/my/:path*', '/api/video/:path*']
 }
