@@ -5,11 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, Grid, Search } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 
 const MyPage = () => {
-  const { email } = useAuth();
-
   return (
     <div className="flex-1">
       <header className="flex items-center justify-between border-b px-6 py-4">
@@ -26,12 +23,7 @@ const MyPage = () => {
           <Button variant="ghost" size="icon">
             <Bell className="h-4 w-4" />
           </Button>
-          <div className="flex items-center">
-            <div className="mr-2 text-sm font-medium">{email}</div>
-            <div className="h-8 w-8 overflow-hidden rounded-full bg-blue-500 text-white flex items-center justify-center">
-              {email ? email.charAt(0).toUpperCase() : "U"}
-            </div>
-          </div>
+          {/* 사용자 이메일과 아바타 표시 부분 제거 */}
         </div>
       </header>
       <div className="m-4">
