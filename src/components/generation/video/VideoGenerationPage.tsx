@@ -2,31 +2,47 @@
 
 import React, { useState } from "react";
 import VideoSidebar, { SidebarFormData } from "./VideoSidebar";
-import VideoSetting from "./FolderSidebar";
+import FolderSidebar, { FileItem } from "./FolderSidebar";
 
 export default function VideoGenerationPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // 왼쪽 사이드바(=VideoSidebar)에서 선택한 탭 ("image" | "text")
   const [activeTab, setActiveTab] = useState<"image" | "text">("image");
+
+  // 오른쪽 FolderSidebar를 위한 state
   const [selectedEndpoint, setSelectedEndpoint] = useState("luna");
   const [quality, setQuality] = useState<"standard" | "high">("standard");
   const [style, setStyle] = useState<"realistic" | "creative">("realistic");
 
+  // + 버튼 통해 올라온 참조이미지
+  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(
+    null
+  );
+  const [referenceImageUrl, setReferenceImageUrl] = useState("");
+
+  // VideoSidebar -> onSubmit
   const handleSidebarSubmit = async (data: SidebarFormData) => {
     setErrorMessage("");
     setVideoUrl("");
     setIsLoading(true);
 
     try {
-      let endpoint = "";
-      // 선택된 API 엔드포인트에 따라 호출할 API 결정
-      if (selectedEndpoint === "veo2") {
-        endpoint = "/api/video/veo2";
-      } else if (selectedEndpoint === "luna") {
-        endpoint = data.imageFile
-          ? "/api/video/luma/image"
-          : "/api/video/luma/text";
+      let endpointUrl = "";
+      // 엔드포인트별 URL 설정
+      if (data.endpoint === "veo2") {
+        endpointUrl = "/api/video/veo2";
+      } else if (data.endpoint === "luna") {
+        endpointUrl =
+          data.imageFile || data.fileUrl
+            ? "/api/video/luna/image"
+            : "/api/video/luna/text";
+      } else if (data.endpoint === "kling") {
+        endpointUrl = "/api/video/kling";
+      } else if (data.endpoint === "wan") {
+        endpointUrl = "/api/video/wan";
       }
 
       let imageBase64 = "";
@@ -54,15 +70,17 @@ export default function VideoGenerationPage() {
         prompt: data.prompt,
         aspectRatio: data.aspectRatio,
         duration: data.duration,
-        quality,
-        style,
+        quality: data.quality,
+        style: data.style,
       };
 
-      if (imageBase64) {
+      if (!data.imageFile && data.fileUrl) {
+        payload.imageUrl = data.fileUrl;
+      } else if (imageBase64) {
         payload.imageUrl = imageBase64;
       }
 
-      const res = await fetch(endpoint, {
+      const res = await fetch(endpointUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -82,40 +100,71 @@ export default function VideoGenerationPage() {
             JSON.stringify(result)
         );
       }
-    } catch {
-      setErrorMessage("오류 발생");
+    } catch (error) {
+      console.error("영상 생성 오류:", error);
+      setErrorMessage(error.message ?? "오류 발생");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 업데이트된 activeTab를 VideoSidebar에서 받아오기 위한 핸들러
+  // 탭 변경 시
   const handleTabChange = (tab: "image" | "text") => {
     setActiveTab(tab);
-    // 이미지 탭이면 luna만 옵션, 텍스트 탭이면 veo2와 luna 선택 옵션 제공
     if (tab === "image") {
       setSelectedEndpoint("luna");
     } else {
-      // 기본값 텍스트 탭은 veo2 선택
       setSelectedEndpoint("veo2");
     }
   };
 
+  // (중요) + 버튼 클릭 시 -> fetch -> blob -> File 변환 -> state 저장
+  const handleAddReferenceImage = async (fileItem: FileItem) => {
+    try {
+      if (!fileItem.fileUrl) {
+        throw new Error("fileUrl이 존재하지 않는 파일");
+      }
+
+      setReferenceImageUrl(fileItem.fileUrl);
+
+      const response = await fetch(fileItem.fileUrl);
+      if (!response.ok) {
+        throw new Error("이미지 불러오기 실패");
+      }
+      const blob = await response.blob();
+
+      // 확장자
+      const fileName = fileItem.name || "image.jpg";
+      const fileExt = fileName.split(".").pop()?.toLowerCase() || "jpg";
+      const mimeType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
+
+      const newFile = new File([blob], fileName, { type: mimeType });
+      setReferenceImageFile(newFile);
+
+      // 혹시 안내 문구
+      console.log("참조 이미지로 추가되었습니다:", newFile.name);
+    } catch (error) {
+      console.error("참조 이미지 추가 오류:", error);
+      setReferenceImageFile(null);
+      setReferenceImageUrl("");
+    }
+  };
+
   return (
-    // Navbar 아래에 위치하도록 fixed를 제거하고 pt-16(Navbar 높이)를 추가
     <div className="flex w-screen h-[calc(100vh-64px)] overflow-hidden bg-gray-100">
-      {/* 왼쪽: 컨트롤 패널 */}
+      {/* 왼쪽: VideoSidebar (영상 생성 옵션) */}
       <div className="h-full">
         <VideoSidebar
           onSubmit={handleSidebarSubmit}
           onTabChange={handleTabChange}
+          referenceImageFile={referenceImageFile}
+          referenceImageUrl={referenceImageUrl}
         />
       </div>
 
-      {/* 중앙: 비디오 미리보기 영역 - 스크롤 없이 고정 */}
+      {/* 중앙: 영상 미리보기 */}
       <div className="flex-1 h-full flex flex-col items-center justify-center p-6 overflow-hidden">
         <div className="w-full max-w-4xl h-full flex flex-col">
-          {/* 비디오 컨테이너 */}
           <div className="flex-1 bg-white rounded-xl shadow-md flex items-center justify-center overflow-hidden">
             {isLoading && (
               <div className="text-center">
@@ -123,7 +172,7 @@ export default function VideoGenerationPage() {
                 <p>비디오 생성 중...</p>
               </div>
             )}
-            {errorMessage && (
+            {errorMessage && !isLoading && (
               <div className="text-center p-6">
                 <div className="text-red-600 mb-2">⚠️</div>
                 <p className="text-red-600">{errorMessage}</p>
@@ -152,8 +201,8 @@ export default function VideoGenerationPage() {
         </div>
       </div>
 
-      {/* 오른쪽: 설정 패널 - VideoSetting 컴포넌트로 대체 */}
-      <VideoSetting
+      {/* 오른쪽: FolderSidebar (폴더/파일 목록) */}
+      <FolderSidebar
         activeTab={activeTab}
         selectedEndpoint={selectedEndpoint}
         quality={quality}
@@ -161,6 +210,7 @@ export default function VideoGenerationPage() {
         onEndpointChange={setSelectedEndpoint}
         onQualityChange={setQuality}
         onStyleChange={setStyle}
+        onAddReferenceImage={handleAddReferenceImage} // +아이콘 클릭 콜백
       />
     </div>
   );
