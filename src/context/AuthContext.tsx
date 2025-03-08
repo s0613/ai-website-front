@@ -1,9 +1,11 @@
 "use client";
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-
-// ──────────────────────────────────────────────
-// AuthContext (클라이언트 인증 컨텍스트)
-// ──────────────────────────────────────────────
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  ReactNode,
+} from "react";
 
 export interface AuthContextType {
   isLoggedIn: boolean;
@@ -16,100 +18,125 @@ export interface AuthContextType {
 
 const defaultContextValue: AuthContextType = {
   isLoggedIn: false,
-  email: '',
+  email: "",
   token: null,
-  userRole: '',
-  login: () => { },
-  logout: () => { }
+  userRole: "",
+  login: () => {},
+  logout: () => {},
 };
 
 const AuthContext = createContext<AuthContextType>(defaultContextValue);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [token, setToken] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState('');
+  const [userRole, setUserRole] = useState("");
 
-  // 로컬 스토리지에 저장된 로그인 정보 복원
-  useEffect(() => {
-    const storedEmail = localStorage.getItem('email');
-    const storedToken = localStorage.getItem('token');
-    const storedRole = localStorage.getItem('userRole');
-
-    if (storedEmail && storedToken) {
-      setEmail(storedEmail);
-      setToken(storedToken);
-      setIsLoggedIn(true);
-      setUserRole(storedRole || '');
+  // 쿠키에서 값을 읽는 유틸리티 함수
+  const getCookie = (name: string) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return parts.pop()?.split(";").shift();
     }
-  }, []);
+    return "";
+  };
 
-  // 앱 최초 마운트 시 /api/auth/me 호출하여 로그인 상태 복원
+  // 초기화: 쿠키와 로컬 스토리지에서 로그인 정보 복원
   useEffect(() => {
-    const fetchCurrentUser = async () => {
+    // 쿠키에서 userRole 확인 (auth-token은 httpOnly라 읽을 수 없음)
+    const roleCookie = getCookie("userRole");
+    console.log("쿠키에서 확인한 userRole:", roleCookie);
+
+    // 로컬 스토리지 확인
+    const storedEmail = localStorage.getItem("email");
+    const storedToken = localStorage.getItem("token");
+    console.log("로컬 스토리지 확인:", {
+      storedEmail,
+      hasToken: !!storedToken,
+    });
+
+    // 백엔드 API를 통해 현재 인증 상태 확인
+    const checkAuthStatus = async () => {
       try {
-        const res = await fetch('http://localhost:8080/api/auth/me', {
-          credentials: 'include', // httpOnly 쿠키 포함
+        console.log("쿠키 확인:", document.cookie); // 현재 쿠키 상태 확인
+
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include", // 쿠키를 포함하여 요청
         });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.email) {
-            // 서버에서 반환된 토큰도 함께 사용
-            login(data.email, data.token || "temp-token-value", data.role);
-          }
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("인증 API 응답:", data);
+          console.log("응답 헤더:", [...response.headers.entries()]); // 응답 헤더 로깅
+
+          setEmail(data.email);
+          setUserRole(data.role || roleCookie || "");
+          setIsLoggedIn(true);
+
+          // 로컬 스토리지에도 저장 (선택적)
+          localStorage.setItem("email", data.email);
+          localStorage.setItem("userRole", data.role || roleCookie || "");
+
+          console.log("인증 상태 설정 완료:", {
+            email: data.email,
+            role: data.role || roleCookie,
+            isLoggedIn: true,
+            cookies: document.cookie, // 인증 후 쿠키 상태 확인
+          });
+        } else {
+          console.log("인증되지 않은 상태 (API 응답)");
         }
       } catch (error) {
-        console.error("Failed to fetch current user", error);
+        console.error("인증 상태 확인 중 오류:", error);
       }
     };
 
-    fetchCurrentUser();
+    // 쿠키가 있거나 로컬 스토리지에 정보가 있으면 인증 상태 확인
+    if (roleCookie || (storedEmail && storedToken)) {
+      checkAuthStatus();
+    }
   }, []);
 
-  const login = (email: string, token: string, role: string = '') => {
-    console.log('AuthContext login 호출됨, 역할:', role);
-
-    // role이 대문자로 들어올 경우를 대비해 소문자로 변환
-    const normalizedRole = role.trim().toLowerCase();
-    console.log('정규화된 역할:', normalizedRole);
+  const login = (email: string, token: string, role: string = "") => {
+    console.log("AuthContext login 호출됨, 역할:", role);
 
     setEmail(email);
     setToken(token);
     setIsLoggedIn(true);
-    setUserRole(normalizedRole);
+    setUserRole(role);
 
-    localStorage.setItem('email', email);
-    localStorage.setItem('token', token);
-    localStorage.setItem('userRole', normalizedRole);
+    // 로컬 스토리지에도 저장
+    localStorage.setItem("email", email);
+    localStorage.setItem("token", token);
+    localStorage.setItem("userRole", role);
 
-    // 쿠키 설정 추가 - 쿠키 만료 시간 설정 (7일)
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 7);
-
-    document.cookie = `auth-token=${token}; path=/; expires=${expiryDate.toUTCString()}`;
-    document.cookie = `userRole=${normalizedRole}; path=/; expires=${expiryDate.toUTCString()}`;
-
-    console.log('쿠키 설정 완료:', document.cookie);
+    console.log("로그인 처리 완료:", { email, role, isLoggedIn: true });
   };
 
   const logout = () => {
-    setEmail('');
+    setEmail("");
     setToken(null);
     setIsLoggedIn(false);
-    setUserRole('');
+    setUserRole("");
 
-    localStorage.removeItem('email');
-    localStorage.removeItem('token');
-    localStorage.removeItem('userRole');
+    localStorage.removeItem("email");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
 
-    // 쿠키 삭제
-    document.cookie = "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
-    document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+    // 백엔드에 로그아웃 요청 (쿠키 제거)
+    fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    }).catch((err) => console.error("로그아웃 요청 실패:", err));
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, email, token, userRole, login, logout }}>
+    <AuthContext.Provider
+      value={{ isLoggedIn, email, token, userRole, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -118,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

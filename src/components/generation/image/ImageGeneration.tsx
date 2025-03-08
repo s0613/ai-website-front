@@ -51,7 +51,7 @@ export default function ImageGeneration() {
         negativePrompt: data.negativePrompt,
         aspectRatio: data.aspectRatio,
         quality: data.quality,
-        style: data.style
+        style: data.style,
       };
 
       if (referenceImageBase64 && activeTab === "image") {
@@ -65,7 +65,9 @@ export default function ImageGeneration() {
       });
 
       if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: "알 수 없는 오류" }));
+        const { error } = await res
+          .json()
+          .catch(() => ({ error: "알 수 없는 오류" }));
         throw new Error(error || "이미지 생성 실패");
       }
 
@@ -74,8 +76,7 @@ export default function ImageGeneration() {
         setImageUrl(result.imageUrl);
       } else {
         setErrorMessage(
-          "이미지가 아직 생성되지 않았습니다. Job ID: " +
-            JSON.stringify(result)
+          "이미지가 아직 생성되지 않았습니다. Job ID: " + JSON.stringify(result)
         );
       }
     } catch {
@@ -97,13 +98,16 @@ export default function ImageGeneration() {
   };
 
   return (
-    <div className="flex w-full h-screen">
-      <div className="w-1/4 h-full min-w-[320px]">
-        <ImageSidebar onSubmit={handleSidebarSubmit} onTabChange={handleTabChange} />
+    <div className="flex w-full h-screen overflow-hidden">
+      <div className="w-1/4 h-full min-w-[320px] overflow-hidden">
+        <ImageSidebar
+          onSubmit={handleSidebarSubmit}
+          onTabChange={handleTabChange}
+        />
       </div>
-      <div className="flex-1 h-full flex flex-col">
+      <div className="flex-1 h-full flex flex-col overflow-hidden">
         {/* 모델 선택 드롭다운 */}
-        <div className="p-4">
+        <div className="p-4 border-b border-gray-200">
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
@@ -123,39 +127,39 @@ export default function ImageGeneration() {
             )}
           </select>
         </div>
-        
-        {/* 이미지 결과 영역 */}
-        <div className="flex-1 flex items-center justify-center p-6">
+
+        {/* 이미지 결과 영역 - 필요시 스크롤 가능하도록 */}
+        <div className="flex-1 overflow-auto flex items-center justify-center p-6">
           {isLoading && (
             <div className="flex flex-col items-center">
               <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               <p className="mt-4 text-gray-600">이미지 생성 중...</p>
             </div>
           )}
-          
+
           {errorMessage && (
             <div className="text-red-600 p-4 bg-red-50 rounded-md">
               {errorMessage}
             </div>
           )}
-          
+
           {imageUrl && !isLoading && (
             <div className="relative max-h-[80vh] max-w-full overflow-hidden rounded-lg shadow-lg">
-              <Image 
-                src={imageUrl} 
-                alt="생성된 이미지" 
-                width={512} 
-                height={512} 
+              <Image
+                src={imageUrl}
+                alt="생성된 이미지"
+                width={512}
+                height={512}
                 className="object-contain"
-                style={{ maxWidth: '100%', height: 'auto' }} 
+                style={{ maxWidth: "100%", height: "auto" }}
               />
-              
+
               <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2 text-center">
-                <button 
+                <button
                   onClick={() => {
-                    const link = document.createElement('a');
+                    const link = document.createElement("a");
                     link.href = imageUrl;
-                    link.download = '생성된_이미지.png';
+                    link.download = "생성된_이미지.png";
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -167,7 +171,7 @@ export default function ImageGeneration() {
               </div>
             </div>
           )}
-          
+
           {!imageUrl && !isLoading && !errorMessage && (
             <div className="text-center text-gray-500">
               <p className="text-lg">이미지 생성을 시작하려면</p>

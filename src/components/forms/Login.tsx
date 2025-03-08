@@ -1,15 +1,21 @@
 "use client";
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Card, CardHeader, CardFooter, CardTitle, CardContent } from '../../components/ui/card';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardContent,
+} from "../../components/ui/card";
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const router = useRouter();
   const { login } = useAuth();
 
@@ -18,30 +24,35 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:8080/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("http://localhost:8080/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include", // 쿠키를 주고받기 위해 추가
       });
 
       if (!response.ok) {
-        throw new Error('로그인에 실패했습니다.');
+        throw new Error("로그인에 실패했습니다.");
       }
 
       const data = await response.json();
       const token = data.token;
       if (!token) {
-        throw new Error('토큰이 전달되지 않았습니다.');
+        throw new Error("토큰이 전달되지 않았습니다.");
       }
 
       // API 응답에서 role 정보 추출
-      const role = data.role || 'user'; // role이 없으면 기본값으로 'user' 설정
-      console.log('로그인 성공, 역할:', role);
+      const role = data.role || "user"; // role이 없으면 기본값으로 'user' 설정
+      console.log("로그인 성공, 역할:", role);
 
-      setError('');
+      setError("");
       // role 정보를 login 함수에 전달
       login(email, token, role);
-      router.push('/');
+
+      // 로그인 완료 후 쿠키 확인
+      console.log("로그인 완료 후 최종 쿠키 상태:", document.cookie);
+
+      router.push("/");
     } catch (error) {
       setError((error as Error).message);
     }
@@ -49,19 +60,24 @@ const Login = () => {
 
   // 구글 로그인 버튼 클릭 시
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/api/auth/google';
+    window.location.href = "http://localhost:8080/api/auth/google";
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">로그인</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            로그인
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 이메일
               </label>
               <Input
@@ -74,7 +90,10 @@ const Login = () => {
               />
             </div>
             <div className="mb-4">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 비밀번호
               </label>
               <Input
