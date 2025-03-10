@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-// 이미지 응답 인터페이스 (전역 Image와 이름 충돌 방지를 위해 ImageResponse 사용)
 interface ImageResponse {
   url: string;
   fileName: string;
@@ -15,27 +14,28 @@ interface ImageResponse {
 const ImageGallery = () => {
   const [images, setImages] = useState<ImageResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  
+
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await axios.get<ImageResponse[]>(`${baseUrl}/api/images`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await axios.get<ImageResponse[]>(
+          `/api/admin/image/get`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         if (response.status !== 304) {
           const imageList = await Promise.all(
             response.data.map(async (image) => {
-              // 브라우저의 Image 객체를 사용하여 이미지의 실제 크기를 가져옴
               const img = new window.Image();
               img.src = image.url;
               await new Promise<void>((resolve) => {
                 img.onload = () => resolve();
               });
-              
+
               return {
                 ...image,
                 width: img.width,
@@ -47,7 +47,7 @@ const ImageGallery = () => {
           setImages(imageList);
         }
         setLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error("이미지 가져오기 실패", error);
         setLoading(false);
       }
@@ -58,11 +58,10 @@ const ImageGallery = () => {
 
   return (
     <div className="image-gallery p-4 container mx-auto px-4 lg:px-8">
-      {/* 제목을 더 눈에 띄게 스타일링 */}
       <h2 className="text-xl font-bold text-gray-900 mb-6 pl-2 border-l-4 border-blue-500">
         Trending generation result
       </h2>
-      
+
       {loading ? (
         <p>이미지 로딩 중...</p>
       ) : (
@@ -71,17 +70,23 @@ const ImageGallery = () => {
             images.map((image, index) => {
               if (!image.width || !image.height) return null;
 
-              const fileName = image.fileName.split('/').pop()?.split('.').slice(0, -1).join('.'); // 폴더 경로와 확장자 제거
+              const fileName = image.fileName
+                .split("/")
+                .pop()
+                ?.split(".")
+                .slice(0, -1)
+                .join(".");
 
               return (
                 <div
                   key={index}
                   className="relative group rounded-lg overflow-hidden transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-inner"
                   style={{
-                    gridRowEnd: `span ${Math.ceil((image.height / image.width) * 10)}`,
+                    gridRowEnd: `span ${Math.ceil(
+                      (image.height / image.width) * 10
+                    )}`,
                   }}
                 >
-                  {/* 나머지 코드 유지 */}
                   <img
                     src={image.url}
                     alt={fileName}

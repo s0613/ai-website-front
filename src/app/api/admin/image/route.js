@@ -8,16 +8,41 @@ export async function POST(request) {
     const category = formData.get("category");
     const images = formData.getAll("images"); // 파일 배열
 
-    // TODO: 여기서 파일 업로드 처리 또는 백엔드 연동 로직 추가
-    // 예시로 각 파일의 이름을 추출
-    const fileNames = images.map((file) => file.name);
+    // 스프링 백엔드로 전송할 새 FormData 생성
+    const backendFormData = new FormData();
+    backendFormData.append("category", category);
+    
+    // 모든 이미지 파일을 FormData에 추가
+    for (const image of images) {
+      backendFormData.append("images", image);
+    }
 
-    console.log("업로드된 파일들:", fileNames);
-    console.log("선택한 카테고리:", category);
+    // 환경 변수에서 백엔드 URL 가져오기
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const uploadUrl = `${baseUrl}/api/images/upload`;
+    
+    console.log(`스프링 백엔드로 요청 전송: ${uploadUrl}`);
+    
+    // 스프링 백엔드로 요청 전송
+    const response = await fetch(uploadUrl, {
+      method: "POST",
+      body: backendFormData,
+      // 인증 정보가 필요한 경우 아래 주석을 해제하고 토큰을 설정
+      // headers: {
+      //   "Authorization": `Bearer ${token}`
+      // }
+    });
+
+    if (!response.ok) {
+      throw new Error(`백엔드 에러: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log("백엔드 응답:", data);
 
     return NextResponse.json(
-      { message: "이미지 업로드 성공", fileNames, category },
-      { status: 200 }
+      { ...data },
+      { status: response.status }
     );
   } catch (error) {
     console.error("API 에러:", error);

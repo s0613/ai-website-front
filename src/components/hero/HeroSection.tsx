@@ -6,11 +6,11 @@ import { FiSearch } from "react-icons/fi";
 import { FaCamera } from "react-icons/fa";
 
 // Shadcn UI Card 컴포넌트 불러오기 (설치/설정 후 사용하세요)
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 
 type CategoryItem = {
@@ -56,23 +56,23 @@ const HeroSection = () => {
     {
       title: "이미지 생성",
       subtitle: "AI로 이미지 생성하기",
-      value: "image-generation"
+      value: "image-generation",
     },
     {
       title: "영상 생성",
       subtitle: "AI로 영상 생성하기",
-      value: "video-generation"
+      value: "video-generation",
     },
     {
       title: "이미지 레퍼런스",
       subtitle: "AI 이미지 레퍼런스 모음",
-      value: "image-reference"
+      value: "image-reference",
     },
     {
       title: "영상 레퍼런스",
       subtitle: "AI 영상 레퍼런스 모음",
-      value: "video-reference"
-    }
+      value: "video-reference",
+    },
   ];
 
   const handleCategorySelect = (item: CategoryItem) => {
@@ -83,10 +83,10 @@ const HeroSection = () => {
     } else if (item.value === "image-reference") {
       router.push("/image/reference");
     } else if (item.value === "video-reference") {
-      router.push("/video/reference");
+      router.push("/reference/video/main");
     }
   };
-  
+
   // 검색 처리
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

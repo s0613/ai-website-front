@@ -36,7 +36,7 @@ const ImageUploader = () => {
       });
 
       // Next.js API 라우트를 호출 (app/api/admin/route.js)
-      const res = await fetch("/api/admin", {
+      const res = await fetch("/api/admin/image", {
         method: "POST",
         body: formData,
       });
