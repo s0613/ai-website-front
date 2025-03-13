@@ -16,6 +16,8 @@ import {
   File,
   PlusCircle,
   CheckCircle,
+  FileText,
+  ChevronDownIcon,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -99,6 +101,7 @@ export default function FolderSidebar({
   const [error, setError] = useState<string | null>(null);
   const [loadingFolders, setLoadingFolders] = useState<Set<string>>(new Set());
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("myFolder"); // 추가: 현재 활성화된 탭
 
   // 폴더 목록 조회
   const fetchFolders = async () => {
@@ -450,39 +453,77 @@ export default function FolderSidebar({
 
   return (
     <div className="w-[260px] h-full bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-      <div className="p-3 border-b border-gray-200 flex-shrink-0">
-        <h2 className="font-medium text-lg">내 폴더</h2>
+      {/* 드롭다운 형식의 메뉴 */}
+      <div className="border-b border-gray-200 p-2">
+        <select
+          value={activeTab}
+          onChange={(e) => setActiveTab(e.target.value)}
+          className="w-full h-9 px-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="myFolder">내 폴더</option>
+          <option value="imageToVideo">이미지→비디오</option>
+          <option value="videoToVideo">비디오→비디오</option>
+          <option value="textToVideo">텍스트→비디오</option>
+        </select>
       </div>
 
       <ScrollArea className="flex-1">
         <div className="p-2 pb-6">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Loader2 className="h-8 w-8 text-gray-400 animate-spin mb-2" />
-              <p className="text-sm text-gray-500">
-                폴더 목록을 불러오는 중...
-              </p>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <p className="text-sm text-red-500">{error}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={fetchFolders}
-              >
-                다시 시도
-              </Button>
-            </div>
-          ) : files.length > 0 ? (
-            renderItems(files)
+          {activeTab === "myFolder" ? (
+            /* 기존 내 폴더 내용 */
+            isLoading ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Loader2 className="h-8 w-8 text-gray-400 animate-spin mb-2" />
+                <p className="text-sm text-gray-500">
+                  폴더 목록을 불러오는 중...
+                </p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <p className="text-sm text-red-500">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={fetchFolders}
+                >
+                  다시 시도
+                </Button>
+              </div>
+            ) : files.length > 0 ? (
+              renderItems(files)
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Folder className="h-12 w-12 text-gray-300 mb-2" />
+                <p className="text-sm text-gray-500">생성된 영상이 없습니다</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  새로운 영상을 생성해보세요
+                </p>
+              </div>
+            )
           ) : (
+            /* 다른 탭일 경우 표시할 내용 */
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Folder className="h-12 w-12 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">생성된 영상이 없습니다</p>
-              <p className="text-xs text-gray-400 mt-1">
-                새로운 영상을 생성해보세요
+              {activeTab === "imageToVideo" && (
+                <>
+                  <ImageIcon className="h-12 w-12 text-blue-300 mb-2" />
+                  <p className="text-sm text-gray-700">이미지 투 비디오</p>
+                </>
+              )}
+              {activeTab === "videoToVideo" && (
+                <>
+                  <Video className="h-12 w-12 text-purple-300 mb-2" />
+                  <p className="text-sm text-gray-700">비디오 투 비디오</p>
+                </>
+              )}
+              {activeTab === "textToVideo" && (
+                <>
+                  <FileText className="h-12 w-12 text-green-300 mb-2" />
+                  <p className="text-sm text-gray-700">텍스트 투 비디오</p>
+                </>
+              )}
+              <p className="text-xs text-gray-400 mt-2">
+                이 기능은 추후 업데이트 예정입니다
               </p>
             </div>
           )}

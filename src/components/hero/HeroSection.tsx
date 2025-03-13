@@ -77,9 +77,9 @@ const HeroSection = () => {
 
   const handleCategorySelect = (item: CategoryItem) => {
     if (item.value === "image-generation") {
-      router.push("/image");
+      router.push("/generation/image");
     } else if (item.value === "video-generation") {
-      router.push("/video");
+      router.push("/generation/video");
     } else if (item.value === "image-reference") {
       router.push("/image/reference");
     } else if (item.value === "video-reference") {

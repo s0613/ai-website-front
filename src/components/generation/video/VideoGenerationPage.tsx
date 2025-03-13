@@ -175,7 +175,9 @@ export default function VideoGenerationPage() {
             {errorMessage && !isLoading && (
               <div className="text-center p-6">
                 <div className="text-red-600 mb-2">⚠️</div>
-                <p className="text-red-600">{errorMessage}</p>
+                <p className="text-red-600 whitespace-pre-line">
+                  {errorMessage}
+                </p>
               </div>
             )}
             {!videoUrl && !isLoading && !errorMessage && (

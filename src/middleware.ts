@@ -9,13 +9,6 @@ export function middleware(request: NextRequest) {
     console.log(`userRole with brackets: [${userRole}]`)
     console.log("length:", userRole?.length)
 
-    // 타입스크립트 오류 수정: userRole이 undefined일 수 있으므로 옵셔널 체이닝 사용
-    if (userRole) {
-      for (let i = 0; i < userRole.length; i++) {
-        console.log(`char at ${i}:`, userRole[i], userRole.charCodeAt(i))
-      }
-    }
-
     // ADMIN 역할이 아닌 경우 /unauthorized 로 리다이렉트
     // 대소문자 구분 없이 'admin' 또는 'ADMIN' 모두 허용
     const normalizedRole = userRole?.trim().toLowerCase() || '';

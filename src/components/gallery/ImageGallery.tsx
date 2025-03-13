@@ -47,7 +47,7 @@ const ImageGallery = () => {
           setImages(imageList);
         }
         setLoading(false);
-      } catch (error: any) {
+      } catch (error) {
         console.error("이미지 가져오기 실패", error);
         setLoading(false);
       }

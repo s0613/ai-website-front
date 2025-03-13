@@ -21,12 +21,12 @@ const sidebarItems: SidebarItem[] = [
   },
   {
     icon: Image,
-    label: "내 이미지",
-    href: "/my/image",
+    label: "내 작업물",
+    href: "/my/create",
   },
   {
     icon: Video,
-    label: "내 영상",
+    label: "내 폴더",
     href: "/my/video",
   },
 
@@ -48,10 +48,6 @@ interface MyPageLayoutProps {
 
 const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
   const pathname = usePathname();
-  // email 변수를 사용하지 않는 경고를 해결하기 위해,
-  // 필요하다면 UI에 표시하거나, 아니면 아래와 같이 주석으로 처리할 수 있습니다.
-  // 여기서는 헤더에 이메일을 표시하는 예를 추가합니다.
-
   return (
     <div className="grid min-h-screen grid-cols-[16rem_1fr]">
       <div className="border-r">
