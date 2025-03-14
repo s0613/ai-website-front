@@ -3,7 +3,7 @@
 Crazy Space는 레퍼런스 기반 AI 영상 생성 웹사이트로, 누구나 쉽게 멋있고 재미있는 AI 영상을 만들 수 있도록 돕는 플랫폼입니다.
 향후 클라이언트와 크리에이터가 연결되어 영상 제작과 관련된 다양한 작업을 수행할 수 있도록 발전해 나갈 예정입니다.
 
-![Crazy Space 메인 화면](/assets/images/main-screenshot.png)
+![Crazy Space 메인 화면]<img width="1470" alt="Image" src="https://github.com/user-attachments/assets/24e703e1-3a5b-4679-96ad-a349330a78aa" />
 
 ## 주요 기능
 
@@ -19,4 +19,4 @@ Crazy Space는 레퍼런스 기반 AI 영상 생성 웹사이트로, 누구나 �
 - **블로그 기능**: AI 영상 및 제작 관련 정보를 공유할 수 있도록 블로그 게시 기능 제공.
 - **회원 관리**: 관리자가 사용자 정보를 확인하고 관리할 수 있습니다.
 
-![Crazy Space 주요 기능 미리보기](/assets/images/features-preview.png)
+![Crazy Space 주요 기능 미리보기]<img width="1470" alt="Image" src="https://github.com/user-attachments/assets/2d63b99b-a345-4de1-b0df-7d779b6377f5" />
