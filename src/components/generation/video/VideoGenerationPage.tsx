@@ -8,6 +8,9 @@ export default function VideoGenerationPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // 왼쪽 사이드바(=VideoSidebar)에서 선택한 탭 ("image" | "text")
   const [activeTab, setActiveTab] = useState<"image" | "text">("image");
@@ -28,6 +31,8 @@ export default function VideoGenerationPage() {
     setErrorMessage("");
     setVideoUrl("");
     setIsLoading(true);
+    setSaveSuccess(false);
+    setSaveError("");
 
     try {
       let endpointUrl = "";
@@ -94,6 +99,8 @@ export default function VideoGenerationPage() {
       const result = await res.json();
       if (result.videoUrl) {
         setVideoUrl(result.videoUrl);
+        // 비디오 URL이 생성되었을 때 저장 API 호출
+        saveVideoToServer(result.videoUrl, data);
       } else {
         setErrorMessage(
           "videoUrl이 아직 생성되지 않았습니다. Job ID: " +
@@ -105,6 +112,40 @@ export default function VideoGenerationPage() {
       setErrorMessage(error.message ?? "오류 발생");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 생성된 비디오를 서버에 저장하는 함수
+  const saveVideoToServer = async (videoUrl: string, data: SidebarFormData) => {
+    try {
+      setIsSaving(true);
+
+      // 새 API 엔드포인트 호출
+      const saveResponse = await fetch("/api/my/creation/video/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoUrl: videoUrl,
+          data: {
+            prompt: data.prompt,
+            endpoint: data.endpoint,
+            fileUrl: data.fileUrl,
+            imageFile: data.imageFile ? true : false, // 파일 객체는 JSON으로 직렬화할 수 없으므로 존재 여부만 전달
+          },
+        }),
+      });
+
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json();
+        throw new Error(errorData.message || "비디오 저장에 실패했습니다.");
+      }
+
+      setSaveSuccess(true);
+    } catch (error) {
+      console.error("비디오 저장 오류:", error);
+      setSaveError(error.message || "비디오 저장 중 오류가 발생했습니다.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -191,13 +232,63 @@ export default function VideoGenerationPage() {
               </div>
             )}
             {videoUrl && (
-              <video
-                src={videoUrl}
-                controls
-                autoPlay
-                loop
-                className="max-w-full max-h-full rounded-lg shadow-lg"
-              />
+              <div className="w-full h-full flex flex-col items-center justify-center">
+                <video
+                  src={videoUrl}
+                  controls
+                  autoPlay
+                  loop
+                  className="max-w-full max-h-[80%] rounded-lg shadow-lg"
+                />
+
+                {/* 저장 상태 표시 */}
+                <div className="mt-4">
+                  {isSaving && (
+                    <div className="text-center text-blue-600">
+                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+                      비디오 저장 중...
+                    </div>
+                  )}
+                  {saveSuccess && (
+                    <div className="text-green-600 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      비디오가 내 보관함에 저장되었습니다
+                    </div>
+                  )}
+                  {saveError && (
+                    <div className="text-red-600 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      {saveError}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>

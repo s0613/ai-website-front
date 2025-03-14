@@ -22,7 +22,7 @@ const sidebarItems: SidebarItem[] = [
   {
     icon: Image,
     label: "내 작업물",
-    href: "/my/create",
+    href: "/my/creation",
   },
   {
     icon: Video,
