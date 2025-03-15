@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 // 예시: baseUrl (백엔드 주소)
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-export async function GET(request: Request) {
+export async function GET(request: Request, { params }) {
   try {
     if (!baseUrl) {
       console.error("API URL 환경 변수가 설정되지 않았습니다");
@@ -15,13 +15,12 @@ export async function GET(request: Request) {
       );
     }
 
-    // URLSearchParams로 type 파라미터 추출
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type"); // "IMAGE", "VIDEO", "TEXT"
+    // URL 경로에서 type 파라미터 추출
+    const type = params.type; // "image", "video", "text"
 
     if (!type) {
       return NextResponse.json(
-        { message: "type 쿼리 파라미터가 필요합니다" },
+        { message: "type 경로 파라미터가 필요합니다" },
         { status: 400 }
       );
     }
@@ -30,8 +29,7 @@ export async function GET(request: Request) {
     const cookieStore = await cookies();
     const allCookiesArray = cookieStore.getAll();
     const jwtCookie = allCookiesArray.find(
-      (c) =>
-        c.name === "auth-token"
+      (c) => c.name === "auth-token"
     );
 
     if (!jwtCookie) {
@@ -48,15 +46,18 @@ export async function GET(request: Request) {
       Authorization: `Bearer ${jwtCookie.value}`,
     };
 
-    // 백엔드 API URL (Spring에서 `@GetMapping("/type/{videoType}")`로 되어 있다면 아래처럼 구성)
-    // 예: GET /api/my/videos/type/VIDEO
-    const apiUrl = `${baseUrl}/api/my/videos/type/${type}`;
+    // 백엔드 API URL
+    const apiUrl = `${baseUrl}/api/my/videos/type/${type.toUpperCase()}`;
+    console.log("요청 URL:", apiUrl);
 
     const response = await fetch(apiUrl, {
       method: "GET",
       headers,
       credentials: "include",
+      cache: 'no-store'
     });
+
+    console.log("응답 상태:", response.status, response.statusText);
 
     if (!response.ok) {
       let errorMessage = "비디오 데이터를 가져오는데 실패했습니다";

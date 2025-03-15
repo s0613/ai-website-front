@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { formatFileSize, formatDate } from "@/utils/formatUtils";
 
-interface VideoDetailProps {
+interface CreationDetailProps {
   videoId: number;
   onBack: () => void;
 }
@@ -14,35 +14,41 @@ interface VideoDetail {
   name: string;
   prompt: string;
   url: string;
-  thumbnailUrl: string; // 썸네일 URL 필요
+  thumbnailUrl: string;
+  model: string;
+  mode: string;
   format: string;
   sizeInBytes: number;
-  creator: string; // 저자 정보 추가
   createdAt: string;
-  model?: string; // 사용된 모델 정보
+  shared: boolean;
 }
 
-export default function VideoDetail({ videoId, onBack }: VideoDetailProps) {
+export default function CreationDetail({
+  videoId,
+  onBack,
+}: CreationDetailProps) {
   const router = useRouter();
   const [video, setVideo] = useState<VideoDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
     const fetchVideoDetail = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/admin/video/${videoId}`);
+        const response = await fetch(`/api/my/creation/video/${videoId}`);
 
         if (!response.ok) {
-          throw new Error("비디오를 불러오는데 실패했습니다");
+          throw new Error("작업물을 불러오는데 실패했습니다");
         }
 
         const data = await response.json();
-        setVideo(data);
+        setVideo(data.video);
+        setIsSharing(data.video.shared || false);
       } catch (err) {
         setError((err as Error).message);
-        console.error("Error fetching videos:", err);
+        console.error("Error fetching video:", err);
       } finally {
         setIsLoading(false);
       }
@@ -53,57 +59,43 @@ export default function VideoDetail({ videoId, onBack }: VideoDetailProps) {
     }
   }, [videoId]);
 
-  // 비디오 사용 핸들러 함수 업데이트
-  const handleUseVideo = () => {
+  // 비디오 재사용 핸들러
+  const handleReuseVideo = () => {
     if (!video) return;
-
-    // 비디오 프롬프트나 특성에 따라 가장 적합한 모델 결정
-    let suggestedModel = "luna"; // 기본값
-
-    if (video.prompt) {
-      const promptLower = video.prompt.toLowerCase();
-
-      // 텍스트 기반 생성으로 추정되는 경우
-      if (
-        !video.thumbnailUrl ||
-        promptLower.includes("text to video") ||
-        promptLower.includes("텍스트")
-      ) {
-        suggestedModel = "veo2";
-      }
-      // 이미지 기반 생성으로 추정되는 경우
-      else {
-        if (
-          promptLower.includes("cinematic") ||
-          promptLower.includes("영화") ||
-          promptLower.includes("시네마틱")
-        ) {
-          suggestedModel = "wan";
-        } else if (
-          promptLower.includes("fast") ||
-          promptLower.includes("빠른") ||
-          promptLower.includes("dynamic") ||
-          promptLower.includes("다이나믹")
-        ) {
-          suggestedModel = "kling";
-        } else {
-          suggestedModel = "luna"; // 기본 이미지-비디오 모델
-        }
-      }
-    }
-
-    // video.model이 지정되어 있으면 그것을 우선 사용
-    const modelToUse = video.model || suggestedModel;
 
     // 필요한 정보를 쿼리 파라미터로 인코딩
     const params = new URLSearchParams({
       prompt: video.prompt || "",
       imageUrl: video.thumbnailUrl || "",
-      model: modelToUse,
+      model: video.model || "luna",
     });
 
     // 영상 생성 페이지로 이동
     router.push(`/generation/video?${params.toString()}`);
+  };
+
+  // 공유 상태 토글 핸들러
+  const handleToggleShare = async () => {
+    if (!video) return;
+
+    try {
+      const response = await fetch(
+        `/api/my/videos/${video.id}/share?share=${!isSharing}`,
+        {
+          method: "PATCH",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("공유 상태 변경에 실패했습니다");
+      }
+
+      const data = await response.json();
+      setIsSharing(data.shared);
+    } catch (err) {
+      console.error("Error updating share status:", err);
+      alert("공유 상태를 변경하는데 실패했습니다");
+    }
   };
 
   if (isLoading) {
@@ -133,6 +125,12 @@ export default function VideoDetail({ videoId, onBack }: VideoDetailProps) {
           </svg>
           <p className="mt-2">{error}</p>
         </div>
+        <button
+          onClick={onBack}
+          className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+        >
+          돌아가기
+        </button>
       </div>
     );
   }
@@ -140,7 +138,7 @@ export default function VideoDetail({ videoId, onBack }: VideoDetailProps) {
   if (!video) return null;
 
   return (
-    <div className="bg-white w-full h-full max-h-[85vh] flex flex-col md:flex-row">
+    <div className="bg-white w-full h-full max-h-[85vh] flex flex-col md:flex-row rounded-lg shadow-lg overflow-hidden">
       {/* 왼쪽: 비디오 플레이어 */}
       <div className="md:w-3/5 p-4 bg-black flex items-center justify-center">
         <div className="w-full h-full flex items-center">
@@ -148,7 +146,7 @@ export default function VideoDetail({ videoId, onBack }: VideoDetailProps) {
             src={video.url}
             controls
             className="w-full max-h-[70vh] object-contain"
-            poster="/video-thumbnail-placeholder.jpg"
+            poster={video.thumbnailUrl || "/video-thumbnail-placeholder.jpg"}
             autoPlay
           >
             브라우저가 비디오 태그를 지원하지 않습니다.
@@ -158,8 +156,27 @@ export default function VideoDetail({ videoId, onBack }: VideoDetailProps) {
 
       {/* 오른쪽: 비디오 정보 */}
       <div className="md:w-2/5 p-6 overflow-y-auto">
-        <div className="mb-6">
+        <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{video.name}</h2>
+          <button
+            onClick={onBack}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
 
         <div className="space-y-4">
@@ -172,30 +189,48 @@ export default function VideoDetail({ videoId, onBack }: VideoDetailProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <h3 className="text-sm font-medium text-gray-500">모델</h3>
+              <p className="mt-1">{video.model || "정보 없음"}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">모드</h3>
+              <p className="mt-1">{video.mode || "정보 없음"}</p>
+            </div>
+            <div>
               <h3 className="text-sm font-medium text-gray-500">포맷</h3>
-              <p className="mt-1">{video.format}</p>
+              <p className="mt-1">{video.format || "MP4"}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">파일 크기</h3>
               <p className="mt-1">{formatFileSize(video.sizeInBytes)}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">제작자</h3>
-              <p className="mt-1">{video.creator || "미상"}</p>
-            </div>
-            <div>
               <h3 className="text-sm font-medium text-gray-500">생성일</h3>
               <p className="mt-1">{formatDate(video.createdAt)}</p>
             </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">공유 상태</h3>
+              <p className="mt-1">{isSharing ? "공개" : "비공개"}</p>
+            </div>
           </div>
 
-          {/* 비디오 ID 부분 대신 USE 버튼 추가 */}
-          <div className="pt-4 border-t border-gray-200">
+          {/* 작업 버튼 영역 */}
+          <div className="pt-4 border-t border-gray-200 grid grid-cols-2 gap-4">
             <button
-              onClick={handleUseVideo}
-              className="w-full py-3 px-4 bg-black hover:bg-black text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              onClick={handleReuseVideo}
+              className="py-3 px-4 bg-black hover:bg-gray-800 text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              USE
+              재사용하기
+            </button>
+            <button
+              onClick={handleToggleShare}
+              className={`py-3 px-4 ${
+                isSharing
+                  ? "bg-red-500 hover:bg-red-600"
+                  : "bg-blue-500 hover:bg-blue-600"
+              } text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+            >
+              {isSharing ? "비공개로 전환" : "공개로 전환"}
             </button>
           </div>
         </div>

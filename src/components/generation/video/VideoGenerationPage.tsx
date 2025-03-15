@@ -1,10 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import VideoSidebar, { SidebarFormData } from "./VideoSidebar";
 import FolderSidebar, { FileItem } from "./FolderSidebar";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function VideoGenerationPage() {
+  const searchParams = useSearchParams();
+
   const [videoUrl, setVideoUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +32,26 @@ export default function VideoGenerationPage() {
     null
   );
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
+
+  // 레퍼런스에서 전달받은 프롬프트 및 모델
+  const [referencePrompt, setReferencePrompt] = useState("");
+  const [referenceModel, setReferenceModel] = useState("");
+
+  // URL 쿼리 파라미터 처리
+  useEffect(() => {
+    if (searchParams) {
+      const prompt = searchParams.get("prompt");
+      const imageUrl = searchParams.get("imageUrl");
+      const model = searchParams.get("model");
+
+      if (prompt) setReferencePrompt(prompt);
+      if (imageUrl) setReferenceImageUrl(imageUrl);
+      if (model) {
+        setReferenceModel(model);
+        setSelectedEndpoint(model);
+      }
+    }
+  }, [searchParams]);
 
   // VideoSidebar -> onSubmit
   const handleSidebarSubmit = async (data: SidebarFormData) => {
@@ -130,19 +157,28 @@ export default function VideoGenerationPage() {
             prompt: data.prompt,
             endpoint: data.endpoint,
             fileUrl: data.fileUrl,
-            imageFile: data.imageFile ? true : false, // 파일 객체는 JSON으로 직렬화할 수 없으므로 존재 여부만 전달
+            imageFile: data.imageFile ? true : false,
           },
         }),
       });
 
       if (!saveResponse.ok) {
-        const errorData = await saveResponse.json();
-        throw new Error(errorData.message || "비디오 저장에 실패했습니다.");
+        let errorMsg = "비디오 저장에 실패했습니다.";
+        try {
+          const errorData = await saveResponse.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch (e) {
+          console.error("응답 파싱 오류:", e);
+          errorMsg = `서버 오류: ${saveResponse.status} ${saveResponse.statusText}`;
+        }
+        throw new Error(errorMsg);
       }
 
+      toast.success("비디오가 내 보관함에 저장되었습니다");
       setSaveSuccess(true);
     } catch (error) {
       console.error("비디오 저장 오류:", error);
+      toast.error(error.message || "비디오 저장 중 오류가 발생했습니다.");
       setSaveError(error.message || "비디오 저장 중 오류가 발생했습니다.");
     } finally {
       setIsSaving(false);
@@ -159,36 +195,51 @@ export default function VideoGenerationPage() {
     }
   };
 
-  // (중요) + 버튼 클릭 시 -> fetch -> blob -> File 변환 -> state 저장
+  // + 버튼 클릭 시 -> 참조 이미지 추가 (fetch 제거, fileUrl만 사용)
   const handleAddReferenceImage = async (fileItem: FileItem) => {
     try {
       if (!fileItem.fileUrl) {
         throw new Error("fileUrl이 존재하지 않는 파일");
       }
-
+      // 참조 이미지 URL을 그대로 상태에 저장
       setReferenceImageUrl(fileItem.fileUrl);
-
-      const response = await fetch(fileItem.fileUrl);
-      if (!response.ok) {
-        throw new Error("이미지 불러오기 실패");
-      }
-      const blob = await response.blob();
-
-      // 확장자
-      const fileName = fileItem.name || "image.jpg";
-      const fileExt = fileName.split(".").pop()?.toLowerCase() || "jpg";
-      const mimeType = `image/${fileExt === "jpg" ? "jpeg" : fileExt}`;
-
-      const newFile = new File([blob], fileName, { type: mimeType });
-      setReferenceImageFile(newFile);
-
-      // 혹시 안내 문구
-      console.log("참조 이미지로 추가되었습니다:", newFile.name);
-    } catch (error) {
+      setReferenceImageFile(null);
+      console.log("참조 이미지로 추가되었습니다:", fileItem.name);
+      toast.success("참조 이미지로 설정되었습니다");
+    } catch (error: any) {
       console.error("참조 이미지 추가 오류:", error);
       setReferenceImageFile(null);
       setReferenceImageUrl("");
     }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setReferenceImageFile(file);
+    const preview = URL.createObjectURL(file);
+    setReferenceImageUrl(preview);
+  };
+
+  const handleTabSelection = (tab: "image" | "text") => {
+    setActiveTab(tab);
+    onTabChange(tab);
+    if (
+      !referenceModel ||
+      tab !== (referenceModel === "veo2" ? "text" : "image")
+    ) {
+      if (tab === "image") setSelectedEndpoint("luna");
+      else setSelectedEndpoint("veo2");
+    }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectImage = () => {
+    fileInputRef.current?.click();
+  };
+  const removeImage = () => {
+    setReferenceImageFile(null);
+    setReferenceImageUrl("");
   };
 
   return (
@@ -200,6 +251,8 @@ export default function VideoGenerationPage() {
           onTabChange={handleTabChange}
           referenceImageFile={referenceImageFile}
           referenceImageUrl={referenceImageUrl}
+          referencePrompt={referencePrompt}
+          referenceModel={referenceModel}
         />
       </div>
 
@@ -240,8 +293,6 @@ export default function VideoGenerationPage() {
                   loop
                   className="max-w-full max-h-[80%] rounded-lg shadow-lg"
                 />
-
-                {/* 저장 상태 표시 */}
                 <div className="mt-4">
                   {isSaving && (
                     <div className="text-center text-blue-600">
@@ -303,7 +354,15 @@ export default function VideoGenerationPage() {
         onEndpointChange={setSelectedEndpoint}
         onQualityChange={setQuality}
         onStyleChange={setStyle}
-        onAddReferenceImage={handleAddReferenceImage} // +아이콘 클릭 콜백
+        onAddReferenceImage={handleAddReferenceImage}
+      />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="hidden"
       />
     </div>
   );

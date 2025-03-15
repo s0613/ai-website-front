@@ -34,6 +34,8 @@ type VideoSidebarProps = {
   onTabChange: (tab: "image" | "text") => void;
   referenceImageFile?: File | null;
   referenceImageUrl?: string;
+  referencePrompt?: string; // 추가: 참조 프롬프트
+  referenceModel?: string; // 추가: 참조 모델
 };
 
 export default function VideoSidebar({
@@ -41,6 +43,8 @@ export default function VideoSidebar({
   onTabChange,
   referenceImageFile,
   referenceImageUrl,
+  referencePrompt,
+  referenceModel,
 }: VideoSidebarProps) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -50,7 +54,7 @@ export default function VideoSidebar({
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [duration, setDuration] = useState("5s");
   const [endpoint, setEndpoint] = useState(
-    activeTab === "image" ? "luna" : "veo2"
+    referenceModel || (activeTab === "image" ? "luna" : "veo2")
   );
   const [quality, setQuality] = useState<"standard" | "high">("standard");
   const [style, setStyle] = useState<"realistic" | "creative">("realistic");
@@ -68,6 +72,29 @@ export default function VideoSidebar({
     useState<boolean>(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 상위에서 전달받은 참조 프롬프트와 모델 처리
+  useEffect(() => {
+    if (referencePrompt) {
+      setPrompt(referencePrompt);
+    }
+
+    if (referenceModel) {
+      // 모델 엔드포인트 설정
+      setEndpoint(referenceModel);
+
+      // 모델에 맞는 탭 설정
+      if (referenceModel === "veo2") {
+        setActiveTab("text");
+        onTabChange("text");
+      } else {
+        setActiveTab("image");
+        onTabChange("image");
+      }
+
+      console.log(`참조 모델 설정: ${referenceModel}`); // 디버깅용
+    }
+  }, [referencePrompt, referenceModel, onTabChange]);
 
   // 상위에서 referenceImageFile/Url이 바뀌면 state에 반영
   useEffect(() => {
@@ -160,8 +187,16 @@ export default function VideoSidebar({
   const handleTabSelection = (tab: "image" | "text") => {
     setActiveTab(tab);
     onTabChange(tab);
-    if (tab === "image") setEndpoint("luna");
-    else setEndpoint("veo2");
+
+    // 참조 모델이 없는 경우에만 기본값으로 변경
+    // 또는 사용자가 명시적으로 탭을 변경한 후에는 referenceModel 영향을 제거
+    if (
+      !referenceModel ||
+      tab !== (referenceModel === "veo2" ? "text" : "image")
+    ) {
+      if (tab === "image") setEndpoint("luna");
+      else setEndpoint("veo2");
+    }
   };
 
   const selectImage = () => {

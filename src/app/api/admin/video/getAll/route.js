@@ -3,7 +3,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 export async function GET() {
   try {
     // Spring Boot API에서 모든 비디오 목록 가져오기
-    const backendResponse = await fetch(`${BASE_URL}/api/admin/videos`, {
+    const backendResponse = await fetch(`${BASE_URL}/api/admin/videos/all`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
