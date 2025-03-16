@@ -2,7 +2,7 @@
 
 import React from "react";
 // 사용하지 않는 컴포넌트와 아이콘 제거
-import { FileText, Image, MessageSquare, Layers, Video } from "lucide-react";
+import { Home, Image, Settings, Folder } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ interface SidebarItem {
 
 const sidebarItems: SidebarItem[] = [
   {
-    icon: FileText,
+    icon: Home,
     label: "홈",
     href: "/my",
   },
@@ -25,20 +25,14 @@ const sidebarItems: SidebarItem[] = [
     href: "/my/creation",
   },
   {
-    icon: Video,
+    icon: Folder,
     label: "내 폴더",
-    href: "/my/video",
-  },
-
-  {
-    icon: MessageSquare,
-    label: "프로필",
-    href: "/my/chat",
+    href: "/my/folder/my",
   },
   {
-    icon: Layers,
+    icon: Settings,
     label: "설정",
-    href: "/my/models",
+    href: "/my/setting",
   },
 ];
 
@@ -51,9 +45,6 @@ const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
   return (
     <div className="grid min-h-screen grid-cols-[16rem_1fr]">
       <div className="border-r">
-        <div className="flex h-[57px] items-center border-b px-6">
-          <span>AI Content Platform</span>
-        </div>
         <div className="flex-1 py-4">
           <nav className="grid gap-1 px-2">
             {sidebarItems.map((item, idx) => {

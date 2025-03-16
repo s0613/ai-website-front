@@ -6,7 +6,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
+  const id = await params.id;
   
   try {
     // Spring Boot API에서 특정 비디오의 세부 정보 가져오기

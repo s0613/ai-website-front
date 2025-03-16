@@ -1,4 +1,6 @@
+// api/my/creation/video/toggleShare/route.ts
 "use server";
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
@@ -26,12 +28,10 @@ export async function PATCH(request: Request) {
     }
 
     // 쿠키 & JWT
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const allCookiesArray = cookieStore.getAll();
     const jwtCookie = allCookiesArray.find(
       (c) =>
-        c.name === "JWT_TOKEN" ||
-        c.name === "access_token" ||
         c.name === "auth-token"
     );
 

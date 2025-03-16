@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { formatFileSize, formatDate } from "@/utils/formatUtils";
+import { toast } from "react-hot-toast";
 
 interface CreationDetailProps {
   videoId: number;
@@ -45,7 +46,7 @@ export default function CreationDetail({
 
         const data = await response.json();
         setVideo(data.video);
-        setIsSharing(data.video.shared || false);
+        setIsSharing(data.video.share || false);
       } catch (err) {
         setError((err as Error).message);
         console.error("Error fetching video:", err);
@@ -79,22 +80,42 @@ export default function CreationDetail({
     if (!video) return;
 
     try {
-      const response = await fetch(
-        `/api/my/videos/${video.id}/share?share=${!isSharing}`,
-        {
-          method: "PATCH",
-        }
-      );
+      const response = await fetch(`/api/my/creation/video/toggleShare`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: video.id,
+          share: !isSharing,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("공유 상태 변경에 실패했습니다");
       }
 
       const data = await response.json();
-      setIsSharing(data.shared);
+
+      // API 응답에서 shared 필드를 확인하고 상태 업데이트
+      // 응답에 shared 필드가 없을 경우 현재 상태 반전
+      const newSharingStatus =
+        data.shared !== undefined ? data.shared : !isSharing;
+
+      setIsSharing(newSharingStatus);
+
+      // 성공 메시지 표시
+      const status = newSharingStatus ? "공개" : "비공개";
+      toast.success(`영상이 ${status}로 설정되었습니다`);
+
+      // 비디오 객체도 업데이트
+      setVideo({
+        ...video,
+        shared: newSharingStatus,
+      });
     } catch (err) {
       console.error("Error updating share status:", err);
-      alert("공유 상태를 변경하는데 실패했습니다");
+      toast.error("공유 상태를 변경하는데 실패했습니다");
     }
   };
 
@@ -146,7 +167,7 @@ export default function CreationDetail({
             src={video.url}
             controls
             className="w-full max-h-[70vh] object-contain"
-            poster={video.thumbnailUrl || "/video-thumbnail-placeholder.jpg"}
+            poster={video.thumbnailUrl}
             autoPlay
           >
             브라우저가 비디오 태그를 지원하지 않습니다.

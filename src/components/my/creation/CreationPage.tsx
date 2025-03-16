@@ -145,7 +145,7 @@ export default function CreationPage() {
               </div>
               <div className="p-4">
                 <h3 className="text-lg font-medium text-gray-800 truncate">
-                  {video.aiVideoName}
+                  {video.name}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1 truncate">
                   {video.prompt}

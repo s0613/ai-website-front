@@ -121,7 +121,7 @@ const VideoPage = () => {
     <div className="p-6">
       {/* 상단 영역 */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">내 영상</h1>
+        <h1 className="text-2xl font-bold">내 폴더</h1>
 
         <div className="flex gap-2">
           {/* 예시용: 새 영상 생성 버튼(미구현) */}

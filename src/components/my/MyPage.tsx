@@ -4,7 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Grid, Search } from "lucide-react";
+import { Home, Search, Settings } from "lucide-react";
 
 const MyPage = () => {
   return (
@@ -18,10 +18,10 @@ const MyPage = () => {
         </div>
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon">
-            <Grid className="h-4 w-4" />
+            <Home className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon">
-            <Bell className="h-4 w-4" />
+            <Settings className="h-4 w-4" />
           </Button>
           {/* 사용자 이메일과 아바타 표시 부분 제거 */}
         </div>

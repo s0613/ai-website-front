@@ -1,10 +1,12 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
 import { FiSearch, FiMenu, FiX } from "react-icons/fi";
+import { Bell } from "lucide-react"; // Bell 아이콘 import 추가
 import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button"; // Button 컴포넌트 import 추가
 
 const Navbar = () => {
   const router = useRouter();
@@ -79,7 +81,12 @@ const Navbar = () => {
             Contact Us
           </Link>
           {isLoggedIn ? (
-            <div className="relative" ref={dropdownRef}>
+            <div className="relative flex items-center" ref={dropdownRef}>
+              {/* 벨 아이콘 추가 */}
+              <Button variant="ghost" size="icon" className="mr-2">
+                <Bell className="h-4 w-4" />
+              </Button>
+
               {/* Avatar와 dropdown 메뉴 */}
               <div
                 className="cursor-pointer"
@@ -98,7 +105,7 @@ const Navbar = () => {
 
               {isDropdownOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50"
+                  className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50"
                   onMouseEnter={() => setIsDropdownOpen(true)}
                   onMouseLeave={() => setIsDropdownOpen(false)}
                 >

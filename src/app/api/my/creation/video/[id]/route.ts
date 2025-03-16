@@ -7,7 +7,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 export async function GET(req, { params }) {
   try {
     // URL에서 id 매개변수 추출
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(

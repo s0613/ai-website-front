@@ -4,65 +4,40 @@ import { useState, useEffect } from "react";
 import Sidebar, { FilterOptions } from "./sidebar";
 import VideoDetail from "./videoDetail";
 
-// VideoItem 인터페이스에 thumbnailUrl 속성 추가
+// VideoItem 인터페이스 업데이트
 interface VideoItem {
   id: number;
   name: string;
   prompt: string;
   url: string;
-  thumbnailUrl: string; // 썸네일 URL 속성 추가
+  thumbnailUrl: string;
   format: string;
   sizeInBytes: number;
   status: string;
   createdAt: string;
+  creator?: string; // creator 필드 추가
+  model?: string;
 }
 
-// 비디오 길이 카테고리 계산 함수
-const getVideoDuration = (sizeInBytes: number): string => {
-  // 예시: 사이즈에 따라 대략적인 길이 추정 (실제는 비디오 메타데이터가 필요함)
+// 간단한 내부 유틸리티 함수
+const getSimpleCategory = (prompt: string): string => {
+  const promptLower = prompt?.toLowerCase() || "";
+  if (promptLower.includes("nature") || promptLower.includes("자연"))
+    return "자연";
+  if (promptLower.includes("city") || promptLower.includes("도시"))
+    return "도시";
+  return "기타";
+};
+
+const getSimpleDuration = (sizeInBytes: number): string => {
   const sizeMB = sizeInBytes / (1024 * 1024);
   if (sizeMB < 10) return "짧은 영상";
   if (sizeMB < 50) return "중간 길이";
   return "긴 영상";
 };
 
-// 비디오 카테고리 추정 함수 (실제로는 백엔드에서 제공할 것이 좋음)
-const getVideoCategory = (prompt: string): string => {
-  const promptLower = prompt?.toLowerCase() || "";
-  if (promptLower.includes("nature") || promptLower.includes("자연"))
-    return "자연";
-  if (
-    promptLower.includes("city") ||
-    promptLower.includes("urban") ||
-    promptLower.includes("도시")
-  )
-    return "도시";
-  if (promptLower.includes("abstract") || promptLower.includes("추상"))
-    return "추상";
-  if (
-    promptLower.includes("aerial") ||
-    promptLower.includes("drone") ||
-    promptLower.includes("항공")
-  )
-    return "항공";
-  if (
-    promptLower.includes("cinematic") ||
-    promptLower.includes("영화") ||
-    promptLower.includes("시네마틱")
-  )
-    return "시네마틱";
-  if (promptLower.includes("slow") || promptLower.includes("슬로우"))
-    return "슬로우 모션";
-  if (promptLower.includes("documentary") || promptLower.includes("다큐"))
-    return "다큐멘터리";
-  if (promptLower.includes("experiment") || promptLower.includes("실험"))
-    return "실험적";
-  return "모든 비디오";
-};
-
-// getThumbnailUrl 함수는 대체 URL을 제공하는 용도로만 사용
+// 썸네일 URL 대체 함수
 const getThumbnailUrl = (video: VideoItem): string => {
-  // thumbnailUrl이 없는 경우에 대한 대체 로직
   return video.thumbnailUrl || "/images/default-video-thumbnail.jpg";
 };
 
@@ -77,13 +52,76 @@ export default function VideoReferencePage() {
     const fetchVideos = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/admin/video/getAll");
-        if (!response.ok) {
-          throw new Error("비디오 데이터를 불러오는데 실패했습니다");
+
+        // 두 API 요청을 병렬로 실행
+        const [adminResponse, sharedResponse] = await Promise.all([
+          fetch("/api/admin/video/getAll"),
+          fetch("/api/my/creation/video/getSharedVideo"),
+        ]);
+
+        // 각 응답 확인 및 데이터 추출
+        if (!adminResponse.ok) {
+          console.error("관리자 비디오 불러오기 실패:", adminResponse.status);
         }
-        const data = await response.json();
-        setVideos(data);
-        setFilteredVideos(data);
+
+        if (!sharedResponse.ok) {
+          console.error("공유 비디오 불러오기 실패:", sharedResponse.status);
+        }
+
+        // 응답 데이터 파싱
+        const adminVideos = adminResponse.ok ? await adminResponse.json() : [];
+        const sharedVideos = sharedResponse.ok
+          ? await sharedResponse.json()
+          : [];
+
+        console.log(
+          "관리자 비디오:",
+          adminVideos.length,
+          "공유 비디오:",
+          sharedVideos.length
+        );
+
+        // ID 기준으로 중복 제거를 위한 Map 사용
+        const videoMap = new Map();
+
+        // 관리자 비디오 추가
+        adminVideos.forEach((video) => {
+          videoMap.set(video.id, {
+            ...video,
+            creator: "관리자",
+          });
+        });
+
+        // 공유 비디오 추가 (이미 존재하는 ID의 경우 덮어쓰기)
+        sharedVideos.forEach((video) => {
+          // 만약 sharedVideos의 구조가 다르다면 여기서 구조를 통일시켜야 함
+          if (!videoMap.has(video.id)) {
+            videoMap.set(video.id, {
+              ...video,
+              // video 객체에 필요한 필드가 없다면 기본값 지정
+              name: video.name || video.aiVideoName || "제목 없음",
+              url: video.url || video.videoUrl || "",
+              thumbnailUrl: video.thumbnailUrl || "",
+              format: video.format || "mp4",
+              sizeInBytes: video.sizeInBytes || 0,
+              status: video.status || "완료",
+              createdAt: video.createdAt || new Date().toISOString(),
+              creator: video.creator || video.email || "사용자", // 생성자 정보 추가
+            });
+          }
+        });
+
+        // Map에서 배열로 변환
+        const combinedVideos = Array.from(videoMap.values());
+
+        // 최신순으로 정렬
+        combinedVideos.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        setVideos(combinedVideos);
+        setFilteredVideos(combinedVideos);
       } catch (err) {
         setError((err as Error).message);
         console.error("Error fetching videos:", err);
@@ -91,6 +129,7 @@ export default function VideoReferencePage() {
         setIsLoading(false);
       }
     };
+
     fetchVideos();
   }, []);
 
@@ -109,12 +148,12 @@ export default function VideoReferencePage() {
       !filters.categories.includes("모든 비디오")
     ) {
       filtered = filtered.filter((video) =>
-        filters.categories.includes(getVideoCategory(video.prompt))
+        filters.categories.includes(getSimpleCategory(video.prompt))
       );
     }
     if (filters.duration !== "모든 길이") {
       filtered = filtered.filter(
-        (video) => getVideoDuration(video.sizeInBytes) === filters.duration
+        (video) => getSimpleDuration(video.sizeInBytes) === filters.duration
       );
     }
     if (filters.sortBy === "최신순") {
@@ -228,10 +267,13 @@ export default function VideoReferencePage() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-medium text-gray-900">{video.name}</h3>
-                    <div className="mt-1 flex items-center text-sm text-gray-500">
-                      <span>{getVideoCategory(video.prompt)}</span>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      {video.creator || "알 수 없음"}
+                    </p>
+                    <div className="mt-2 flex items-center text-sm text-gray-500">
+                      <span>{getSimpleCategory(video.prompt)}</span>
                       <span className="mx-2">•</span>
-                      <span>{getVideoDuration(video.sizeInBytes)}</span>
+                      <span>{getSimpleDuration(video.sizeInBytes)}</span>
                     </div>
                   </div>
                 </div>
@@ -266,7 +308,7 @@ export default function VideoReferencePage() {
       </div>
 
       {/* 비디오 상세 정보 모달 */}
-      {selectedVideoId && (
+      {selectedVideoId && selectedVideo && (
         <div
           className="fixed inset-0 flex justify-center items-center z-50 bg-black/80 p-4"
           onClick={handleBackToList}
@@ -295,10 +337,7 @@ export default function VideoReferencePage() {
               </svg>
             </button>
             <div className="h-full overflow-y-auto">
-              <VideoDetail
-                videoId={selectedVideoId}
-                onBack={handleBackToList}
-              />
+              <VideoDetail video={selectedVideo} onBack={handleBackToList} />
             </div>
           </div>
         </div>
