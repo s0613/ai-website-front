@@ -1,5 +1,5 @@
-import ImageGallery from '@/components/gallery/ImageGallery';
-import HeroSection from '../components/hero/HeroSection';
+import ImageGallery from "@/features/gallery/ImageGallery";
+import HeroSection from "../features/hero/HeroSection";
 
 export default function HomePage() {
   return (
@@ -7,7 +7,6 @@ export default function HomePage() {
       {/* HeroSection */}
       <HeroSection />
       <ImageGallery />
-
     </div>
   );
 }

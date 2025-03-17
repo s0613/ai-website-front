@@ -6,7 +6,7 @@ import VideoSidebar, { SidebarFormData } from "./VideoSidebar";
 import FolderSidebar, { FileItem } from "./FolderSidebar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, ArrowUpToLine } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function VideoGenerationPage() {
@@ -18,6 +18,8 @@ export default function VideoGenerationPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [isUpscaling, setIsUpscaling] = useState(false);
+  const [upscaledVideoUrl, setUpscaledVideoUrl] = useState("");
 
   // 왼쪽 사이드바(=VideoSidebar)에서 선택한 탭 ("image" | "text")
   const [activeTab, setActiveTab] = useState<"image" | "text">("image");
@@ -57,6 +59,7 @@ export default function VideoGenerationPage() {
   const handleSidebarSubmit = async (data: SidebarFormData) => {
     setErrorMessage("");
     setVideoUrl("");
+    setUpscaledVideoUrl(""); // 업스케일링 결과 초기화
     setIsLoading(true);
     setSaveSuccess(false);
     setSaveError("");
@@ -110,6 +113,11 @@ export default function VideoGenerationPage() {
         payload.imageUrl = data.fileUrl;
       } else if (imageBase64) {
         payload.imageUrl = imageBase64;
+      }
+
+      // 업스케일링 옵션 추가
+      if (data.upscaling) {
+        payload.upscaling = "true";
       }
 
       const res = await fetch(endpointUrl, {
@@ -185,6 +193,48 @@ export default function VideoGenerationPage() {
     }
   };
 
+  // 업스케일링 처리 함수
+  const handleUpscaleVideo = async () => {
+    if (!videoUrl) return;
+
+    try {
+      setIsUpscaling(true);
+      setUpscaledVideoUrl("");
+
+      console.log("업스케일링 API 요청 시작:", videoUrl); // 요청 시작 로그
+
+      const response = await fetch("/api/video/upscaler", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoUrl }),
+      });
+
+      console.log("업스케일링 API 응답 상태:", response.status); // 응답 상태 로그
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "업스케일링 처리 중 오류가 발생했습니다"
+        );
+      }
+
+      const result = await response.json();
+      console.log("업스케일링 API 응답 데이터:", result); // 응답 데이터 로그
+
+      if (result.data && result.data.video_upscaled) {
+        setUpscaledVideoUrl(result.data.video_upscaled);
+        toast.success("비디오 업스케일링이 완료되었습니다!");
+      } else {
+        throw new Error("업스케일링된 비디오 URL을 찾을 수 없습니다");
+      }
+    } catch (error) {
+      console.error("비디오 업스케일링 오류:", error);
+      toast.error(error.message || "업스케일링 중 오류가 발생했습니다");
+    } finally {
+      setIsUpscaling(false);
+    }
+  };
+
   // 탭 변경 시
   const handleTabChange = (tab: "image" | "text") => {
     setActiveTab(tab);
@@ -253,13 +303,20 @@ export default function VideoGenerationPage() {
           referenceImageUrl={referenceImageUrl}
           referencePrompt={referencePrompt}
           referenceModel={referenceModel}
+          // 업스케일링 관련 props 전달
+          onUpscale={handleUpscaleVideo}
+          isUpscaling={isUpscaling}
+          hasUpscaled={!!upscaledVideoUrl}
+          videoGenerated={!!videoUrl}
+          // 추가: isLoading 상태 전달
+          isLoading={isLoading}
         />
       </div>
 
       {/* 중앙: 영상 미리보기 */}
       <div className="flex-1 h-full flex flex-col items-center justify-center p-6 overflow-hidden">
         <div className="w-full max-w-4xl h-full flex flex-col">
-          <div className="flex-1 bg-white rounded-xl shadow-md flex items-center justify-center overflow-hidden">
+          <div className="flex-1 bg-white rounded-xl shadow-md flex flex-col items-center justify-center overflow-hidden">
             {isLoading && (
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
@@ -284,16 +341,20 @@ export default function VideoGenerationPage() {
                 </p>
               </div>
             )}
+
             {videoUrl && (
               <div className="w-full h-full flex flex-col items-center justify-center">
                 <video
-                  src={videoUrl}
+                  src={upscaledVideoUrl || videoUrl}
                   controls
                   autoPlay
                   loop
                   className="max-w-full max-h-[80%] rounded-lg shadow-lg"
                 />
-                <div className="mt-4">
+                <div className="mt-4 flex flex-col items-center space-y-2">
+                  {/* 업스케일링 버튼 제거 - 사이드바로 이동 */}
+
+                  {/* 저장 상태 표시는 유지 */}
                   {isSaving && (
                     <div className="text-center text-blue-600">
                       <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>

@@ -1,9 +1,9 @@
 "use client";
-import React from 'react';
-import BlogForm from '../../../components/admin/BlogForm';
+import React from "react";
+import BlogForm from "@/features/admin/BlogForm";
 
 const BlogFormPage = () => {
-    return <BlogForm />;
+  return <BlogForm />;
 };
 
 export default BlogFormPage;

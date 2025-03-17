@@ -1,4 +1,4 @@
-import CreationPage from "@/components/my/creation/CreationPage";
+import CreationPage from "@/features/my/creation/CreationPage";
 
 export default function Page() {
   return <CreationPage />;

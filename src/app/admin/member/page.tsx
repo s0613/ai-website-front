@@ -1,9 +1,9 @@
 "use client";
-import React from 'react';
-import MemberCheck from '../../../components/admin/MemberCheck';
+import React from "react";
+import MemberCheck from "@/features/admin/MemberCheck";
 
 const MemberCheckPage = () => {
-    return <MemberCheck />;
+  return <MemberCheck />;
 };
 
 export default MemberCheckPage;

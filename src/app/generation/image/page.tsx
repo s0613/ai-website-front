@@ -1,4 +1,4 @@
-import ImageGeneration from "@/components/generation/image/ImageGeneration";
+import ImageGeneration from "@/features/generation/image/ImageGeneration";
 
 export default function Page() {
   return <ImageGeneration />;

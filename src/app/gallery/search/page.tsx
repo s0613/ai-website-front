@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import SearchImage from '../../../components/gallery/SearchImage';
+import React from "react";
+import SearchImage from "@/features/gallery/SearchImage";
 
 const SearchPage = () => {
-    return <SearchImage />;
+  return <SearchImage />;
 };
 
 export default SearchPage;

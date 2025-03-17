@@ -10,9 +10,10 @@ import {
   ContextMenuItem,
 } from "@/components/ui/context-menu";
 import { Button } from "@/components/ui/button";
-import { Upload, CheckCircle } from "lucide-react";
+import { Upload, CheckCircle, ArrowUpToLine, Loader2 } from "lucide-react";
 import ModelSetting from "./ModelSetting";
 
+// SidebarFormData 타입에서 upscaling 필드 제거
 export type SidebarFormData = {
   prompt: string;
   imageFile: File | null;
@@ -29,13 +30,21 @@ export type SidebarFormData = {
   numFrames?: number;
 };
 
+// VideoSidebarProps 타입에 isLoading 추가
 type VideoSidebarProps = {
   onSubmit: (data: SidebarFormData) => void;
   onTabChange: (tab: "image" | "text") => void;
   referenceImageFile?: File | null;
   referenceImageUrl?: string;
-  referencePrompt?: string; // 추가: 참조 프롬프트
-  referenceModel?: string; // 추가: 참조 모델
+  referencePrompt?: string;
+  referenceModel?: string;
+  // 업스케일링 관련 props 추가
+  onUpscale?: () => Promise<void>;
+  isUpscaling?: boolean;
+  hasUpscaled?: boolean;
+  videoGenerated?: boolean;
+  // 추가: 로딩 상태 추가
+  isLoading?: boolean;
 };
 
 export default function VideoSidebar({
@@ -45,6 +54,13 @@ export default function VideoSidebar({
   referenceImageUrl,
   referencePrompt,
   referenceModel,
+  // 업스케일링 관련 props
+  onUpscale,
+  isUpscaling,
+  hasUpscaled,
+  videoGenerated,
+  // 추가: isLoading prop 받기
+  isLoading,
 }: VideoSidebarProps) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -70,6 +86,8 @@ export default function VideoSidebar({
   const [enableSafetyChecker, setEnableSafetyChecker] = useState<boolean>(true);
   const [enablePromptExpansion, setEnablePromptExpansion] =
     useState<boolean>(true);
+  // 업스케일링 상태 제거
+  // const [upscaling, setUpscaling] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,8 +169,7 @@ export default function VideoSidebar({
       setEnablePromptExpansion(settings.enablePromptExpansion);
   };
 
-  // handleSubmit 함수 수정
-
+  // handleSubmit 함수 수정 - 업스케일링 옵션 제거
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -165,7 +182,7 @@ export default function VideoSidebar({
       style,
       fileUrl,
       cameraControl,
-      // hunyuan 모델 파라미터
+      // 모델별 파라미터
       seed: endpoint === "hunyuan" || endpoint === "wan" ? seed : undefined,
       resolution:
         endpoint === "hunyuan" || endpoint === "wan" ? resolution : undefined,
@@ -181,6 +198,7 @@ export default function VideoSidebar({
       enableSafetyChecker: endpoint === "wan" ? enableSafetyChecker : undefined,
       enablePromptExpansion:
         endpoint === "wan" ? enablePromptExpansion : undefined,
+      // upscaling 제거
     });
   };
 
@@ -372,9 +390,56 @@ export default function VideoSidebar({
               }}
             />
 
-            <Button type="submit" className="w-full mt-4">
-              영상 생성
+            {/* 생성 버튼 수정: disabled 및 로딩 UI 추가 */}
+            <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  영상 생성 중...
+                </>
+              ) : (
+                "영상 생성"
+              )}
             </Button>
+
+            {/* 업스케일링 버튼 추가 */}
+            <div className="mt-3">
+              <Button
+                type="button"
+                onClick={onUpscale}
+                disabled={!videoGenerated || isUpscaling || hasUpscaled}
+                className={`w-full flex items-center justify-center ${
+                  hasUpscaled
+                    ? "bg-green-600 hover:bg-green-700"
+                    : !videoGenerated
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {isUpscaling ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    업스케일링 중...
+                  </>
+                ) : hasUpscaled ? (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    업스케일링 완료
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpToLine className="mr-2 h-4 w-4" />
+                    고화질 업스케일링
+                  </>
+                )}
+              </Button>
+
+              {!videoGenerated && (
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  영상을 먼저 생성해주세요
+                </p>
+              )}
+            </div>
           </form>
         </div>
       </ScrollArea>
