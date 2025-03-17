@@ -9,24 +9,21 @@ interface SidebarProps {
 export interface FilterOptions {
   search: string;
   categories: string[];
-  duration: string;
+  size: string;
   sortBy: string;
 }
 
 // 사이드바 카테고리 데이터
-const categories = [
-  "모든 비디오",
-  // 카테고리 예시 제거됨
-];
+const categories = ["모든 이미지", "자연", "도시", "기타"];
 
-const durations = ["모든 길이", "짧은 영상", "중간 길이", "긴 영상"];
+const sizes = ["모든 크기", "작은 이미지", "중간 크기", "큰 이미지"];
 const sortOptions = ["최신순", "인기순", "오래된순"];
 
 export default function Sidebar({ onFilterChange }: SidebarProps) {
   const [filters, setFilters] = useState<FilterOptions>({
     search: "",
     categories: [],
-    duration: "모든 길이",
+    size: "모든 크기",
     sortBy: "최신순",
   });
 
@@ -49,8 +46,8 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
     onFilterChange(newFilters);
   };
 
-  const handleDurationChange = (duration: string) => {
-    const newFilters = { ...filters, duration };
+  const handleSizeChange = (size: string) => {
+    const newFilters = { ...filters, size };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -116,7 +113,7 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
             <div className="relative">
               <input
                 type="text"
-                placeholder="비디오 검색..."
+                placeholder="이미지 검색..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={filters.search}
                 onChange={handleSearchChange}
@@ -181,16 +178,16 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
             )}
           </div>
 
-          {/* Duration Section */}
+          {/* Size Section */}
           <div className="mb-6">
             <button
               className="flex items-center justify-between w-full text-left font-medium mb-2"
-              onClick={() => toggleSection("duration")}
+              onClick={() => toggleSection("size")}
             >
-              <span>영상 길이</span>
+              <span>이미지 크기</span>
               <svg
                 className={`h-5 w-5 transition-transform ${
-                  activeSection === "duration" ? "rotate-180" : ""
+                  activeSection === "size" ? "rotate-180" : ""
                 }`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
@@ -203,23 +200,23 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                 />
               </svg>
             </button>
-            {activeSection === "duration" && (
+            {activeSection === "size" && (
               <div className="space-y-2 ml-2">
-                {durations.map((duration) => (
-                  <div key={duration} className="flex items-center">
+                {sizes.map((size) => (
+                  <div key={size} className="flex items-center">
                     <input
                       type="radio"
-                      id={duration}
-                      name="duration"
-                      checked={filters.duration === duration}
-                      onChange={() => handleDurationChange(duration)}
+                      id={size}
+                      name="size"
+                      checked={filters.size === size}
+                      onChange={() => handleSizeChange(size)}
                       className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                     />
                     <label
-                      htmlFor={duration}
+                      htmlFor={size}
                       className="ml-2 text-sm text-gray-700"
                     >
-                      {duration}
+                      {size}
                     </label>
                   </div>
                 ))}

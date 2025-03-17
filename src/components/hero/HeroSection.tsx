@@ -81,7 +81,7 @@ const HeroSection = () => {
     } else if (item.value === "video-generation") {
       router.push("/generation/video");
     } else if (item.value === "image-reference") {
-      router.push("/image/reference");
+      router.push("/reference/image");
     } else if (item.value === "video-reference") {
       router.push("/reference/video/main");
     }

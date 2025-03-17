@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-// 사용하지 않는 컴포넌트와 아이콘 제거
 import { Home, Image, Settings, Folder } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,9 +42,10 @@ interface MyPageLayoutProps {
 const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   return (
-    <div className="grid min-h-screen grid-cols-[16rem_1fr]">
-      <div className="border-r">
-        <div className="flex-1 py-4">
+    <div className="flex h-screen overflow-hidden">
+      {/* 사이드바 - 고정 너비, 전체 높이, 자체 스크롤 */}
+      <div className="w-64 border-r flex-shrink-0 h-full overflow-y-auto">
+        <div className="py-4">
           <nav className="grid gap-1 px-2">
             {sidebarItems.map((item, idx) => {
               const isActive = pathname === item.href;
@@ -69,9 +69,10 @@ const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
           </nav>
         </div>
       </div>
-      <div className="flex flex-col">
-        {/* 로그인 정보 표시 부분 제거 */}
-        <div className="flex-1">{children}</div>
+
+      {/* 메인 콘텐츠 영역 - 남은 공간 채우고, 자체 스크롤 */}
+      <div className="flex-1 flex flex-col h-full overflow-y-auto">
+        {children}
       </div>
     </div>
   );
