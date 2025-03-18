@@ -35,13 +35,7 @@ import { toast } from "react-hot-toast";
 import { FileItem, FolderSidebarProps } from "@/types/fileTypes";
 import { useFolderSidebar } from "../hooks/useFolderSidebar";
 
-const FileIcon = ({
-  fileType,
-  fileUrl,
-}: {
-  fileType: string;
-  fileUrl?: string;
-}) => {
+const FileIcon = ({ fileType }: { fileType: string; fileUrl?: string }) => {
   switch (fileType) {
     case "folder":
       return <Folder className="h-4 w-4 text-blue-500 mr-2" />;
@@ -59,12 +53,6 @@ export default function FolderSidebar({
   onDownload,
   onDelete,
   onAddReferenceImage,
-  selectedEndpoint,
-  quality,
-  style,
-  onEndpointChange,
-  onQualityChange,
-  onStyleChange,
 }: FolderSidebarProps) {
   const {
     expandedFolders,

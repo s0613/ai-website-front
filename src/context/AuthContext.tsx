@@ -1,3 +1,4 @@
+// src/components/context/AuthContext.tsx
 "use client";
 import React, {
   createContext,
@@ -12,7 +13,13 @@ export interface AuthContextType {
   email: string;
   token: string | null;
   userRole: string;
-  login: (email: string, token: string, role?: string) => void;
+  nickname: string;
+  login: (
+    email: string,
+    token: string,
+    role?: string,
+    nickname?: string
+  ) => void;
   logout: () => void;
 }
 
@@ -21,6 +28,7 @@ const defaultContextValue: AuthContextType = {
   email: "",
   token: null,
   userRole: "",
+  nickname: "",
   login: () => {},
   logout: () => {},
 };
@@ -32,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [email, setEmail] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState("");
+  const [nickname, setNickname] = useState("");
 
   // 쿠키에서 값을 읽는 유틸리티 함수
   const getCookie = (name: string) => {
@@ -74,6 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           setEmail(data.email);
           setUserRole(data.role || roleCookie || "");
+          setNickname(data.nickname);
           setIsLoggedIn(true);
 
           // 로컬 스토리지에도 저장 (선택적)
@@ -84,6 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: data.email,
             role: data.role || roleCookie,
             isLoggedIn: true,
+            nickname: data.nickname,
             cookies: document.cookie, // 인증 후 쿠키 상태 확인
           });
         } else {
@@ -107,12 +118,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(token);
     setIsLoggedIn(true);
     setUserRole(role);
-
+    setNickname(nickname);
     // 로컬 스토리지에도 저장
     localStorage.setItem("email", email);
     localStorage.setItem("token", token);
     localStorage.setItem("userRole", role);
-
+    localStorage.setItem("nickname", nickname);
     console.log("로그인 처리 완료:", { email, role, isLoggedIn: true });
   };
 
@@ -125,6 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("email");
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("nickname");
 
     // 백엔드에 로그아웃 요청 (쿠키 제거)
     fetch("/api/auth/logout", {
@@ -135,7 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, email, token, userRole, login, logout }}
+      value={{ isLoggedIn, email, token, userRole, nickname, login, logout }}
     >
       {children}
     </AuthContext.Provider>

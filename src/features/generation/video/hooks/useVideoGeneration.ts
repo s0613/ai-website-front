@@ -54,7 +54,7 @@ export default function useVideoGeneration() {
   }, [searchParams]);
 
   // VideoSidebar에서 전달받은 데이터로 영상 생성 요청
-  const handleSidebarSubmit = async (data: any) => {
+  const handleSidebarSubmit = async (data) => {
     setErrorMessage("");
     setVideoUrl("");
     setUpscaledVideoUrl(""); // 업스케일링 결과 초기화
@@ -83,7 +83,7 @@ export default function useVideoGeneration() {
         imageBase64 = await readFileAsBase64(data.imageFile);
       }
 
-      const payload: any = {
+      const payload= {
         prompt: data.prompt,
         aspectRatio: data.aspectRatio,
         duration: data.duration,
@@ -113,7 +113,7 @@ export default function useVideoGeneration() {
             JSON.stringify(result)
         );
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("영상 생성 오류:", error);
       setErrorMessage(error.message ?? "오류 발생");
     } finally {
@@ -122,13 +122,13 @@ export default function useVideoGeneration() {
   };
 
   // 생성된 영상을 서버에 저장하는 함수
-  const saveVideoToServer = async (videoUrl: string, data: any) => {
+  const saveVideoToServer = async (videoUrl: string, data) => {
     try {
       setIsSaving(true);
       await saveVideo(videoUrl, data);
       toast.success("비디오가 내 보관함에 저장되었습니다");
       setSaveSuccess(true);
-    } catch (error: any) {
+    } catch (error) {
       console.error("비디오 저장 오류:", error);
       toast.error(error.message || "비디오 저장 중 오류가 발생했습니다.");
       setSaveError(error.message || "비디오 저장 중 오류가 발생했습니다.");
@@ -151,7 +151,7 @@ export default function useVideoGeneration() {
       } else {
         throw new Error("업스케일링된 비디오 URL을 찾을 수 없습니다");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("비디오 업스케일링 오류:", error);
       toast.error(error.message || "업스케일링 중 오류가 발생했습니다");
     } finally {
@@ -170,7 +170,7 @@ export default function useVideoGeneration() {
   };
 
   // 참조 이미지로 선택할 때 (FolderSidebar의 + 버튼)
-  const handleAddReferenceImage = async (fileItem: any) => {
+  const handleAddReferenceImage = async (fileItem) => {
     try {
       if (!fileItem.fileUrl) {
         throw new Error("fileUrl이 존재하지 않는 파일");
@@ -180,7 +180,7 @@ export default function useVideoGeneration() {
       setReferenceImageFile(null);
       console.log("참조 이미지로 추가되었습니다:", fileItem.name);
       toast.success("참조 이미지로 설정되었습니다");
-    } catch (error: any) {
+    } catch (error) {
       console.error("참조 이미지 추가 오류:", error);
       setReferenceImageFile(null);
       setReferenceImageUrl("");

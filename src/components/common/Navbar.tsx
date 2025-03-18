@@ -14,7 +14,7 @@ const Navbar = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // AuthContext에서 직접 값 받아오기
-  const { isLoggedIn, email, logout, userRole } = useAuth();
+  const { isLoggedIn, email, logout, userRole, nickname } = useAuth();
 
   // UI 관련 상태
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -121,7 +121,9 @@ const Navbar = () => {
                   onMouseLeave={() => setIsDropdownOpen(false)}
                 >
                   <div className="px-4 py-2 border-b border-gray-200">
-                    <p className="text-sm font-medium text-gray-900">{email}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {nickname || email}
+                    </p>
                   </div>
                   <Link
                     href="/my"
@@ -206,7 +208,7 @@ const Navbar = () => {
                     {getInitials(email)}
                   </AvatarFallback>
                 </Avatar>
-                <span>{email}</span>
+                <span>{nickname || email}</span>
                 {/* 모바일에서 사용자 역할 표시 */}
                 {userRole && (
                   <Badge

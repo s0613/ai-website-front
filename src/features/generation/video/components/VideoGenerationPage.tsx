@@ -2,12 +2,8 @@
 "use client";
 
 import React from "react";
-import VideoSidebar, { SidebarFormData } from "./VideoSidebar";
-import FolderSidebar, { FileItem } from "../components/FolderSidebar";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, Loader2, ArrowUpToLine } from "lucide-react";
-import { toast } from "react-hot-toast";
+import VideoSidebar from "./VideoSidebar";
+import FolderSidebar from "../components/FolderSidebar";
 import useVideoGeneration from "../hooks/useVideoGeneration";
 
 export default function VideoGenerationPage() {
@@ -21,7 +17,6 @@ export default function VideoGenerationPage() {
     isUpscaling,
     upscaledVideoUrl,
     activeTab,
-    setActiveTab,
     selectedEndpoint,
     setSelectedEndpoint,
     quality,
@@ -38,8 +33,6 @@ export default function VideoGenerationPage() {
     handleAddReferenceImage,
     handleImageChange,
     fileInputRef,
-    selectImage,
-    removeImage,
   } = useVideoGeneration();
 
   return (

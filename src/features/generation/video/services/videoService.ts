@@ -9,9 +9,9 @@
  * @returns API 응답 결과(JSON)
  */
 export async function generateVideo(
-  payload: any,
+  payload,
   endpoint: string
-): Promise<any> {
+): Promise {
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -33,8 +33,8 @@ export async function generateVideo(
  */
 export async function saveVideo(
   videoUrl: string,
-  data: any
-): Promise<any> {
+  data
+): Promise{
   const res = await fetch("/api/my/creation/video/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -54,7 +54,7 @@ export async function saveVideo(
     try {
       const errorData = await res.json();
       errorMsg = errorData.message || errorMsg;
-    } catch (e) {
+    } catch {
       errorMsg = `서버 오류: ${res.status} ${res.statusText}`;
     }
     throw new Error(errorMsg);
@@ -67,7 +67,7 @@ export async function saveVideo(
  * @param videoUrl 업스케일링할 영상 URL
  * @returns API 응답 결과(JSON)
  */
-export async function upscaleVideo(videoUrl: string): Promise<any> {
+export async function upscaleVideo(videoUrl: string): Promise {
   const response = await fetch("/api/video/upscaler", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
