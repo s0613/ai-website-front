@@ -1,6 +1,7 @@
+// components/VideoSidebar.tsx
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -12,220 +13,70 @@ import {
 import { Button } from "@/components/ui/button";
 import { Upload, CheckCircle, ArrowUpToLine, Loader2 } from "lucide-react";
 import ModelSetting from "./ModelSetting";
+import { SidebarFormData } from "@/hooks/useVideoSidebar";
+import { useVideoSidebar } from "../hooks/useVideoSidebar";
 
-// SidebarFormData 타입에서 upscaling 필드 제거
-export type SidebarFormData = {
-  prompt: string;
-  imageFile: File | null;
-  aspectRatio: string;
-  duration: string;
-  endpoint: string;
-  quality: "standard" | "high";
-  style: "realistic" | "creative";
-  fileUrl?: string;
-  cameraControl?: string;
-  advancedCameraControl?;
-  seed?: number;
-  resolution?: string;
-  numFrames?: number;
-};
-
-// VideoSidebarProps 타입에 isLoading 추가
-type VideoSidebarProps = {
+export type VideoSidebarProps = {
   onSubmit: (data: SidebarFormData) => void;
   onTabChange: (tab: "image" | "text") => void;
   referenceImageFile?: File | null;
   referenceImageUrl?: string;
   referencePrompt?: string;
   referenceModel?: string;
-  // 업스케일링 관련 props 추가
   onUpscale?: () => Promise<void>;
   isUpscaling?: boolean;
   hasUpscaled?: boolean;
   videoGenerated?: boolean;
-  // 추가: 로딩 상태 추가
   isLoading?: boolean;
 };
 
-export default function VideoSidebar({
-  onSubmit,
-  onTabChange,
-  referenceImageFile,
-  referenceImageUrl,
-  referencePrompt,
-  referenceModel,
-  // 업스케일링 관련 props
-  onUpscale,
-  isUpscaling,
-  hasUpscaled,
-  videoGenerated,
-  // 추가: isLoading prop 받기
-  isLoading,
-}: VideoSidebarProps) {
-  const [prompt, setPrompt] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [fileUrl, setFileUrl] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"image" | "text">("image");
-  const [aspectRatio, setAspectRatio] = useState("16:9");
-  const [duration, setDuration] = useState("5s");
-  const [endpoint, setEndpoint] = useState(
-    referenceModel || (activeTab === "image" ? "luna" : "veo2")
-  );
-  const [quality, setQuality] = useState<"standard" | "high">("standard");
-  const [style, setStyle] = useState<"realistic" | "creative">("realistic");
-  const [imageChanged, setImageChanged] = useState(false);
-  const [cameraControl, setCameraControl] = useState<string>("down_back");
-  // Hunyuan 모델을 위한 추가 상태
-  const [seed, setSeed] = useState<number | undefined>(undefined);
-  const [resolution, setResolution] = useState<string>("720p");
-  const [numFrames, setNumFrames] = useState<number>(129);
-  // Wan 모델을 위한 추가 상태
-  const [framesPerSecond, setFramesPerSecond] = useState<number>(16);
-  const [numInferenceSteps, setNumInferenceSteps] = useState<number>(30);
-  const [enableSafetyChecker, setEnableSafetyChecker] = useState<boolean>(true);
-  const [enablePromptExpansion, setEnablePromptExpansion] =
-    useState<boolean>(true);
-  // 업스케일링 상태 제거
-  // const [upscaling, setUpscaling] = useState<boolean>(false);
+export default function VideoSidebar(props: VideoSidebarProps) {
+  const {
+    onSubmit,
+    onTabChange,
+    referenceImageFile,
+    referenceImageUrl,
+    referencePrompt,
+    referenceModel,
+    onUpscale,
+    isUpscaling,
+    hasUpscaled,
+    videoGenerated,
+    isLoading,
+  } = props;
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    prompt,
+    setPrompt,
 
-  // 상위에서 전달받은 참조 프롬프트와 모델 처리
-  useEffect(() => {
-    if (referencePrompt) {
-      setPrompt(referencePrompt);
-    }
+    previewUrl,
 
-    if (referenceModel) {
-      // 모델 엔드포인트 설정
-      setEndpoint(referenceModel);
+    activeTab,
+    aspectRatio,
+    duration,
+    endpoint,
 
-      // 모델에 맞는 탭 설정
-      if (referenceModel === "veo2") {
-        setActiveTab("text");
-        onTabChange("text");
-      } else {
-        setActiveTab("image");
-        onTabChange("image");
-      }
+    imageChanged,
+    cameraControl,
+    seed,
+    resolution,
+    numFrames,
 
-      console.log(`참조 모델 설정: ${referenceModel}`); // 디버깅용
-    }
-  }, [referencePrompt, referenceModel, onTabChange]);
-
-  // 상위에서 referenceImageFile/Url이 바뀌면 state에 반영
-  useEffect(() => {
-    if (referenceImageFile || referenceImageUrl) {
-      if (referenceImageFile) {
-        setImageFile(referenceImageFile);
-        const objectURL = URL.createObjectURL(referenceImageFile);
-        setPreviewUrl(objectURL);
-        setFileUrl("");
-      } else if (referenceImageUrl) {
-        setImageFile(null);
-        setPreviewUrl(referenceImageUrl);
-        setFileUrl(referenceImageUrl);
-      }
-
-      setImageChanged(true);
-      setTimeout(() => setImageChanged(false), 3000);
-    }
-  }, [referenceImageFile, referenceImageUrl]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setImageFile(file);
-    const preview = URL.createObjectURL(file);
-    setPreviewUrl(preview);
-    setFileUrl("");
-  };
-
-  // updateSettings 함수 수정
-
-  // 모델 설정 업데이트 함수
-  const updateSettings = (settings: any) => {
-    if (settings.aspectRatio !== undefined)
-      setAspectRatio(settings.aspectRatio);
-    if (settings.duration !== undefined) setDuration(settings.duration);
-    if (settings.cameraControl !== undefined)
-      setCameraControl(settings.cameraControl);
-
-    // Hunyuan 모델 설정
-    if (settings.seed !== undefined) setSeed(settings.seed);
-    if (settings.resolution !== undefined) setResolution(settings.resolution);
-    if (settings.numFrames !== undefined) setNumFrames(settings.numFrames);
-
-    // Wan 모델 설정
-    if (settings.framesPerSecond !== undefined)
-      setFramesPerSecond(settings.framesPerSecond);
-    if (settings.numInferenceSteps !== undefined)
-      setNumInferenceSteps(settings.numInferenceSteps);
-    if (settings.enableSafetyChecker !== undefined)
-      setEnableSafetyChecker(settings.enableSafetyChecker);
-    if (settings.enablePromptExpansion !== undefined)
-      setEnablePromptExpansion(settings.enablePromptExpansion);
-  };
-
-  // handleSubmit 함수 수정 - 업스케일링 옵션 제거
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      prompt,
-      imageFile,
-      aspectRatio,
-      duration,
-      endpoint,
-      quality,
-      style,
-      fileUrl,
-      cameraControl,
-      // 모델별 파라미터
-      seed: endpoint === "hunyuan" || endpoint === "wan" ? seed : undefined,
-      resolution:
-        endpoint === "hunyuan" || endpoint === "wan" ? resolution : undefined,
-      numFrames:
-        endpoint === "hunyuan"
-          ? numFrames
-          : endpoint === "wan"
-          ? numFrames
-          : undefined,
-      // wan 모델 전용 파라미터
-      framesPerSecond: endpoint === "wan" ? framesPerSecond : undefined,
-      numInferenceSteps: endpoint === "wan" ? numInferenceSteps : undefined,
-      enableSafetyChecker: endpoint === "wan" ? enableSafetyChecker : undefined,
-      enablePromptExpansion:
-        endpoint === "wan" ? enablePromptExpansion : undefined,
-      // upscaling 제거
-    });
-  };
-
-  const handleTabSelection = (tab: "image" | "text") => {
-    setActiveTab(tab);
-    onTabChange(tab);
-
-    // 참조 모델이 없는 경우에만 기본값으로 변경
-    // 또는 사용자가 명시적으로 탭을 변경한 후에는 referenceModel 영향을 제거
-    if (
-      !referenceModel ||
-      tab !== (referenceModel === "veo2" ? "text" : "image")
-    ) {
-      if (tab === "image") setEndpoint("luna");
-      else setEndpoint("veo2");
-    }
-  };
-
-  const selectImage = () => {
-    fileInputRef.current?.click();
-  };
-
-  const removeImage = () => {
-    setImageFile(null);
-    setPreviewUrl("");
-    setFileUrl("");
-  };
+    updateSettings,
+    handleSubmit,
+    handleImageChange,
+    handleTabSelection,
+    selectImage,
+    removeImage,
+    fileInputRef,
+  } = useVideoSidebar({
+    onSubmit,
+    onTabChange,
+    referenceImageFile,
+    referenceImageUrl,
+    referencePrompt,
+    referenceModel,
+  });
 
   return (
     <div className="w-[260px] h-full bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
@@ -376,7 +227,7 @@ export default function VideoSidebar({
               </select>
             </div>
 
-            {/* 모델 설정 컴포넌트로 대체 */}
+            {/* 모델 설정 컴포넌트 */}
             <ModelSetting
               endpoint={endpoint}
               updateSettings={updateSettings}
@@ -390,7 +241,6 @@ export default function VideoSidebar({
               }}
             />
 
-            {/* 생성 버튼 수정: disabled 및 로딩 UI 추가 */}
             <Button type="submit" className="w-full mt-4" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -402,7 +252,6 @@ export default function VideoSidebar({
               )}
             </Button>
 
-            {/* 업스케일링 버튼 추가 */}
             <div className="mt-3">
               <Button
                 type="button"

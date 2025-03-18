@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button"; // Button 컴포넌트 import 추가
+import { Badge } from "@/components/ui/badge"; // Badge 컴포넌트 import 추가
 
 const Navbar = () => {
   const router = useRouter();
@@ -82,6 +83,16 @@ const Navbar = () => {
           </Link>
           {isLoggedIn ? (
             <div className="relative flex items-center" ref={dropdownRef}>
+              {/* 사용자 역할 Badge 추가 */}
+              {userRole && (
+                <Badge
+                  variant="outline"
+                  className="mr-2 capitalize border-blue-500 text-blue-500"
+                >
+                  {userRole}
+                </Badge>
+              )}
+
               {/* 벨 아이콘 추가 */}
               <Button variant="ghost" size="icon" className="mr-2">
                 <Bell className="h-4 w-4" />
@@ -196,6 +207,15 @@ const Navbar = () => {
                   </AvatarFallback>
                 </Avatar>
                 <span>{email}</span>
+                {/* 모바일에서 사용자 역할 표시 */}
+                {userRole && (
+                  <Badge
+                    variant="outline"
+                    className="ml-auto capitalize border-blue-500 text-blue-500"
+                  >
+                    {userRole}
+                  </Badge>
+                )}
               </div>
               <Link
                 href="/my"
