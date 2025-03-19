@@ -2,7 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { formatFileSize, formatDate } from "@/utils/formatUtils";
+import {
+  formatFileSize,
+  formatDate,
+} from "@/features/reference/video/utils/formatUtils";
 import { toast } from "react-hot-toast";
 
 interface CreationDetailProps {

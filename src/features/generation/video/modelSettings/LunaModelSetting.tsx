@@ -1,7 +1,7 @@
 // modelSettings/LunaModelSetting.tsx
 import React from "react";
 import { ModelSettingBase } from "./ModelSettingBase";
-import { ModelSettingProps } from "@/types/modelSettingTypes";
+import { ModelSettingProps } from "../types/modelSettingTypes";
 
 export class LunaModelSetting extends ModelSettingBase {
   renderSettings({ updateSettings, currentSettings }: ModelSettingProps) {

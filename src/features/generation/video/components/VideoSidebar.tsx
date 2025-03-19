@@ -1,4 +1,3 @@
-// components/VideoSidebar.tsx
 "use client";
 
 import React from "react";
@@ -13,12 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Upload, CheckCircle, ArrowUpToLine, Loader2 } from "lucide-react";
 import ModelSetting from "./ModelSetting";
-import { SidebarFormData } from "@/hooks/useVideoSidebar";
-import { useVideoSidebar } from "../hooks/useVideoSidebar";
+import { SidebarFormData, useVideoSidebar } from "../hooks/useVideoSidebar";
 
 export type VideoSidebarProps = {
   onSubmit: (data: SidebarFormData) => void;
-  onTabChange: (tab: "image" | "text") => void;
+  onTabChange: (tab: "image" | "text" | "video") => void;
   referenceImageFile?: File | null;
   referenceImageUrl?: string;
   referencePrompt?: string;
@@ -48,20 +46,16 @@ export default function VideoSidebar(props: VideoSidebarProps) {
   const {
     prompt,
     setPrompt,
-
     previewUrl,
-
     activeTab,
     aspectRatio,
     duration,
     endpoint,
-
     imageChanged,
     cameraControl,
     seed,
     resolution,
     numFrames,
-
     updateSettings,
     handleSubmit,
     handleImageChange,
@@ -120,7 +114,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="text-xs font-medium text-gray-700 mb-1">
                 프롬프트
               </label>
               <textarea
@@ -129,7 +123,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="예: 바닷가에서 춤추는 로봇"
                 rows={4}
-                className="block w-full rounded-md border border-gray-300 p-2 text-sm focus:outline-none focus:border-blue-500 resize-y"
+                className="w-full rounded-md border border-gray-300 p-2 text-sm focus:outline-none focus:border-blue-500 resize-y"
               />
             </div>
 
@@ -143,7 +137,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
 
             {activeTab === "image" && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-700 mb-1 flex items-center justify-between">
                   참조 이미지
                   {imageChanged && (
                     <span className="text-green-500 text-xs flex items-center animate-pulse">
@@ -203,17 +197,16 @@ export default function VideoSidebar(props: VideoSidebarProps) {
             )}
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="text-xs font-medium text-gray-700 mb-1">
                 API 엔드포인트
               </label>
               <select
                 value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
+                onChange={(e) => updateSettings({ endpoint: e.target.value })}
                 className="w-full rounded-md border border-gray-300 p-2 text-sm focus:outline-none focus:border-blue-500"
               >
                 {activeTab === "image" ? (
                   <>
-                    <option value="luna">LUNA</option>
                     <option value="kling">KLING</option>
                     <option value="wan">WAN</option>
                     <option value="hunyuan">HUNYUAN</option>
@@ -221,7 +214,6 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                 ) : (
                   <>
                     <option value="veo2">VEO2</option>
-                    <option value="luna">LUNA</option>
                   </>
                 )}
               </select>

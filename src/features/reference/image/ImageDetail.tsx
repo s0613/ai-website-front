@@ -1,7 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { formatFileSize, formatDate } from "@/utils/formatUtils";
+import {
+  formatFileSize,
+  formatDate,
+} from "@/features/reference/video/utils/formatUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 

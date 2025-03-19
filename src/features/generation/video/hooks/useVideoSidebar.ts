@@ -1,4 +1,3 @@
-// hooks/useVideoSidebar.ts
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -13,16 +12,15 @@ export type SidebarFormData = {
   style: "realistic" | "creative";
   fileUrl?: string;
   cameraControl?: string;
-  advancedCameraControl?;
+  advancedCameraControl?: boolean;
   seed?: number;
   resolution?: string;
   numFrames?: number;
-  // upscaling 필드는 제거됨
 };
 
 export interface UseVideoSidebarProps {
   onSubmit: (data: SidebarFormData) => void;
-  onTabChange: (tab: "image" | "text") => void;
+  onTabChange: (tab: "image" | "text" | "video") => void;
   referenceImageFile?: File | null;
   referenceImageUrl?: string;
   referencePrompt?: string;
@@ -41,11 +39,11 @@ export function useVideoSidebar({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [fileUrl, setFileUrl] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"image" | "text">("image");
+  const [activeTab, setActiveTab] = useState<"image" | "text" | "video">("image");
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [duration, setDuration] = useState("5s");
   const [endpoint, setEndpoint] = useState(
-    referenceModel || (activeTab === "image" ? "luna" : "veo2")
+    referenceModel || (activeTab === "image" ? "kling" : "veo2")
   );
   const [quality, setQuality] = useState<"standard" | "high">("standard");
   const [style, setStyle] = useState<"realistic" | "creative">("realistic");
@@ -57,9 +55,7 @@ export function useVideoSidebar({
   const [framesPerSecond, setFramesPerSecond] = useState<number>(16);
   const [numInferenceSteps, setNumInferenceSteps] = useState<number>(30);
   const [enableSafetyChecker, setEnableSafetyChecker] = useState<boolean>(true);
-  const [enablePromptExpansion, setEnablePromptExpansion] = useState<boolean>(
-    true
-  );
+  const [enablePromptExpansion, setEnablePromptExpansion] = useState<boolean>(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,9 +66,10 @@ export function useVideoSidebar({
     }
     if (referenceModel) {
       setEndpoint(referenceModel);
+      // referenceModel이 "veo2"이면 video 탭으로 전환, 그렇지 않으면 image 탭으로 전환
       if (referenceModel === "veo2") {
-        setActiveTab("text");
-        onTabChange("text");
+        setActiveTab("video");
+        onTabChange("video");
       } else {
         setActiveTab("image");
         onTabChange("image");
@@ -108,8 +105,9 @@ export function useVideoSidebar({
     setFileUrl("");
   };
 
-  // 모델 설정 업데이트 함수
-  const updateSettings = (settings) => {
+  // 모델 설정 업데이트 함수 (endpoint 업데이트 로직 추가)
+  const updateSettings = (settings: any) => {
+    if (settings.endpoint !== undefined) setEndpoint(settings.endpoint);
     if (settings.aspectRatio !== undefined) setAspectRatio(settings.aspectRatio);
     if (settings.duration !== undefined) setDuration(settings.duration);
     if (settings.cameraControl !== undefined)
@@ -158,14 +156,14 @@ export function useVideoSidebar({
   };
 
   // 탭 전환 핸들러
-  const handleTabSelection = (tab: "image" | "text") => {
+  const handleTabSelection = (tab: "image" | "text" | "video") => {
     setActiveTab(tab);
     onTabChange(tab);
     if (
       !referenceModel ||
-      tab !== (referenceModel === "veo2" ? "text" : "image")
+      tab !== (referenceModel === "veo2" ? "video" : "image")
     ) {
-      if (tab === "image") setEndpoint("luna");
+      if (tab === "image") setEndpoint("kling");
       else setEndpoint("veo2");
     }
   };

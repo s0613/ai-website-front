@@ -1,7 +1,7 @@
 // modelSettings/Veo2ModelSetting.tsx
 import React from "react";
 import { ModelSettingBase } from "./ModelSettingBase";
-import { ModelSettingProps } from "@/types/modelSettingTypes";
+import { ModelSettingProps } from "../types/modelSettingTypes";
 
 export class Veo2ModelSetting extends ModelSettingBase {
   renderSettings({ updateSettings, currentSettings }: ModelSettingProps) {

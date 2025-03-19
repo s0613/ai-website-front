@@ -1,7 +1,7 @@
 // modelSettings/ModelSettingBase.tsx
 import React from "react";
 import { Info } from "lucide-react";
-import { ModelSettingProps } from "@/types/modelSettingTypes";
+import { ModelSettingProps } from "../types/modelSettingTypes";
 
 export abstract class ModelSettingBase {
   abstract renderSettings(props: ModelSettingProps): React.ReactNode;

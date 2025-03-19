@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"; // Badge 컴포넌트 import 추�
 const Navbar = () => {
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   // AuthContext에서 직접 값 받아오기
   const { isLoggedIn, email, logout, userRole, nickname } = useAuth();
@@ -19,6 +20,11 @@ const Navbar = () => {
   // UI 관련 상태
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  // 실제 앱에서는 API로 알람 데이터를 가져와야 함
+  const [notifications, setNotifications] = useState<
+    { id: number; message: string; date: string }[]
+  >([]);
 
   const toggleMenu = () => {
     setIsMenuOpen((prev) => !prev);
@@ -27,6 +33,20 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     router.push("/");
+  };
+
+  // Bell 아이콘 클릭 핸들러
+  const toggleNotifications = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsNotificationOpen((prev) => !prev);
+
+    // 프로필 드롭다운이 열려있으면 닫기
+    if (isDropdownOpen) setIsDropdownOpen(false);
+  };
+
+  // Badge 클릭 시 payment 페이지로 이동하는 함수
+  const handleBadgeClick = () => {
+    router.push("/payment");
   };
 
   // Avatar를 위한 이니셜 생성
@@ -43,6 +63,13 @@ const Navbar = () => {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
+      }
+
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -83,20 +110,60 @@ const Navbar = () => {
           </Link>
           {isLoggedIn ? (
             <div className="relative flex items-center" ref={dropdownRef}>
-              {/* 사용자 역할 Badge 추가 */}
+              {/* 사용자 역할 Badge 추가 - 클릭 가능하도록 수정 */}
               {userRole && (
                 <Badge
                   variant="outline"
-                  className="mr-2 capitalize border-blue-500 text-blue-500"
+                  className="mr-2 capitalize border-blue-500 text-blue-500 cursor-pointer hover:bg-blue-50 transition-colors"
+                  onClick={handleBadgeClick}
                 >
                   {userRole}
                 </Badge>
               )}
 
               {/* 벨 아이콘 추가 */}
-              <Button variant="ghost" size="icon" className="mr-2">
-                <Bell className="h-4 w-4" />
-              </Button>
+              <div className="relative" ref={notificationRef}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="mr-2"
+                  onClick={toggleNotifications}
+                >
+                  <Bell className="h-4 w-4" />
+                </Button>
+
+                {/* 알람 드롭다운 메뉴 */}
+                {isNotificationOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50">
+                    <div className="px-4 py-2 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">알림</p>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto">
+                      {notifications.length > 0 ? (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className="px-4 py-2 border-b border-gray-100 hover:bg-gray-50"
+                          >
+                            <p className="text-sm text-gray-800">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {notification.date}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-6 text-center">
+                          <p className="text-sm text-gray-500">
+                            새로운 알림이 없습니다
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Avatar와 dropdown 메뉴 */}
               <div
@@ -209,11 +276,12 @@ const Navbar = () => {
                   </AvatarFallback>
                 </Avatar>
                 <span>{nickname || email}</span>
-                {/* 모바일에서 사용자 역할 표시 */}
+                {/* 모바일에서 사용자 역할 표시 - 클릭 가능하도록 수정 */}
                 {userRole && (
                   <Badge
                     variant="outline"
-                    className="ml-auto capitalize border-blue-500 text-blue-500"
+                    className="ml-auto capitalize border-blue-500 text-blue-500 cursor-pointer hover:bg-blue-50 transition-colors"
+                    onClick={handleBadgeClick}
                   >
                     {userRole}
                   </Badge>
