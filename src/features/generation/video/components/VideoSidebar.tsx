@@ -73,7 +73,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
   });
 
   return (
-    <div className="w-[260px] h-full bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
+    <div className="w-[360px] h-full bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
       <ScrollArea className="flex-1">
         <div className="p-3 pb-6">
           <div className="mb-4 flex rounded-md overflow-hidden border border-gray-200">
@@ -114,7 +114,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="text-xs font-medium text-gray-700 mb-1">
+              <label className="text-sm font-medium text-gray-700 mb-1">
                 프롬프트
               </label>
               <textarea
@@ -150,7 +150,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                   <ContextMenu>
                     <ContextMenuTrigger>
                       <div
-                        className={`relative w-full h-28 border rounded-md overflow-hidden cursor-pointer transition-all duration-300 ${
+                        className={`relative w-full h-48 border rounded-md overflow-hidden cursor-pointer transition-all duration-300 ${
                           imageChanged ? "ring-2 ring-green-500 shadow-lg" : ""
                         }`}
                       >
@@ -158,7 +158,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                           src={previewUrl}
                           alt="미리보기"
                           fill
-                          className="object-cover"
+                          className="object-contain"
                         />
                         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                           <p className="text-white text-xs">우클릭 메뉴</p>
@@ -181,11 +181,11 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                   </ContextMenu>
                 ) : (
                   <div
-                    className="w-full h-28 border border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors border-gray-300"
+                    className="w-full h-48 border border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors border-gray-300"
                     onClick={selectImage}
                   >
-                    <Upload className="h-6 w-6 text-gray-400" />
-                    <p className="mt-1 text-xs text-gray-500">
+                    <Upload className="h-8 w-8 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-500">
                       이미지 추가하기
                     </p>
                     <p className="text-xs text-gray-400 mt-1">

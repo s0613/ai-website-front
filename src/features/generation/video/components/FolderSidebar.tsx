@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
-import { FileItem, FolderSidebarProps } from "@/types/fileTypes";
+import { FileItem, FolderSidebarProps } from "../types/fileTypes";
 import { useFolderSidebar } from "../hooks/useFolderSidebar";
 
 const FileIcon = ({ fileType }: { fileType: string; fileUrl?: string }) => {

@@ -13,11 +13,11 @@ interface SidebarItem {
 }
 
 const sidebarItems: SidebarItem[] = [
-  {
-    icon: Home,
-    label: "홈",
-    href: "/my",
-  },
+  // {
+  //   icon: Home,
+  //   label: "홈",
+  //   href: "/my",
+  // },
   {
     icon: Image,
     label: "내 작업물",

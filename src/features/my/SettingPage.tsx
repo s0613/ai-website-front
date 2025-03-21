@@ -40,14 +40,10 @@ const SettingPage = () => {
       <h1 className="text-2xl font-bold mb-8">설정</h1>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span>프로필</span>
-          </TabsTrigger>
-          <TabsTrigger value="account" className="flex items-center gap-2">
-            <Key className="h-4 w-4" />
-            <span>계정</span>
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
@@ -97,50 +93,6 @@ const SettingPage = () => {
                 {isLoading ? "저장 중..." : "변경사항 저장"}
               </Button>
             </CardFooter>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="account" className="mt-6">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle>계정 설정</CardTitle>
-              <CardDescription>
-                로그인 정보와 계정 설정을 관리하세요.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="email">이메일</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  defaultValue="user@example.com"
-                  disabled
-                />
-              </div>
-              <div className="space-y-3">
-                <Label htmlFor="password">비밀번호 변경</Label>
-                <Input id="password" type="password" placeholder="••••••••" />
-              </div>
-              <div className="space-y-3">
-                <Label htmlFor="newPassword">새 비밀번호</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="••••••••"
-                />
-              </div>
-              <Separator className="my-6" />
-              <div className="space-y-3 pt-2">
-                <h3 className="text-lg font-medium">위험 구역</h3>
-                <p className="text-sm text-gray-500">
-                  계정을 삭제하면 모든 데이터가 영구적으로 제거됩니다.
-                </p>
-                <Button variant="destructive" className="mt-2">
-                  계정 삭제
-                </Button>
-              </div>
-            </CardContent>
           </Card>
         </TabsContent>
 

@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
+import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface PlanFeature {
   text: string;
@@ -20,21 +22,30 @@ interface PlanFeature {
 
 interface PlanProps {
   title: string;
-  price: number;
-  period: string;
+  price: number | string;
+  originalPrice?: number; // 할인 표시를 위한
+  credits: number;
   description: string;
   features: PlanFeature[];
   recommended?: boolean;
+  isBusinessPlan?: boolean;
+  billingType: "monthly" | "yearly";
 }
 
 const PlanCard: React.FC<PlanProps> = ({
   title,
   price,
-  period,
+  originalPrice,
+  credits,
   description,
   features,
   recommended = false,
+  isBusinessPlan = false,
+  billingType,
 }) => {
+  // 스타터와 비즈니스 플랜인지 확인
+  const isStarterOrBusiness = title === "스타터" || title === "비즈니스";
+
   return (
     <Card
       className={`h-full flex flex-col relative ${
@@ -49,8 +60,24 @@ const PlanCard: React.FC<PlanProps> = ({
       </CardHeader>
       <CardContent className="flex-grow flex flex-col pt-2 pb-6">
         <div className="text-center mb-6">
-          <span className="text-3xl font-bold">₩{price.toLocaleString()}</span>
-          <span className="text-muted-foreground">/{period}</span>
+          <span className="text-3xl font-bold">
+            {typeof price === "number" ? `₩${price.toLocaleString()}` : price}
+          </span>
+          {originalPrice && (
+            <span className="ml-2 text-sm line-through text-muted-foreground">
+              ₩{originalPrice.toLocaleString()}
+            </span>
+          )}
+          {billingType === "yearly" && typeof price === "number" && (
+            <div className="text-xs text-muted-foreground mt-1">
+              월 ₩{Math.floor(price / 12).toLocaleString()}
+            </div>
+          )}
+          <div className="text-primary font-medium mt-2">
+            {credits} 크레딧{" "}
+            {!isStarterOrBusiness &&
+              (billingType === "yearly" ? "/ 연간" : "/ 월간")}
+          </div>
         </div>
         <p className="text-center text-sm mb-6">{description}</p>
         <Separator className="my-6" />
@@ -73,13 +100,25 @@ const PlanCard: React.FC<PlanProps> = ({
           ))}
         </div>
         <div className="mt-auto pt-4">
-          <Button
-            variant={recommended ? "default" : "outline"}
-            className="w-full"
-            size="lg"
-          >
-            선택하기
-          </Button>
+          {isBusinessPlan ? (
+            <Link href="/contact">
+              <Button
+                variant="outline"
+                className="w-full bg-primary/10 hover:bg-primary/20 text-primary"
+                size="lg"
+              >
+                문의하기
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              variant={recommended ? "default" : "outline"}
+              className="w-full"
+              size="lg"
+            >
+              구매하기
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -87,67 +126,190 @@ const PlanCard: React.FC<PlanProps> = ({
 };
 
 export default function MembershipPlan() {
-  const plans = [
+  const [billingType, setBillingType] = useState<"monthly" | "yearly">(
+    "yearly"
+  );
+
+  const monthlyPlans = [
     {
-      title: "Beginner Plan",
+      title: "스타터",
       price: "무료",
-      period: "월",
-      description: "개인 사용자를 위한 기본 기능",
+      credits: 30,
+      description:
+        "AI 이미지 생성을 처음 시작하는 분들을 위한 무료 체험 패키지",
       features: [
-        { text: "월 50개 이미지 생성", included: true },
+        { text: "30 크레딧 제공", included: true },
         { text: "기본 이미지 편집 도구", included: true },
         { text: "표준 해상도", included: true },
         { text: "이메일 지원", included: true },
         { text: "AI 스타일 추천", included: false },
-        { text: "무제한 이미지 저장", included: false },
+        { text: "크레딧 30일 유효기간", included: true },
       ],
       recommended: false,
+      isBusinessPlan: false,
     },
     {
-      title: "Basic Plan",
-      price: 29900,
-      period: "월",
-      description: "전문가를 위한 고급 기능",
+      title: "베이직",
+      price: 15000,
+      credits: 100,
+      description: "개인 사용자를 위한 합리적인 크레딧 패키지",
       features: [
-        { text: "월 200개 이미지 생성", included: true },
+        { text: "100 크레딧 제공", included: true },
+        { text: "중급 이미지 편집 도구", included: true },
+        { text: "고해상도 지원", included: true },
+        { text: "이메일 지원", included: true },
+        { text: "AI 스타일 추천", included: false },
+        { text: "크레딧 45일 유효기간", included: true },
+      ],
+      recommended: false,
+      isBusinessPlan: false,
+    },
+    {
+      title: "프리미엄",
+      price: 29900,
+      credits: 250,
+      description: "전문가를 위한 고급 크레딧 패키지",
+      features: [
+        { text: "250 크레딧 제공", included: true },
         { text: "고급 이미지 편집 도구", included: true },
-        { text: "고해상도 출력", included: true },
+        { text: "최고 해상도 출력", included: true },
         { text: "우선 이메일 지원", included: true },
         { text: "AI 스타일 추천", included: true },
-        { text: "무제한 이미지 저장", included: true },
+        { text: "크레딧 60일 유효기간", included: true },
       ],
       recommended: true,
+      isBusinessPlan: false,
     },
     {
-      title: "premium Plan",
-      price: 1399000,
-      period: "월",
-      description: "팀과 기업을 위한 솔루션",
+      title: "비즈니스",
+      price: "문의",
+      credits: 500,
+      description:
+        "기업과 팀을 위한 대용량 크레딧과 맞춤형 기능이 필요하신가요? 비즈니스 전용 혜택과 함께 기업에 최적화된 견적을 제공합니다.",
       features: [
-        { text: "월 500개 이미지 생성", included: true },
+        { text: "500+ 크레딧 제공", included: true },
         { text: "전체 편집 기능 액세스", included: true },
         { text: "최대 해상도 출력", included: true },
         { text: "24/7 전용 지원", included: true },
         { text: "팀 협업 기능", included: true },
-        { text: "API 액세스", included: true },
+        { text: "기업 전용 API 액세스", included: true },
       ],
       recommended: false,
+      isBusinessPlan: true,
     },
   ];
+
+  const yearlyPlans = [
+    {
+      title: "스타터",
+      price: "무료",
+      credits: 30,
+      description:
+        "AI 이미지 생성을 처음 시작하는 분들을 위한 무료 체험 패키지",
+      features: [
+        { text: "30 크레딧 제공", included: true },
+        { text: "기본 이미지 편집 도구", included: true },
+        { text: "표준 해상도", included: true },
+        { text: "이메일 지원", included: true },
+        { text: "AI 스타일 추천", included: false },
+        { text: "크레딧 30일 유효기간", included: true },
+      ],
+      recommended: false,
+      isBusinessPlan: false,
+    },
+    {
+      title: "베이직",
+      price: 144000,
+      originalPrice: 180000, // 15000 * 12
+      credits: 100,
+      description:
+        "개인 사용자를 위한 합리적인 크레딧 패키지, 연간 결제 시 20% 할인",
+      features: [
+        { text: "매월 100 크레딧 제공", included: true },
+        { text: "중급 이미지 편집 도구", included: true },
+        { text: "고해상도 지원", included: true },
+        { text: "이메일 지원", included: true },
+        { text: "AI 스타일 추천", included: false },
+        { text: "크레딧 60일 유효기간", included: true },
+      ],
+      recommended: false,
+      isBusinessPlan: false,
+    },
+    {
+      title: "프리미엄",
+      price: 287040,
+      originalPrice: 358800, // 29900 * 12
+      credits: 250,
+      description: "전문가를 위한 고급 크레딧 패키지, 연간 결제 시 20% 할인",
+      features: [
+        { text: "매월 250 크레딧 제공", included: true },
+        { text: "고급 이미지 편집 도구", included: true },
+        { text: "최고 해상도 출력", included: true },
+        { text: "우선 이메일 지원", included: true },
+        { text: "AI 스타일 추천", included: true },
+        { text: "크레딧 90일 유효기간", included: true },
+      ],
+      recommended: true,
+      isBusinessPlan: false,
+    },
+    {
+      title: "비즈니스",
+      price: "문의",
+      credits: 500,
+      description:
+        "기업과 팀을 위한 대용량 크레딧과 맞춤형 기능이 필요하신가요? 연간 계약 시 특별 할인과 전용 계정 관리자를 제공합니다.",
+      features: [
+        { text: "매월 500+ 크레딧 제공", included: true },
+        { text: "전체 편집 기능 액세스", included: true },
+        { text: "최대 해상도 출력", included: true },
+        { text: "24/7 전용 지원", included: true },
+        { text: "팀 협업 기능", included: true },
+        { text: "기업 전용 API 액세스", included: true },
+      ],
+      recommended: false,
+      isBusinessPlan: true,
+    },
+  ];
+
+  const plans = billingType === "monthly" ? monthlyPlans : yearlyPlans;
 
   return (
     <div className="container max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
       <div className="text-center mb-16 sm:mb-20">
-        <h1 className="text-3xl sm:text-4xl font-bold mb-4">멤버십 플랜</h1>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto px-4">
-          당신의 창의적인 프로젝트에 맞는 최적의 플랜을 선택하세요
+        <h1 className="text-3xl sm:text-4xl font-bold mb-4">크레딧 패키지</h1>
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto px-4 mb-8">
+          필요한 만큼만 구매하고 원하는 때 사용하세요
         </p>
+
+        <div className="flex justify-center mb-10">
+          <Tabs
+            defaultValue="yearly"
+            value={billingType}
+            onValueChange={(value) =>
+              setBillingType(value as "monthly" | "yearly")
+            }
+            className="w-full max-w-[400px]"
+          >
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="monthly">월간 결제</TabsTrigger>
+              <TabsTrigger value="yearly" className="relative">
+                연간 결제
+                <Badge
+                  variant="outline"
+                  className="absolute -top-3 -right-2 font-normal text-xs bg-green-50 text-green-700 border-green-200"
+                >
+                  20% 할인
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-20 sm:mb-24">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-20 sm:mb-24">
         {plans.map((plan, index) => (
           <div key={index} className="mb-6 sm:mb-0">
-            <PlanCard {...plan} />
+            <PlanCard {...plan} billingType={billingType} />
           </div>
         ))}
       </div>
@@ -160,23 +322,24 @@ export default function MembershipPlan() {
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1">
               <AccordionTrigger className="px-6 py-4 font-medium">
-                구독은 언제든지 취소할 수 있나요?
+                크레딧은 얼마나 오래 유효한가요?
               </AccordionTrigger>
               <AccordionContent className="px-6 py-3">
-                네, 언제든지 구독을 취소할 수 있으며 다음 결제일 전까지 서비스를
-                계속 이용할 수 있습니다. 취소 시 별도의 위약금이나 추가 비용은
-                발생하지 않습니다.
+                크레딧 유효기간은 구매한 패키지에 따라 다릅니다. 스타터는 30일,
+                베이직은 45일, 프리미엄은 60일, 비즈니스 패키지는 맞춤형
+                유효기간을 제공합니다. 유효기간은 구매일로부터 계산됩니다. 연간
+                구독의 경우 크레딧 유효기간이 더 길게 적용됩니다.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2">
               <AccordionTrigger className="px-6 py-4 font-medium">
-                플랜은 어떻게 업그레이드하나요?
+                하나의 이미지 생성에 몇 크레딧이 사용되나요?
               </AccordionTrigger>
               <AccordionContent className="px-6 py-3">
-                계정 설정에서 언제든지 플랜을 변경할 수 있습니다. 상위 플랜으로
-                업그레이드하면 즉시 새로운 기능을 이용할 수 있으며, 남은 기간에
-                대해 비례 계산된 차액만 지불하시면 됩니다.
+                기본 이미지 생성은 1크레딧이 소모됩니다. 고해상도 이미지는
+                2크레딧, 초고해상도 이미지는 3크레딧이 소모됩니다. 특수 효과나
+                고급 편집 기능을 사용할 경우 추가 크레딧이 소모될 수 있습니다.
               </AccordionContent>
             </AccordionItem>
 
@@ -193,12 +356,12 @@ export default function MembershipPlan() {
 
             <AccordionItem value="item-4">
               <AccordionTrigger className="px-6 py-4 font-medium">
-                생성된 이미지의 저작권은 어떻게 되나요?
+                남은 크레딧은 환불 가능한가요?
               </AccordionTrigger>
               <AccordionContent className="px-6 py-3">
-                귀하가 생성한 모든 이미지의 저작권은 귀하에게 있습니다. 상업적
-                용도를 포함한 모든 목적으로 자유롭게 사용할 수 있습니다. 다만,
-                불법적인 콘텐츠 생성은 이용약관에 위배됩니다.
+                구매 후 7일 이내에 사용하지 않은 크레딧에 한해 부분 환불이
+                가능합니다. 환불 요청은 고객센터를 통해 접수하실 수 있으며, 처리
+                시 수수료가 발생할 수 있습니다.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

@@ -45,40 +45,48 @@ const VideoUploader = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("aiVideo", aiVideo);
-    formData.append("aiVideoName", aiVideoName);
-    formData.append("prompt", prompt);
-    formData.append("model", model); // 모델 정보 추가
-
-    // modeFile이 있는 경우에만 추가
-    if (modeFile) {
-      formData.append("modeFile", modeFile);
-    }
-
     setIsLoading(true);
     try {
-      console.log("영상 업로드 요청 보내기:", {
-        aiVideo: aiVideo.name,
-        aiVideoName,
-        prompt,
-        model,
-        modeFile: modeFile?.name || "없음",
-      });
+      // FormData 객체 생성
+      const formData = new FormData();
 
-      const res = await fetch("/api/admin/video/upload", {
+      // 비디오 파일 추가
+      formData.append("videoFile", aiVideo);
+
+      // 추가 파일이 있는 경우 추가
+      if (modeFile) {
+        formData.append("modeFile", modeFile);
+      }
+
+      // JSON 데이터 구성
+      const jsonData = {
+        prompt: prompt,
+        endpoint: model,
+        videoName: aiVideoName,
+      };
+
+      // JSON 데이터를 FormData에 추가
+      formData.append("data", JSON.stringify(jsonData));
+
+      console.log("영상 저장 요청 보내기");
+
+      // FormData로 요청 전송
+      const res = await fetch("/api/my/creation/video/save", {
         method: "POST",
         body: formData,
       });
 
       if (res.ok) {
+        const result = await res.json();
         alert("영상 업로드 성공");
         setAiVideo(null);
         setAiVideoName("");
         setPrompt("");
         setModeFile(null);
+        console.log("저장된 영상 정보:", result);
       } else {
-        alert("업로드 실패");
+        const errorData = await res.json();
+        alert(`업로드 실패: ${errorData.message || "알 수 없는 오류"}`);
       }
     } catch (error) {
       alert("에러 발생");

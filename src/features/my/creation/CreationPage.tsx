@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Video, Plus, Filter } from "lucide-react";
+import { Video, Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import {
@@ -17,7 +17,7 @@ interface Video {
   id: number;
   videoUrl: string;
   thumbnailUrl: string;
-  aiVideoName: string;
+  name: string;
   prompt: string;
   model: string;
   mode: string;
@@ -93,11 +93,6 @@ export default function CreationPage() {
               <SelectItem value="VIDEO">영상 기반</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button variant="outline" className="ml-2">
-            <Filter className="w-4 h-4 mr-2" /> 필터
-          </Button>
-
           <Link href="/generation/video">
             <Button className="bg-black hover:bg-gray-800 text-white">
               <Plus className="w-4 h-4 mr-2" /> 새 작업
@@ -124,46 +119,44 @@ export default function CreationPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {videos.map((video) => (
             <div
               key={video.id}
-              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+              className="overflow-hidden hover:shadow-sm transition-all cursor-pointer bg-white rounded-md"
               onClick={() => handleVideoClick(video.id)}
             >
-              <div className="relative pb-[56.25%]">
-                <div className="absolute inset-0">
-                  <video
-                    src={video.videoUrl}
-                    className="w-full h-full object-cover"
-                    poster={
-                      video.thumbnailUrl || "/video-thumbnail-placeholder.jpg"
-                    }
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-60"></div>
-                </div>
+              <div className="aspect-video bg-gray-100 relative overflow-hidden">
+                <video
+                  src={video.videoUrl}
+                  className="w-full h-full object-cover"
+                  poster={
+                    video.thumbnailUrl || "/video-thumbnail-placeholder.jpg"
+                  }
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-30"></div>
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-medium text-gray-800 truncate">
-                  {video.name}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1 truncate">
-                  {video.prompt}
-                </p>
-                <div className="flex justify-between items-center mt-3">
-                  <span className="text-xs text-gray-400">
-                    {new Date(video.createdAt).toLocaleDateString()}
-                  </span>
+              <div className="p-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm line-clamp-1">
+                    {video.name}
+                  </h3>
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${
+                    className={`text-xs px-1.5 py-0.5 rounded-full ${
                       video.share
                         ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
+                        : "bg-gray-100 text-gray-600"
                     }`}
                   >
                     {video.share ? "공개" : "비공개"}
                   </span>
                 </div>
+                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                  {video.prompt}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {new Date(video.createdAt).toLocaleDateString()}
+                </p>
               </div>
             </div>
           ))}

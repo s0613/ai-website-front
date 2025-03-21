@@ -1,3 +1,3 @@
-import FolderPage from "@/features/my/FolderPage";
+import FolderPage from "@/features/my/FolderInPage";
 
 export default FolderPage;

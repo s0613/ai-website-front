@@ -171,51 +171,62 @@ const VideoPage = () => {
         </div>
       </div>
 
-      {/* 폴더 목록 표시 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+      {/* 폴더 목록 표시 - 컴팩트 그리드 스타일 */}
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {folders.map((folder) => (
-          // folder.id로 이동하면서, folder.name도 query로 넘겨주어
-          // 상세 페이지에서 초기 제목으로 활용할 수 있게 함
           <Link
             key={folder.id}
             href={{
               pathname: `/my/folder/${folder.id}`,
               query: { folderName: folder.name },
             }}
+            className="block w-full"
           >
-            <div className="border rounded-lg p-4 flex flex-col hover:border-blue-500 cursor-pointer transition-all">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Folder className="h-5 w-5 text-blue-500" />
-                  <span className="font-medium">{folder.name}</span>
+            <div className="overflow-hidden hover:shadow-sm transition-all cursor-pointer bg-white rounded-md">
+              {/* 썸네일 영역 - 작은 크기로 변경 */}
+              <div className="aspect-video bg-blue-50 flex items-center justify-center relative">
+                <Folder className="h-10 w-10 text-blue-500" />
+              </div>
+
+              {/* 폴더 정보 */}
+              <div className="p-2">
+                {/* 제목과 메뉴 버튼을 같은 행에 배치 */}
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm line-clamp-1">
+                    {folder.name}
+                  </h3>
+
+                  {/* 액션 메뉴 */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 ml-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          deleteFolder(folder.id);
+                        }}
+                      >
+                        삭제
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteFolder(folder.id);
-                      }}
-                    >
-                      삭제
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div className="text-xs text-gray-500 mt-2">
-                {folder.createdAt &&
-                  new Date(folder.createdAt).toLocaleDateString()}
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {folder.createdAt
+                    ? new Date(folder.createdAt).toLocaleDateString()
+                    : "날짜 정보 없음"}
+                </p>
               </div>
             </div>
           </Link>

@@ -15,10 +15,10 @@ export class Veo2ModelSetting extends ModelSettingBase {
             {["16:9", "9:16"].map((ratio) => (
               <label
                 key={ratio}
-                className={`flex items-center justify-center py-1.5 rounded border cursor-pointer text-xs ${
+                className={`flex items-center justify-between w-full py-2 px-3 rounded-lg border cursor-pointer text-xs transition-transform duration-200 transform hover:scale-105 ${
                   currentSettings.aspectRatio === ratio
-                    ? "bg-blue-100 border-blue-400 text-blue-700"
-                    : "border-gray-300 text-gray-700"
+                    ? "border-blue-600 shadow-md"
+                    : "border-gray-300"
                 }`}
               >
                 <input
@@ -31,7 +31,25 @@ export class Veo2ModelSetting extends ModelSettingBase {
                   }
                   className="sr-only"
                 />
-                {ratio}
+                {ratio === "16:9" && (
+                  <div
+                    className={`w-3 h-2 border bg-transparent ${
+                      currentSettings.aspectRatio === "16:9"
+                        ? "border-blue-600"
+                        : "border-gray-400"
+                    }`}
+                  ></div>
+                )}
+                {ratio === "9:16" && (
+                  <div
+                    className={`w-2 h-3 border bg-transparent ${
+                      currentSettings.aspectRatio === "9:16"
+                        ? "border-blue-600"
+                        : "border-gray-400"
+                    }`}
+                  ></div>
+                )}
+                <span>{ratio}</span>
               </label>
             ))}
           </div>

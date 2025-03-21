@@ -31,62 +31,40 @@ export default function VideoReferencePage() {
       try {
         setIsLoading(true);
 
-        // 두 API 요청을 병렬로 실행
-        const [adminResponse, sharedResponse] = await Promise.all([
-          fetch("/api/admin/video/getAll"),
-          fetch("/api/my/creation/video/getSharedVideo"),
-        ]);
+        // 관리자 비디오 요청 제거, 공유 비디오만 가져오기
+        const sharedResponse = await fetch(
+          "/api/my/creation/video/getSharedVideo"
+        );
 
-        // 각 응답 확인 및 데이터 추출
-        if (!adminResponse.ok) {
-          console.error("관리자 비디오 불러오기 실패:", adminResponse.status);
-        }
-
+        // 응답 확인 및 데이터 추출
         if (!sharedResponse.ok) {
           console.error("공유 비디오 불러오기 실패:", sharedResponse.status);
         }
 
         // 응답 데이터 파싱
-        const adminVideos = adminResponse.ok ? await adminResponse.json() : [];
         const sharedVideos = sharedResponse.ok
           ? await sharedResponse.json()
           : [];
 
-        console.log(
-          "관리자 비디오:",
-          adminVideos.length,
-          "공유 비디오:",
-          sharedVideos.length
-        );
+        console.log("공유 비디오:", sharedVideos.length);
 
-        // ID 기준으로 중복 제거를 위한 Map 사용
+        // 비디오 목록 처리
         const videoMap = new Map();
 
-        // 관리자 비디오 추가
-        adminVideos.forEach((video) => {
+        // 공유 비디오 추가
+        sharedVideos.forEach((video) => {
           videoMap.set(video.id, {
             ...video,
-            creator: "관리자",
+            // video 객체에 필요한 필드가 없다면 기본값 지정
+            name: video.name || video.aiVideoName || "제목 없음",
+            url: video.url || video.videoUrl || "",
+            thumbnailUrl: video.thumbnailUrl || "",
+            format: video.format || "mp4",
+            sizeInBytes: video.sizeInBytes || 0,
+            status: video.status || "완료",
+            createdAt: video.createdAt || new Date().toISOString(),
+            creator: video.creator || video.email || "사용자",
           });
-        });
-
-        // 공유 비디오 추가 (이미 존재하는 ID의 경우 덮어쓰기)
-        sharedVideos.forEach((video) => {
-          // 만약 sharedVideos의 구조가 다르다면 여기서 구조를 통일시켜야 함
-          if (!videoMap.has(video.id)) {
-            videoMap.set(video.id, {
-              ...video,
-              // video 객체에 필요한 필드가 없다면 기본값 지정
-              name: video.name || video.aiVideoName || "제목 없음",
-              url: video.url || video.videoUrl || "",
-              thumbnailUrl: video.thumbnailUrl || "",
-              format: video.format || "mp4",
-              sizeInBytes: video.sizeInBytes || 0,
-              status: video.status || "완료",
-              createdAt: video.createdAt || new Date().toISOString(),
-              creator: video.creator || video.email || "사용자", // 생성자 정보 추가
-            });
-          }
         });
 
         // Map에서 배열로 변환

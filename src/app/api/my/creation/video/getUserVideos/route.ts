@@ -97,7 +97,7 @@ export async function GET() {
   } catch (error) {
     console.error("비디오 가져오기 API 오류:", error);
     return NextResponse.json(
-      { message: "비디오를 가져오는 중 오류가 발생했습니다: " + (error.message || "알 수 없는 오류") },
+      { message: "비디오를 가져오는 중 오류가 발생했습니다: " + (error || "알 수 없는 오류") },
       { status: 500 }
     );
   }
