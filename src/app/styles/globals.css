@@ -1,6 +1,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-fadeOut {
+  animation: fadeOut 1.5s forwards;
+}
 
 @layer base {
   :root {

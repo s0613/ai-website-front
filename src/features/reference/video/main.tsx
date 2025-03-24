@@ -4,19 +4,17 @@ import { useState, useEffect } from "react";
 import Sidebar, { FilterOptions } from "./sidebar";
 import VideoDetail from "./videoDetail";
 
-// VideoItem 인터페이스 업데이트
+// VideoItem 인터페이스 - 백엔드 응답에 맞게 필수 필드만 정의
 interface VideoItem {
   id: number;
   name: string;
-  prompt: string;
-  url: string;
   thumbnailUrl: string;
-  format: string;
-  sizeInBytes: number;
-  status: string;
-  createdAt: string;
-  creator?: string; // creator 필드 추가
-  model?: string;
+  url: string;
+  creator: string;
+  size?: "small" | "medium" | "large";
+  aspectRatio?: number;
+  likeCount?: number;
+  liked?: boolean;
 }
 
 export default function VideoReferencePage() {
@@ -25,62 +23,126 @@ export default function VideoReferencePage() {
   const [filteredVideos, setFilteredVideos] = useState<VideoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   useEffect(() => {
+    // 로그인 상태 확인
+    const checkLoginStatus = () => {
+      // 쿠키에서 로그인 토큰 확인 (auth-token 이름 추가)
+      const cookies = document.cookie.split(";").reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split("=");
+        acc[key] = value;
+        return acc;
+      }, {} as { [key: string]: string });
+
+      // auth-token도 포함하여 확인
+      const hasAuthToken =
+        cookies.access_token ||
+        cookies.jwt ||
+        cookies["auth-token"] || // 쿠키에서 auth-token 확인
+        localStorage.getItem("auth-token");
+
+      console.log("감지된 인증 토큰:", {
+        access_token: cookies.access_token || "없음",
+        jwt: cookies.jwt || "없음",
+        "auth-token (쿠키)": cookies["auth-token"] || "없음",
+        "auth-token (로컬스토리지)":
+          localStorage.getItem("auth-token") || "없음",
+      });
+
+      const isLoggedIn = !!hasAuthToken;
+      setIsLoggedIn(isLoggedIn);
+      return isLoggedIn;
+    };
+
     const fetchVideos = async () => {
       try {
         setIsLoading(true);
 
-        // 관리자 비디오 요청 제거, 공유 비디오만 가져오기
-        const sharedResponse = await fetch(
-          "/api/my/creation/video/getSharedVideo"
+        // 로그인 상태 확인
+        const loggedIn = checkLoginStatus();
+
+        // 로그인 상태에 따라 다른 API 엔드포인트 호출
+        const apiEndpoint = loggedIn
+          ? "/api/my/creation/video/getSharedVideo"
+          : "/api/my/creation/video/getSharedVideoNoLogin";
+
+        console.log(
+          `사용자 로그인 상태: ${
+            loggedIn ? "로그인됨" : "로그인되지 않음"
+          }, API 사용: ${apiEndpoint}`
         );
 
-        // 응답 확인 및 데이터 추출
-        if (!sharedResponse.ok) {
-          console.error("공유 비디오 불러오기 실패:", sharedResponse.status);
-        }
-
-        // 응답 데이터 파싱
-        const sharedVideos = sharedResponse.ok
-          ? await sharedResponse.json()
-          : [];
-
-        console.log("공유 비디오:", sharedVideos.length);
-
-        // 비디오 목록 처리
-        const videoMap = new Map();
-
-        // 공유 비디오 추가
-        sharedVideos.forEach((video) => {
-          videoMap.set(video.id, {
-            ...video,
-            // video 객체에 필요한 필드가 없다면 기본값 지정
-            name: video.name || video.aiVideoName || "제목 없음",
-            url: video.url || video.videoUrl || "",
-            thumbnailUrl: video.thumbnailUrl || "",
-            format: video.format || "mp4",
-            sizeInBytes: video.sizeInBytes || 0,
-            status: video.status || "완료",
-            createdAt: video.createdAt || new Date().toISOString(),
-            creator: video.creator || video.email || "사용자",
-          });
+        // API 호출
+        const sharedResponse = await fetch(apiEndpoint, {
+          credentials: "include",
+          cache: "no-store", // 캐시를 사용하지 않도록 설정
         });
 
-        // Map에서 배열로 변환
-        const combinedVideos = Array.from(videoMap.values());
+        if (!sharedResponse.ok) {
+          console.error("공유 비디오 불러오기 실패:", sharedResponse.status);
+          setError("공유 비디오를 불러오는데 실패했습니다.");
+          return;
+        }
 
-        // 최신순으로 정렬
-        combinedVideos.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        const sharedVideos = await sharedResponse.json();
+        console.log("공유 비디오:", sharedVideos.length);
+
+        // 비디오 데이터 처리
+        const sizes: Array<"small" | "medium" | "large"> = [
+          "small",
+          "medium",
+          "large",
+        ];
+
+        const initialProcessedVideos = sharedVideos.map((video, index) => ({
+          id: video.id,
+          name: video.title || "제목 없음",
+          thumbnailUrl: video.thumbnailUrl || "",
+          url: video.url || "",
+          creator: video.creator || "알 수 없음",
+          size: sizes[index % sizes.length],
+          aspectRatio: 1,
+          likeCount: video.likeCount || 0,
+          liked: video.liked || false,
+        }));
+
+        // 비디오 메타데이터로 실제 비율 계산
+        const videoList = await Promise.all(
+          initialProcessedVideos.map(async (video) => {
+            try {
+              const videoElement = document.createElement("video");
+              videoElement.src = video.url;
+
+              const metadataLoaded = new Promise<void>((resolve) => {
+                videoElement.onloadedmetadata = () => resolve();
+                videoElement.onerror = () => resolve();
+              });
+
+              await metadataLoaded;
+
+              let aspectRatio = 16 / 9;
+              if (videoElement.videoWidth && videoElement.videoHeight) {
+                aspectRatio =
+                  videoElement.videoWidth / videoElement.videoHeight;
+              }
+
+              return {
+                ...video,
+                aspectRatio,
+              };
+            } catch (err) {
+              console.error("비디오 메타데이터 로드 실패:", err);
+              return video;
+            }
+          })
         );
 
-        setVideos(combinedVideos);
-        setFilteredVideos(combinedVideos);
+        setVideos(videoList);
+        setFilteredVideos(videoList);
       } catch (err) {
+        console.error("비디오를 불러오는 중 오류 발생:", err);
         setError((err as Error).message);
-        console.error("Error fetching videos:", err);
       } finally {
         setIsLoading(false);
       }
@@ -90,40 +152,23 @@ export default function VideoReferencePage() {
   }, []);
 
   const handleFilterChange = (filters: FilterOptions) => {
-    let filtered = [...videos];
+    let result = [...videos];
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(
+      result = result.filter(
         (video) =>
           video.name.toLowerCase().includes(searchLower) ||
-          video.prompt?.toLowerCase().includes(searchLower)
+          video.creator.toLowerCase().includes(searchLower)
       );
     }
-    if (
-      filters.categories.length > 0 &&
-      !filters.categories.includes("모든 비디오")
-    ) {
-      filtered = filtered.filter((video) =>
-        filters.categories.includes(getSimpleCategory(video.prompt))
-      );
-    }
-    if (filters.duration !== "모든 길이") {
-      filtered = filtered.filter(
-        (video) => getSimpleDuration(video.sizeInBytes) === filters.duration
-      );
-    }
+
     if (filters.sortBy === "최신순") {
-      filtered = filtered.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      result = result.sort((a, b) => b.id - a.id);
     } else if (filters.sortBy === "오래된순") {
-      filtered = filtered.sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
+      result = result.sort((a, b) => a.id - b.id);
     }
-    setFilteredVideos(filtered);
+
+    setFilteredVideos(result);
   };
 
   const handleVideoClick = (videoId: number) => {
@@ -133,25 +178,6 @@ export default function VideoReferencePage() {
   const handleBackToList = () => {
     setSelectedVideoId(null);
   };
-
-  const handleVideoHover = (videoElement: HTMLVideoElement | null) => {
-    if (videoElement) {
-      videoElement.play().catch((err) => {
-        console.error("비디오 재생 실패:", err);
-      });
-    }
-  };
-
-  const handleVideoLeave = (videoElement: HTMLVideoElement | null) => {
-    if (videoElement) {
-      videoElement.pause();
-      videoElement.currentTime = 0;
-    }
-  };
-
-  const selectedVideo = selectedVideoId
-    ? videos.find((v) => v.id === selectedVideoId)
-    : null;
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -193,43 +219,120 @@ export default function VideoReferencePage() {
               <p className="mt-1 text-gray-500">{error}</p>
             </div>
           ) : (
-            // CSS Columns를 사용하여 테트리스(마젠리) 형식으로 배치
-            <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
-              {filteredVideos.map((video) => (
-                <div
-                  key={video.id}
-                  className="mb-4 break-inside-avoid bg-white rounded-lg shadow overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
-                  onClick={() => handleVideoClick(video.id)}
-                >
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-auto">
+              {filteredVideos.map((video) => {
+                const rowSpan = Math.ceil(12 / (video.aspectRatio || 1));
+
+                return (
                   <div
-                    className="relative"
-                    onMouseEnter={(e) => {
-                      const videoEl = e.currentTarget.querySelector("video");
-                      handleVideoHover(videoEl);
+                    key={video.id}
+                    className="relative group rounded-lg overflow-hidden bg-white shadow transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg"
+                    style={{
+                      gridRowEnd: `span ${rowSpan}`,
+                      minHeight: "180px",
                     }}
-                    onMouseLeave={(e) => {
-                      const videoEl = e.currentTarget.querySelector("video");
-                      handleVideoLeave(videoEl);
-                    }}
+                    onClick={() => handleVideoClick(video.id)}
                   >
-                    <video
-                      src={video.url}
-                      poster={video.thumbnailUrl}
-                      className="w-full object-cover"
-                      preload="metadata"
-                      muted
-                      playsInline
-                    />
+                    <div className="relative w-full h-full">
+                      {/* 포인터 이벤트를 비디오로 전달하기 위해 썸네일 이미지에 pointer-events-none 적용 */}
+                      <img
+                        src={video.thumbnailUrl}
+                        alt={video.name}
+                        className="w-full h-full object-cover absolute inset-0 z-10 transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"
+                      />
+
+                      <video
+                        src={video.url}
+                        className="w-full h-full object-cover absolute inset-0 z-0"
+                        preload="auto"
+                        muted
+                        playsInline
+                        loop
+                        onLoadedMetadata={(e) =>
+                          console.log("비디오 메타데이터 로드됨:", video.id)
+                        }
+                        onError={(e) =>
+                          console.error("비디오 로드 오류:", video.id, e)
+                        }
+                        onMouseEnter={(e) => {
+                          console.log("비디오 재생 시도:", video.id);
+                          const playPromise = e.currentTarget.play();
+                          if (playPromise !== undefined) {
+                            playPromise.catch((error) => {
+                              console.error("비디오 재생 실패:", error);
+                            });
+                          }
+                          e.currentTarget.parentElement
+                            ?.querySelector("img")
+                            ?.classList.add("opacity-0");
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.pause();
+                          e.currentTarget.currentTime = 0;
+                          e.currentTarget.parentElement
+                            ?.querySelector("img")
+                            ?.classList.remove("opacity-0");
+                        }}
+                      />
+
+                      {/* 오버레이에도 pointer-events-none을 추가해 비디오가 hover 이벤트를 받을 수 있게 함 */}
+                      <div className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        <div className="bg-black/40 rounded-full p-3 animate-fadeOut">
+                          <svg
+                            className="w-8 h-8 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-30 transition-opacity duration-300 z-20 pointer-events-none"></div>
+
+                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white z-30">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-medium text-white truncate">
+                              {video.name}
+                            </h3>
+                            <p className="text-sm text-gray-300 mt-0.5 truncate">
+                              {video.creator}
+                            </p>
+                          </div>
+                          <div className="flex items-center">
+                            {video.liked ? (
+                              <svg
+                                className="w-5 h-5 fill-current text-red-500"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-5 h-5 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                />
+                              </svg>
+                            )}
+                            <span className="ml-1 text-sm">
+                              {video.likeCount || 0}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-medium text-gray-900">{video.name}</h3>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                      {video.creator || "알 수 없음"}
-                    </p>
-                    <div className="mt-2 flex items-center text-sm text-gray-500"></div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -260,7 +363,7 @@ export default function VideoReferencePage() {
       </div>
 
       {/* 비디오 상세 정보 모달 */}
-      {selectedVideoId && selectedVideo && (
+      {selectedVideoId !== null && (
         <div
           className="fixed inset-0 flex justify-center items-center z-50 bg-black/80 p-4"
           onClick={handleBackToList}
@@ -289,7 +392,11 @@ export default function VideoReferencePage() {
               </svg>
             </button>
             <div className="h-full overflow-y-auto">
-              <VideoDetail video={selectedVideo} onBack={handleBackToList} />
+              <VideoDetail
+                videoId={selectedVideoId}
+                videoBasicInfo={videos.find((v) => v.id === selectedVideoId)!}
+                onBack={handleBackToList}
+              />
             </div>
           </div>
         </div>

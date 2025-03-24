@@ -122,7 +122,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="예: 바닷가에서 춤추는 로봇"
-                rows={4}
+                rows={7}
                 className="w-full rounded-md border border-gray-300 p-2 text-sm focus:outline-none focus:border-blue-500 resize-y"
               />
             </div>

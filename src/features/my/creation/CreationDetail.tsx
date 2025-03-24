@@ -21,10 +21,10 @@ interface VideoDetail {
   thumbnailUrl: string;
   model: string;
   mode: string;
-  format: string;
-  sizeInBytes: number;
   createdAt: string;
   shared: boolean;
+  clickCount: number;
+  likeCount: number;
 }
 
 export default function CreationDetail({
@@ -221,12 +221,14 @@ export default function CreationDetail({
               <p className="mt-1">{video.mode || "정보 없음"}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">포맷</h3>
-              <p className="mt-1">{video.format || "MP4"}</p>
+              <h3 className="text-sm font-medium text-gray-500">조회수</h3>
+              <p className="mt-1">
+                {video.clickCount?.toLocaleString() || "0"}
+              </p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">파일 크기</h3>
-              <p className="mt-1">{formatFileSize(video.sizeInBytes)}</p>
+              <h3 className="text-sm font-medium text-gray-500">좋아요</h3>
+              <p className="mt-1">{video.likeCount?.toLocaleString() || "0"}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">생성일</h3>

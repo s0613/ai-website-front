@@ -1,10 +1,10 @@
-// import MyPage from "@/features/my/MyPage";
-
-// export default function Page() {
-//   return <MyPage />;
-// }
-import CreationPage from "@/features/my/creation/CreationPage";
+import MyLikedPage from "@/features/my/home/MyLikedPage";
 
 export default function Page() {
-  return <CreationPage />;
+  return <MyLikedPage />;
 }
+// import CreationPage from "@/features/my/creation/CreationPage";
+
+// export default function Page() {
+//   return <CreationPage />;
+// }

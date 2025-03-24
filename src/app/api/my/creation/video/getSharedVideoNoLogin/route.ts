@@ -20,10 +20,7 @@ export async function GET() {
     // 1) 쿠키 가져오기
     const cookieStore = await cookies();
     const allCookiesArray = cookieStore.getAll();
-    const jwtCookie = allCookiesArray.find(
-      (c) => c.name === "auth-token"
-    );
-
+    
     // 2) 백엔드 요청 헤더 준비
     const cookieHeader = allCookiesArray
       .map((c) => `${c.name}=${c.value}`)
@@ -33,13 +30,8 @@ export async function GET() {
       Cookie: cookieHeader,
     };
 
-    // JWT 토큰이 있으면 Authorization 헤더에 추가
-    if (jwtCookie) {
-      headers["Authorization"] = `Bearer ${jwtCookie.value}`;
-    }
-
     // 3) API URL 로깅
-    const apiUrl = `${baseUrl}/api/videos/shared`;
+    const apiUrl = `${baseUrl}/api/videos/shared/no-login`;
     console.log("요청 전체 URL:", apiUrl);
     console.log("요청 헤더:", headers);
 
