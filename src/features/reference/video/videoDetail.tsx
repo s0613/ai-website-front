@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { formatFileSize, formatDate } from "./utils/formatUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Eye, FileVideo, Info, Layers } from "lucide-react";
 
 // 기본 비디오 정보 인터페이스
 interface VideoBasicInfo {
@@ -186,141 +188,273 @@ export default function VideoDetail({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-400"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-full">
-      {/* 비디오 플레이어 */}
-      <div className="md:w-3/5 bg-black flex items-center justify-center p-4">
-        {videoDetail?.url ? (
-          <video
-            src={videoDetail.url}
-            poster={videoDetail.thumbnailUrl || videoBasicInfo.thumbnailUrl}
-            controls
-            autoPlay
-            className="max-h-[70vh] w-full object-contain"
-          >
-            브라우저가 비디오 태그를 지원하지 않습니다.
-          </video>
-        ) : (
-          // 비디오 URL이 없으면 썸네일만 표시
-          <img
-            src={videoDetail?.thumbnailUrl || videoBasicInfo.thumbnailUrl}
-            alt={videoDetail?.title || videoBasicInfo.name}
-            className="max-h-[70vh] w-full object-contain"
-          />
-        )}
+    <div className="flex flex-col md:flex-row h-full bg-white">
+      {/* 비디오 플레이어 섹션 */}
+      <div className="md:w-3/5 bg-gray-950 flex items-center justify-center p-0">
+        <div className="w-full h-full relative">
+          {videoDetail?.url ? (
+            <video
+              src={videoDetail.url}
+              poster={videoDetail.thumbnailUrl || videoBasicInfo.thumbnailUrl}
+              controls
+              autoPlay
+              className="w-full h-full object-contain max-h-[80vh]"
+            >
+              브라우저가 비디오 태그를 지원하지 않습니다.
+            </video>
+          ) : (
+            <img
+              src={videoDetail?.thumbnailUrl || videoBasicInfo.thumbnailUrl}
+              alt={videoDetail?.title || videoBasicInfo.name}
+              className="w-full h-full object-contain max-h-[80vh]"
+            />
+          )}
+        </div>
       </div>
 
-      {/* 비디오 정보 */}
-      <div className="md:w-2/5 p-6 overflow-y-auto">
-        <h2 className="text-2xl font-bold text-gray-800 mb-1">
-          {videoDetail?.title || videoBasicInfo.name}
-        </h2>
-        <p className="text-gray-600 mb-4">
-          {videoDetail?.creator || videoBasicInfo.creator || "알 수 없음"}
-        </p>
+      {/* 비디오 정보 섹션 - 독립적으로 스크롤 가능하도록 설정 */}
+      <div
+        className="md:w-2/5 overflow-y-auto bg-white border-l border-gray-200"
+        style={{ maxHeight: "80vh" }}
+      >
+        <div className="p-6">
+          {/* 헤더 섹션 */}
+          <div className="mb-6">
+            <h1 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
+              {videoDetail?.title || videoBasicInfo.name}
+            </h1>
 
-        <div className="space-y-4">
-          {/* 프롬프트 - 있는 경우에만 표시 */}
+            <div className="flex items-center text-gray-500 mb-3">
+              <span className="font-medium text-gray-700">
+                {videoDetail?.creator || videoBasicInfo.creator || "알 수 없음"}
+              </span>
+
+              {videoDetail?.createdAt && (
+                <div className="flex items-center ml-4 text-sm">
+                  <Calendar className="w-4 h-4 mr-1 text-gray-400" />
+                  <span>{formatDate(videoDetail.createdAt)}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center text-sm text-gray-500">
+                <Eye className="w-4 h-4 mr-1 text-gray-400" />
+                <span>
+                  {videoDetail?.clickCount?.toLocaleString() || "0"} 조회
+                </span>
+              </div>
+
+              <div className="flex items-center text-sm text-gray-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className={`w-4 h-4 mr-1 ${
+                    isLiked ? "text-sky-500" : "text-gray-400"
+                  }`}
+                >
+                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                </svg>
+                <span>{likeCount.toLocaleString()}</span>
+              </div>
+
+              {videoDetail?.model && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-gray-50 text-gray-700 border-gray-200 font-normal"
+                >
+                  {videoDetail.model}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* 프롬프트 섹션 - 크기 축소 */}
           {videoDetail?.prompt && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-800 mb-2">
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
+                <Info className="w-3.5 h-3.5 mr-1.5 text-sky-500" />
                 프롬프트
-              </h3>
-              <ScrollArea className="h-[120px]">
-                <p className="text-gray-700 pr-4">{videoDetail.prompt}</p>
-              </ScrollArea>
+              </h2>
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                <ScrollArea className="h-[80px]">
+                  <p className="text-gray-700 pr-4 leading-relaxed text-xs">
+                    {videoDetail.prompt}
+                  </p>
+                </ScrollArea>
+              </div>
             </div>
           )}
 
-          {/* 메타데이터 그리드 - 있는 정보만 표시 */}
-          <div className="grid grid-cols-2 gap-4">
-            {videoDetail?.model && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">모델</h3>
-                <p className="mt-1">{videoDetail.model}</p>
-              </div>
-            )}
+          {/* 메타데이터 섹션 */}
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
+              <Layers className="w-3.5 h-3.5 mr-1.5 text-sky-500" />
+              상세 정보
+            </h2>
+            <div className="grid grid-cols-2 gap-y-3 gap-x-6 bg-gray-50 rounded-lg border border-gray-200 p-3">
+              {videoDetail?.model && (
+                <div className="flex items-start">
+                  <FileVideo className="w-3.5 h-3.5 mt-0.5 mr-1.5 text-gray-400" />
+                  <div>
+                    <h3 className="text-xs font-medium text-gray-500 mb-0.5">
+                      모델
+                    </h3>
+                    <p className="text-xs text-gray-800">{videoDetail.model}</p>
+                  </div>
+                </div>
+              )}
 
-            {videoDetail?.format && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">포맷</h3>
-                <p className="mt-1">{videoDetail.format}</p>
-              </div>
-            )}
-
-            {/* 조회수 정보 추가 */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">조회수</h3>
-              <p className="mt-1">
-                {videoDetail?.clickCount?.toLocaleString() || "0"}
-              </p>
-            </div>
-
-            {videoDetail?.sizeInBytes && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">파일 크기</h3>
-                <p className="mt-1">
-                  {formatFileSize(videoDetail.sizeInBytes)}
-                </p>
-              </div>
-            )}
-
-            {videoDetail?.createdAt && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">생성일</h3>
-                <p className="mt-1">{formatDate(videoDetail.createdAt)}</p>
-              </div>
-            )}
-          </div>
-
-          {/* 버튼 영역 - 좋아요 버튼과 재사용하기 버튼 */}
-          <div className="pt-4 flex space-x-4">
-            {/* 좋아요 버튼 */}
-            <button
-              onClick={handleLikeClick}
-              className="flex items-center justify-center py-3 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
-            >
-              <span className="flex items-center">
-                {isLiked ? (
+              {videoDetail?.sizeInBytes && (
+                <div className="flex items-start">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="w-6 h-6 text-pink-500 mr-2"
-                  >
-                    <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-3.5 h-3.5 mt-0.5 mr-1.5 text-gray-400"
                     fill="none"
                     viewBox="0 0 24 24"
-                    strokeWidth={1.5}
                     stroke="currentColor"
-                    className="w-6 h-6 text-gray-600 mr-2"
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                      strokeWidth={2}
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
                     />
                   </svg>
-                )}
-                <span>{likeCount.toLocaleString()}</span>
-              </span>
+                  <div>
+                    <h3 className="text-xs font-medium text-gray-500 mb-0.5">
+                      파일 크기
+                    </h3>
+                    <p className="text-xs text-gray-800">
+                      {formatFileSize(videoDetail.sizeInBytes)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {videoDetail?.status && (
+                <div className="flex items-start">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-3.5 h-3.5 mt-0.5 mr-1.5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div>
+                    <h3 className="text-xs font-medium text-gray-500 mb-0.5">
+                      상태
+                    </h3>
+                    <p className="text-xs text-gray-800">
+                      {videoDetail.status}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {videoDetail?.prompt && (
+                <div className="flex items-start">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-3.5 h-3.5 mt-0.5 mr-1.5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                  <div>
+                    <h3 className="text-xs font-medium text-gray-500 mb-0.5">
+                      카테고리
+                    </h3>
+                    <p className="text-xs text-gray-800">
+                      {getSimpleCategory(videoDetail.prompt)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {videoDetail?.sizeInBytes && (
+                <div className="flex items-start">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-3.5 h-3.5 mt-0.5 mr-1.5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div>
+                    <h3 className="text-xs font-medium text-gray-500 mb-0.5">
+                      길이
+                    </h3>
+                    <p className="text-xs text-gray-800">
+                      {getSimpleDuration(videoDetail.sizeInBytes)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 버튼 영역 */}
+          <div className="flex space-x-3">
+            {/* 좋아요 버튼 - 텍스트 제거, 아이콘만 표시 */}
+            <button
+              onClick={handleLikeClick}
+              className={`flex items-center justify-center w-12 h-12 rounded-full shadow-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                isLiked
+                  ? "bg-sky-50 border border-sky-200 text-sky-700 hover:bg-sky-100 focus:ring-sky-500"
+                  : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 focus:ring-gray-500"
+              }`}
+              aria-label={isLiked ? "좋아요 취소" : "좋아요"}
+              title={isLiked ? "좋아요 취소" : "좋아요"}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                className={`w-6 h-6 ${
+                  isLiked ? "fill-sky-500" : "fill-none stroke-current stroke-2"
+                }`}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                />
+              </svg>
             </button>
 
-            {/* 재사용하기 버튼 */}
             <button
               onClick={handleReuseVideo}
-              className="flex-1 py-3 px-4 bg-black hover:bg-gray-800 text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="flex-1 py-3 px-5 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-md shadow-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 hover:shadow-md hover:translate-y-[-1px]"
             >
-              재사용하기
+              <span>재사용하기</span>
             </button>
           </div>
         </div>

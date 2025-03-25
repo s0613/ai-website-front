@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -121,51 +122,62 @@ const MyLikedPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <header className="flex items-center justify-between border-b px-6 py-4 flex-shrink-0">
+    <div className="flex flex-col h-full bg-gray-50">
+      <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4 flex-shrink-0 bg-white shadow-sm">
         <div className="w-96">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
             <Input
               type="search"
               placeholder="파일 검색..."
-              className="pl-9"
+              className="pl-9 border-gray-200 focus:border-sky-200 focus:ring-1 focus:ring-sky-200 transition-all duration-200"
               value={searchQuery}
               onChange={handleSearchChange}
             />
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/")}
+            className="text-gray-600 hover:text-sky-500 hover:bg-sky-50 transition-all duration-300"
+          >
             <Home className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.push("/my/settings")}
+            className="text-gray-600 hover:text-sky-500 hover:bg-sky-50 transition-all duration-300"
           >
             <Settings className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      <div className="flex-1 p-4 overflow-y-auto">
-        <Tabs defaultValue="like">
-          <TabsList>
-            <TabsTrigger value="like">좋아요</TabsTrigger>
+      <div className="flex-1 p-6 overflow-y-auto">
+        <Tabs defaultValue="like" className="w-full">
+          <TabsList className="bg-gray-100 border border-gray-200">
+            <TabsTrigger
+              value="like"
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-gray-600"
+            >
+              좋아요
+            </TabsTrigger>
           </TabsList>
 
           {/* 탭 내용 */}
-          <div className="mt-4">
+          <div className="mt-6">
             {isLoading ? (
               // 로딩 상태
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-400"></div>
               </div>
             ) : error ? (
               // 에러 상태
-              <div className="text-center py-12">
-                <div className="mx-auto w-12 h-12 text-red-500 mb-4">
+              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-100 p-8">
+                <div className="mx-auto w-12 h-12 text-gray-400 mb-4">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -185,8 +197,7 @@ const MyLikedPage = () => {
                 </h3>
                 <p className="mt-2 text-gray-600">{error}</p>
                 <Button
-                  variant="outline"
-                  className="mt-4"
+                  className="mt-4 bg-gray-900 hover:bg-gray-800 text-white hover:shadow-md transition-all duration-300 hover:translate-y-[-1px]"
                   onClick={() => window.location.reload()}
                 >
                   다시 시도
@@ -194,7 +205,7 @@ const MyLikedPage = () => {
               </div>
             ) : filteredVideos.length === 0 ? (
               // 비디오가 없는 경우
-              <div className="text-center py-12">
+              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-100 p-8">
                 <div className="mx-auto w-12 h-12 text-gray-400 mb-4">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -223,22 +234,22 @@ const MyLikedPage = () => {
               </div>
             ) : (
               // 비디오 그리드
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVideos.map((video) => (
                   <div
                     key={video.id}
                     onClick={() => handleVideoClick(video.id)}
-                    className="bg-white rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
+                    className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md hover:border-sky-100 transition-all duration-300 cursor-pointer overflow-hidden group"
                   >
-                    <div className="h-40 w-full bg-gray-100 relative">
+                    <div className="h-44 w-full bg-gray-100 relative overflow-hidden">
                       {video.thumbnailUrl ? (
                         <img
-                          src={video.thumbnailUrl}
+                          src={video.thumbnailUrl || "/placeholder.svg"}
                           alt={video.videoName}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="flex items-center justify-center h-full bg-gray-200">
+                        <div className="flex items-center justify-center h-full bg-gray-200 group-hover:bg-gray-300 transition-colors duration-300">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
@@ -256,12 +267,12 @@ const MyLikedPage = () => {
                       )}
 
                       {/* 좋아요 뱃지 */}
-                      <div className="absolute bottom-2 right-2 bg-white bg-opacity-90 rounded-full px-2 py-1 flex items-center text-xs font-medium">
+                      <div className="absolute bottom-2 right-2 bg-white bg-opacity-90 rounded-full px-2.5 py-1 flex items-center text-xs font-medium shadow-sm border border-gray-100 group-hover:bg-sky-50 group-hover:border-sky-100 transition-all duration-300">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
                           fill="currentColor"
-                          className="w-4 h-4 text-pink-500 mr-1"
+                          className="w-4 h-4 text-sky-500 mr-1"
                         >
                           <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                         </svg>
@@ -269,7 +280,7 @@ const MyLikedPage = () => {
                       </div>
                     </div>
 
-                    <div className="p-4">
+                    <div className="p-4 group-hover:translate-y-[-2px] transition-transform duration-300">
                       <h3 className="font-medium text-gray-900 truncate">
                         {video.videoName}
                       </h3>
@@ -310,20 +321,20 @@ const MyLikedPage = () => {
       {/* 비디오 상세 정보 모달 */}
       {selectedVideoId !== null && (
         <div
-          className="fixed inset-0 flex justify-center items-center z-50 bg-black/80 p-4"
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/80 p-4 backdrop-blur-sm"
           onClick={handleBackToList}
         >
           <div
-            className="relative bg-white rounded-lg shadow-xl overflow-hidden w-full max-w-4xl mx-auto"
+            className="relative bg-white rounded-lg shadow-2xl overflow-hidden w-full max-w-4xl mx-auto border border-gray-200"
             style={{ maxHeight: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-gray-800 hover:bg-white shadow-md"
+              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-gray-700 hover:text-gray-900 hover:bg-white shadow-md border border-gray-200 hover:border-sky-100 transition-all duration-300 hover:scale-105"
               onClick={handleBackToList}
             >
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
