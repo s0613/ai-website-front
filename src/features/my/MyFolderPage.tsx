@@ -4,7 +4,16 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Folder, MoreHorizontal } from "lucide-react";
+import {
+  Plus,
+  Folder,
+  MoreHorizontal,
+  Loader2,
+  Trash2,
+  AlertTriangle,
+  Calendar,
+  FileVideo,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,10 +37,12 @@ interface FolderType {
   createdAt?: string;
 }
 
-const VideoPage = () => {
+const MyFolderPage = () => {
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 1) 마운트 시 폴더 목록 불러오기
   useEffect(() => {
@@ -41,7 +52,9 @@ const VideoPage = () => {
   // 2) 폴더 목록 조회 API
   const fetchFolders = async () => {
     try {
-      // (예) /api/my/folder GET
+      setIsLoading(true);
+      setError(null);
+
       const response = await fetch("/api/my/folder", {
         method: "GET",
         credentials: "include",
@@ -58,14 +71,22 @@ const VideoPage = () => {
       setFolders(data);
     } catch (error) {
       console.error("폴더 로딩 오류:", error);
-      toast.error("폴더 목록을 불러오는데 실패했습니다");
+      setError(
+        (error as Error).message || "폴더 목록을 불러오는데 실패했습니다"
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // 3) 폴더 생성
   const createFolder = async (folderName: string) => {
+    if (!folderName.trim()) {
+      toast.error("폴더 이름을 입력해주세요");
+      return;
+    }
+
     try {
-      // (예) /api/my/folder/create POST
       const res = await fetch("/api/my/folder/create", {
         method: "POST",
         headers: {
@@ -81,22 +102,19 @@ const VideoPage = () => {
       }
 
       const data = await res.json();
-      console.log("폴더 생성 성공:", data);
-
       fetchFolders();
-      toast.success("폴더가 생성되었습니다.");
+      toast.success("폴더가 생성되었습니다");
       setIsCreateFolderOpen(false);
       setNewFolderName("");
     } catch (err) {
       console.error(err);
-      alert("폴더 생성에 실패했습니다.");
+      toast.error("폴더 생성에 실패했습니다");
     }
   };
 
   // 4) 폴더 삭제
   const deleteFolder = async (folderId: number) => {
     try {
-      // (예) /api/my/folder/{folderId} DELETE
       const response = await fetch(`/api/my/folder/${folderId}`, {
         method: "DELETE",
         credentials: "include",
@@ -117,17 +135,35 @@ const VideoPage = () => {
     }
   };
 
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "날짜 정보 없음";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
-    <div className="p-6">
+    <div className="h-full flex flex-col bg-gray-50 p-6">
       {/* 상단 영역 */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">내 폴더</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">내 폴더</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            영상과 이미지를 폴더로 관리하세요
+          </p>
+        </div>
 
         <div className="flex gap-2">
-          {/* 예시용: 새 영상 생성 버튼(미구현) */}
-          <Button variant="default" className="gap-2">
-            <Plus className="h-4 w-4" /> 새 영상 생성
-          </Button>
+          {/* 새 영상 생성 버튼 */}
+          <Link href="/generation/video">
+            <Button className="gap-2 bg-sky-500 hover:bg-sky-600 text-white">
+              <Plus className="h-4 w-4" /> 새 영상 생성
+            </Button>
+          </Link>
 
           {/* 폴더 생성 버튼 (Dialog) */}
           <Dialog
@@ -135,33 +171,39 @@ const VideoPage = () => {
             onOpenChange={setIsCreateFolderOpen}
           >
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" />
-                <Folder className="h-4 w-4" />
+              <Button
+                variant="outline"
+                className="gap-2 border-gray-200 hover:border-sky-200 hover:bg-sky-50"
+              >
+                <Folder className="h-4 w-4 text-sky-500" />
                 폴더 추가
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>새 폴더 생성</DialogTitle>
+                <DialogTitle className="text-xl font-bold">
+                  새 폴더 생성
+                </DialogTitle>
               </DialogHeader>
               <div className="py-4">
                 <Input
                   placeholder="폴더 이름"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
+                  className="focus:border-sky-300 focus:ring-sky-200"
                 />
               </div>
               <DialogFooter>
                 <Button
                   variant="outline"
                   onClick={() => setIsCreateFolderOpen(false)}
+                  className="border-gray-200"
                 >
                   취소
                 </Button>
                 <Button
-                  variant="default"
                   onClick={() => createFolder(newFolderName)}
+                  className="bg-sky-500 hover:bg-sky-600 text-white"
                 >
                   생성
                 </Button>
@@ -171,84 +213,127 @@ const VideoPage = () => {
         </div>
       </div>
 
-      {/* 폴더 목록 표시 - 컴팩트 그리드 스타일 */}
-      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {folders.map((folder) => (
-          <Link
-            key={folder.id}
-            href={{
-              pathname: `/my/folder/${folder.id}`,
-              query: { folderName: folder.name },
-            }}
-            className="block w-full"
-          >
-            <div className="overflow-hidden hover:shadow-sm transition-all cursor-pointer bg-white rounded-md">
-              {/* 썸네일 영역 - 작은 크기로 변경 */}
-              <div className="aspect-video bg-blue-50 flex items-center justify-center relative">
-                <Folder className="h-10 w-10 text-blue-500" />
-              </div>
-
-              {/* 폴더 정보 */}
-              <div className="p-2">
-                {/* 제목과 메뉴 버튼을 같은 행에 배치 */}
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm line-clamp-1">
-                    {folder.name}
-                  </h3>
-
-                  {/* 액션 메뉴 */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 ml-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          deleteFolder(folder.id);
-                        }}
-                      >
-                        삭제
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {folder.createdAt
-                    ? new Date(folder.createdAt).toLocaleDateString()
-                    : "날짜 정보 없음"}
-                </p>
-              </div>
+      {/* 컨텐츠 영역 */}
+      <div className="flex-1 overflow-auto">
+        {isLoading ? (
+          <div className="flex flex-col justify-center items-center h-64">
+            <Loader2 className="h-10 w-10 text-sky-500 animate-spin mb-4" />
+            <p className="text-gray-600 font-medium">
+              폴더 목록을 불러오는 중...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <div className="bg-red-50 text-red-500 rounded-full p-4 mb-4">
+              <AlertTriangle className="h-10 w-10" />
             </div>
-          </Link>
-        ))}
-      </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              오류가 발생했습니다
+            </h3>
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button
+              className="bg-sky-500 hover:bg-sky-600 text-white"
+              onClick={fetchFolders}
+            >
+              다시 시도
+            </Button>
+          </div>
+        ) : folders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <div className="bg-sky-50 text-sky-500 rounded-full p-4 mb-4">
+              <Folder className="h-10 w-10" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              생성된 폴더가 없습니다
+            </h3>
+            <p className="text-gray-500 mb-5 max-w-md">
+              새로운 폴더를 생성하여 영상과 이미지를 관리해보세요
+            </p>
+            <Button
+              className="bg-sky-500 hover:bg-sky-600 text-white"
+              onClick={() => setIsCreateFolderOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" /> 폴더 생성하기
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {folders.map((folder) => (
+              <Link
+                key={folder.id}
+                href={{
+                  pathname: `/my/folder/${folder.id}`,
+                  query: { folderName: folder.name },
+                }}
+                className="block w-full"
+              >
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200/80 hover:shadow-md hover:border-sky-200 transition-all duration-200 cursor-pointer overflow-hidden group h-full flex flex-col">
+                  {/* 썸네일 영역 */}
+                  <div className="aspect-video bg-sky-50 flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-transparent"></div>
+                    <div className="absolute top-2 right-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          asChild
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white"
+                            onClick={(e) => e.preventDefault()}
+                          >
+                            <MoreHorizontal className="h-4 w-4 text-gray-600" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              // 폴더 이동 기능 (예시)
+                            }}
+                          >
+                            <FileVideo className="h-4 w-4 mr-2 text-gray-500" />
+                            <span>영상 추가</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              deleteFolder(folder.id);
+                            }}
+                            className="text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            <span>폴더 삭제</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="transform group-hover:scale-110 transition-transform duration-300">
+                      <Folder className="h-16 w-16 text-sky-500" />
+                    </div>
+                  </div>
 
-      {/* 폴더가 없을 때 */}
-      {folders.length === 0 && (
-        <div className="flex flex-col items-center justify-center p-12 text-gray-500">
-          <Folder className="h-12 w-12 mb-3" />
-          <p>생성된 폴더가 없습니다</p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => setIsCreateFolderOpen(true)}
-          >
-            폴더 생성하기
-          </Button>
-        </div>
-      )}
+                  {/* 폴더 정보 */}
+                  <div className="p-3 flex-1 flex flex-col">
+                    <h3 className="font-medium text-sm line-clamp-1 text-gray-900 mb-1">
+                      {folder.name}
+                    </h3>
+                    <div className="mt-auto pt-2 flex items-center text-xs text-gray-500">
+                      <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                      <span>{formatDate(folder.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default VideoPage;
+export default MyFolderPage;

@@ -16,10 +16,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="bg-white text-gray-800">
+      <body>
         <AuthProvider>
           <Navbar />
-          <div className="">{children}</div>
+          <div>{children}</div>
         </AuthProvider>
       </body>
     </html>

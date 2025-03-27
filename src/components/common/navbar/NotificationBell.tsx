@@ -30,10 +30,10 @@ export const NotificationBell = ({
       className="mr-2 rounded-full hover:bg-white hover:text-sky-500 transition"
       onClick={toggle}
     >
-      <Bell className="h-4 w-4" />
-      {notifications.length > 0 && (
-        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />
-      )}
+      <div className="relative">
+        <Bell className="h-5 w-5" />
+        <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+      </div>
     </Button>
 
     {isOpen && (

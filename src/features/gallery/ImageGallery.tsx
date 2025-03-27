@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Download, Loader2, ImageIcon, RefreshCw } from "lucide-react";
+import { Download, Loader2, ImageIcon } from "lucide-react";
 
 interface ImageResponse {
   url: string;
@@ -17,7 +17,7 @@ const ImageGallery = () => {
   const [images, setImages] = useState<ImageResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"grid" | "masonry">("masonry");
+  const [view] = useState<"grid" | "masonry">("masonry");
 
   const fetchImages = async () => {
     try {
@@ -93,58 +93,14 @@ const ImageGallery = () => {
 
   return (
     // 전체 컨테이너에서 container, mx-auto, px-4 제거 → w-full, px-0 등으로 대체
-    <div className="w-full py-8 bg-gradient-to-b from-gray-50 via-gray-100 to-gray-200">
+    <div className="w-full py-8 bg-gradient-to-b from-gray-200 via-gray-100 to-gray-50">
       {/* 상단 컨트롤 영역 */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 px-4">
+      <div className="px-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold mb-2 flex items-center text-gray-900">
-            <span className="inline-block w-1.5 h-6 bg-gradient-to-b from-sky-400 to-sky-500 mr-3 rounded-full"></span>
+          <h2 className="text-lg font-bold mb-2 flex items-center text-gray-900">
+            <span className="inline-block w-1.5 h-4 bg-gradient-to-b from-sky-400 to-sky-500 mr-3 rounded-full"></span>
             트렌딩 생성 결과
           </h2>
-          <p className="text-gray-600 text-sm">
-            최근 인기 있는 AI 생성 이미지 컬렉션
-          </p>
-        </div>
-        <div className="flex items-center mt-4 md:mt-0 space-x-4">
-          <button
-            onClick={() => setView("grid")}
-            className={`p-2 rounded-full transition-colors ${
-              view === "grid"
-                ? "bg-gradient-to-r from-sky-400/20 to-sky-500/20 text-sky-700"
-                : "text-gray-500 hover:text-gray-700 hover:bg-white hover:shadow-sm"
-            }`}
-            aria-label="Grid view"
-          >
-            <div className="grid grid-cols-2 gap-0.5">
-              <div className="w-2 h-2 bg-current rounded-sm"></div>
-              <div className="w-2 h-2 bg-current rounded-sm"></div>
-              <div className="w-2 h-2 bg-current rounded-sm"></div>
-              <div className="w-2 h-2 bg-current rounded-sm"></div>
-            </div>
-          </button>
-          <button
-            onClick={() => setView("masonry")}
-            className={`p-2 rounded-full transition-colors ${
-              view === "masonry"
-                ? "bg-gradient-to-r from-sky-400/20 to-sky-500/20 text-sky-700"
-                : "text-gray-500 hover:text-gray-700 hover:bg-white hover:shadow-sm"
-            }`}
-            aria-label="Masonry view"
-          >
-            <div className="flex space-x-0.5">
-              <div className="w-1 h-4 bg-current rounded-sm"></div>
-              <div className="w-1 h-3 bg-current rounded-sm"></div>
-              <div className="w-1 h-5 bg-current rounded-sm"></div>
-              <div className="w-1 h-2 bg-current rounded-sm"></div>
-            </div>
-          </button>
-          <button
-            onClick={fetchImages}
-            className="p-2 rounded-full text-gray-500 hover:text-sky-600 hover:bg-white hover:shadow-sm transition-all duration-300"
-            aria-label="Refresh images"
-          >
-            <RefreshCw size={18} />
-          </button>
         </div>
       </div>
 

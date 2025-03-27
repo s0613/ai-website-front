@@ -1,14 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FiSearch, FiMenu, FiX } from "react-icons/fi";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Camera } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { DesktopNav } from "./DesktopNav";
 import { MobileMenu } from "./MobileMenu";
 
 const Navbar = () => {
   const { isLoggedIn, email, logout, userRole, nickname } = useAuth();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -62,6 +65,13 @@ const Navbar = () => {
     if (isDropdownOpen) setIsDropdownOpen(false);
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
   return (
     <header className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-100 border-b border-gray-200/50 shadow-sm sticky top-0 z-50 h-16 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between relative">
@@ -78,16 +88,25 @@ const Navbar = () => {
 
         {/* 검색창 */}
         <div className="flex-1 mx-4 relative">
-          <label htmlFor="navbar-search" className="sr-only">
-            사진과 일러스트 검색
-          </label>
-          <input
-            id="navbar-search"
-            type="text"
-            placeholder="사진과 일러스트 검색"
-            className="w-full h-10 border border-gray-300 rounded-full pl-10 pr-4 bg-white/90 text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-200 shadow-sm transition-all duration-300 focus:shadow-md"
-          />
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+          <form onSubmit={handleSearch} className="relative">
+            <label htmlFor="navbar-search" className="sr-only">
+              원하는 영상 콘셉트를 입력하세요
+            </label>
+            <input
+              id="navbar-search"
+              type="text"
+              placeholder="원하는 영상 콘셉트를 입력하세요 (예: 우주 여행 영상, 제품 광고)"
+              className="w-full h-10 border border-gray-300 rounded-full pl-10 pr-4 bg-white/90 text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-200 shadow-sm transition-all duration-300 focus:shadow-md"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+            >
+              <FiSearch className="w-5 h-5" />
+            </button>
+          </form>
         </div>
 
         {/* 데스크탑 네비게이션 */}

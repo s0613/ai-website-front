@@ -7,6 +7,20 @@ import {
   formatDate,
 } from "@/features/reference/video/utils/formatUtils";
 import { toast } from "react-hot-toast";
+import {
+  X,
+  Loader2,
+  AlertTriangle,
+  Calendar,
+  Eye,
+  Heart,
+  Share2,
+  Lock,
+  RefreshCw,
+  Globe,
+  Download,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CreationDetailProps {
   videoId: number;
@@ -101,10 +115,8 @@ export default function CreationDetail({
       const data = await response.json();
 
       // API 응답에서 shared 필드를 확인하고 상태 업데이트
-      // 응답에 shared 필드가 없을 경우 현재 상태 반전
       const newSharingStatus =
         data.shared !== undefined ? data.shared : !isSharing;
-
       setIsSharing(newSharingStatus);
 
       // 성공 메시지 표시
@@ -122,39 +134,41 @@ export default function CreationDetail({
     }
   };
 
+  // 다운로드 핸들러
+  const handleDownload = () => {
+    if (!video || !video.url) return;
+
+    const link = document.createElement("a");
+    link.href = video.url;
+    link.download = `${video.name || "video"}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex flex-col justify-center items-center h-full p-8 bg-white/80 rounded-lg">
+        <Loader2 className="h-10 w-10 text-sky-500 animate-spin mb-4" />
+        <p className="text-gray-600 font-medium">작업물을 불러오는 중...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8">
-        <div className="text-red-500 text-xl mb-4">
-          <svg
-            className="w-12 h-12 mx-auto"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-          <p className="mt-2">{error}</p>
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-white/80 rounded-lg">
+        <div className="bg-red-50 text-red-500 rounded-full p-4 mb-4">
+          <AlertTriangle className="h-10 w-10" />
         </div>
-        <button
-          onClick={onBack}
-          className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
-        >
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          오류가 발생했습니다
+        </h3>
+        <p className="text-red-500 mb-4 text-center">{error}</p>
+        <Button onClick={onBack} variant="outline" className="gap-2">
+          <X className="h-4 w-4" />
           돌아가기
-        </button>
+        </Button>
       </div>
     );
   }
@@ -162,9 +176,9 @@ export default function CreationDetail({
   if (!video) return null;
 
   return (
-    <div className="bg-white w-full h-full max-h-[85vh] flex flex-col md:flex-row rounded-lg shadow-lg overflow-hidden">
+    <div className="bg-white w-full h-full max-h-[85vh] flex flex-col md:flex-row rounded-xl shadow-md overflow-hidden border border-gray-200/80">
       {/* 왼쪽: 비디오 플레이어 */}
-      <div className="md:w-3/5 p-4 bg-black flex items-center justify-center">
+      <div className="md:w-3/5 bg-black flex items-center justify-center">
         <div className="w-full h-full flex items-center">
           <video
             src={video.url}
@@ -172,6 +186,7 @@ export default function CreationDetail({
             className="w-full max-h-[70vh] object-contain"
             poster={video.thumbnailUrl}
             autoPlay
+            controlsList="nodownload"
           >
             브라우저가 비디오 태그를 지원하지 않습니다.
           </video>
@@ -179,88 +194,135 @@ export default function CreationDetail({
       </div>
 
       {/* 오른쪽: 비디오 정보 */}
-      <div className="md:w-2/5 p-6 overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{video.name}</h2>
-          <button
+      <div className="md:w-2/5 p-6 overflow-y-auto bg-white border-l border-gray-200">
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="text-xl font-bold text-gray-900 leading-tight">
+            {video.name}
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onBack}
-            className="text-gray-500 hover:text-gray-700"
+            className="rounded-full h-8 w-8 hover:bg-gray-100"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+            <X className="h-5 w-5 text-gray-500" />
+          </Button>
         </div>
 
-        <div className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-800 mb-2">프롬프트</h3>
-            <p className="text-gray-700">
+        <div className="space-y-5">
+          <div className="bg-gray-50/80 p-4 rounded-lg border border-gray-100">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">프롬프트</h3>
+            <p className="text-gray-800 whitespace-pre-wrap text-sm">
               {video.prompt || "프롬프트 정보가 없습니다."}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">모델</h3>
-              <p className="mt-1">{video.model || "정보 없음"}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">모드</h3>
-              <p className="mt-1">{video.mode || "정보 없음"}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">조회수</h3>
-              <p className="mt-1">
-                {video.clickCount?.toLocaleString() || "0"}
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">좋아요</h3>
-              <p className="mt-1">{video.likeCount?.toLocaleString() || "0"}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">생성일</h3>
-              <p className="mt-1">{formatDate(video.createdAt)}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">공유 상태</h3>
-              <p className="mt-1">{isSharing ? "공개" : "비공개"}</p>
-            </div>
+            <InfoCard
+              label="모델"
+              value={video.model || "정보 없음"}
+              icon={
+                <div className="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center text-sky-500">
+                  AI
+                </div>
+              }
+            />
+            <InfoCard
+              label="모드"
+              value={video.mode || "정보 없음"}
+              icon={
+                <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-purple-500">
+                  M
+                </div>
+              }
+            />
+            <InfoCard
+              label="조회수"
+              value={video.clickCount?.toLocaleString() || "0"}
+              icon={<Eye className="h-4 w-4 text-gray-400" />}
+            />
+            <InfoCard
+              label="좋아요"
+              value={video.likeCount?.toLocaleString() || "0"}
+              icon={<Heart className="h-4 w-4 text-gray-400" />}
+            />
+            <InfoCard
+              label="생성일"
+              value={formatDate(video.createdAt)}
+              icon={<Calendar className="h-4 w-4 text-gray-400" />}
+            />
+            <InfoCard
+              label="공유 상태"
+              value={isSharing ? "공개" : "비공개"}
+              icon={
+                isSharing ? (
+                  <Globe className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <Lock className="h-4 w-4 text-gray-400" />
+                )
+              }
+            />
           </div>
 
           {/* 작업 버튼 영역 */}
-          <div className="pt-4 border-t border-gray-200 grid grid-cols-2 gap-4">
-            <button
+          <div className="pt-5 border-t border-gray-200 grid grid-cols-2 gap-3">
+            <Button
               onClick={handleReuseVideo}
-              className="py-3 px-4 bg-black hover:bg-gray-800 text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="py-2 gap-1.5 bg-gray-900 hover:bg-gray-800 text-white"
             >
+              <RefreshCw className="h-4 w-4" />
               재사용하기
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleToggleShare}
-              className={`py-3 px-4 ${
+              className={`py-2 gap-1.5 ${
                 isSharing
                   ? "bg-red-500 hover:bg-red-600"
-                  : "bg-blue-500 hover:bg-blue-600"
-              } text-white font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                  : "bg-sky-500 hover:bg-sky-600"
+              } text-white`}
             >
-              {isSharing ? "비공개로 전환" : "공개로 전환"}
-            </button>
+              {isSharing ? (
+                <>
+                  <Lock className="h-4 w-4" />
+                  비공개로 전환
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-4 w-4" />
+                  공개로 전환
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              className="py-2 gap-1.5 col-span-2"
+            >
+              <Download className="h-4 w-4" />
+              다운로드
+            </Button>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+// 정보 카드 컴포넌트
+const InfoCard = ({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon?: React.ReactNode;
+}) => (
+  <div className="flex items-center space-x-2.5">
+    {icon}
+    <div>
+      <h3 className="text-xs font-medium text-gray-500">{label}</h3>
+      <p className="text-sm font-medium text-gray-900 mt-0.5">{value}</p>
+    </div>
+  </div>
+);

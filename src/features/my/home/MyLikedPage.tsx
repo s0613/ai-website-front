@@ -1,12 +1,17 @@
 "use client";
 
-import type React from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, Search, Settings } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  Heart,
+  Eye,
+  Film,
+  Clock,
+  Loader2,
+  AlertTriangle,
+  X,
+} from "lucide-react";
 import VideoDetail from "@/features/reference/video/videoDetail";
 
 // 비디오 데이터 타입 정의
@@ -32,12 +37,9 @@ interface VideoBasicInfo {
 }
 
 const MyLikedPage = () => {
-  const router = useRouter();
   const [likedVideos, setLikedVideos] = useState<LikedVideo[]>([]);
-  const [filteredVideos, setFilteredVideos] = useState<LikedVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
 
   // 좋아요한 비디오 목록 가져오기
@@ -56,9 +58,7 @@ const MyLikedPage = () => {
         }
 
         const data = await response.json();
-        console.log("좋아요한 비디오:", data);
         setLikedVideos(data);
-        setFilteredVideos(data);
       } catch (err) {
         console.error("좋아요한 비디오 목록 조회 오류:", err);
         setError((err as Error).message);
@@ -70,22 +70,6 @@ const MyLikedPage = () => {
     fetchLikedVideos();
   }, []);
 
-  // 검색 기능
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredVideos(likedVideos);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = likedVideos.filter(
-        (video) =>
-          video.videoName.toLowerCase().includes(query) ||
-          video.creator.toLowerCase().includes(query) ||
-          (video.prompt && video.prompt.toLowerCase().includes(query))
-      );
-      setFilteredVideos(filtered);
-    }
-  }, [searchQuery, likedVideos]);
-
   // 비디오 클릭 핸들러 - 상세 정보 모달 표시
   const handleVideoClick = (videoId: number) => {
     setSelectedVideoId(videoId);
@@ -94,11 +78,6 @@ const MyLikedPage = () => {
   // 목록으로 돌아가기 핸들러
   const handleBackToList = () => {
     setSelectedVideoId(null);
-  };
-
-  // 검색어 변경 핸들러
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
   };
 
   // LikedVideo를 VideoBasicInfo로 변환하는 도우미 함수
@@ -121,49 +100,27 @@ const MyLikedPage = () => {
     };
   };
 
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4 flex-shrink-0 bg-white shadow-sm">
-        <div className="w-96">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-            <Input
-              type="search"
-              placeholder="파일 검색..."
-              className="pl-9 border-gray-200 focus:border-sky-200 focus:ring-1 focus:ring-sky-200 transition-all duration-200"
-              value={searchQuery}
-              onChange={handleSearchChange}
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/")}
-            className="text-gray-600 hover:text-sky-500 hover:bg-sky-50 transition-all duration-300"
-          >
-            <Home className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/my/settings")}
-            className="text-gray-600 hover:text-sky-500 hover:bg-sky-50 transition-all duration-300"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
-      </header>
-
       <div className="flex-1 p-6 overflow-y-auto">
         <Tabs defaultValue="like" className="w-full">
-          <TabsList className="bg-gray-100 border border-gray-200">
+          <TabsList className="bg-gray-100/80 p-0.5 rounded-lg">
             <TabsTrigger
               value="like"
-              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-gray-600"
+              className="flex items-center gap-1.5 py-2 data-[state=active]:bg-white data-[state=active]:text-sky-600 text-gray-600 shadow-none data-[state=active]:shadow-sm"
             >
-              좋아요
+              <Heart className="h-4 w-4" />
+              <span>좋아요</span>
             </TabsTrigger>
           </TabsList>
 
@@ -171,143 +128,97 @@ const MyLikedPage = () => {
           <div className="mt-6">
             {isLoading ? (
               // 로딩 상태
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-400"></div>
+              <div className="flex flex-col justify-center items-center h-64">
+                <Loader2 className="h-10 w-10 text-sky-500 animate-spin mb-4" />
+                <p className="text-gray-600 font-medium">
+                  좋아요한 작업물을 불러오는 중...
+                </p>
               </div>
             ) : error ? (
               // 에러 상태
               <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-100 p-8">
-                <div className="mx-auto w-12 h-12 text-gray-400 mb-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                    />
-                  </svg>
+                <div className="bg-red-50 text-red-500 rounded-full p-4 mx-auto w-16 h-16 flex items-center justify-center mb-4">
+                  <AlertTriangle className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   오류가 발생했습니다
                 </h3>
-                <p className="mt-2 text-gray-600">{error}</p>
+                <p className="text-red-500 mb-4">{error}</p>
                 <Button
-                  className="mt-4 bg-gray-900 hover:bg-gray-800 text-white hover:shadow-md transition-all duration-300 hover:translate-y-[-1px]"
+                  className="bg-sky-500 hover:bg-sky-600 text-white"
                   onClick={() => window.location.reload()}
                 >
                   다시 시도
                 </Button>
               </div>
-            ) : filteredVideos.length === 0 ? (
+            ) : likedVideos.length === 0 ? (
               // 비디오가 없는 경우
               <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-100 p-8">
-                <div className="mx-auto w-12 h-12 text-gray-400 mb-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                    />
-                  </svg>
+                <div className="bg-sky-50 text-sky-500 rounded-full p-4 mx-auto w-16 h-16 flex items-center justify-center mb-4">
+                  <Heart className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {searchQuery
-                    ? "검색 결과가 없습니다"
-                    : "좋아요한 비디오가 없습니다"}
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  좋아요한 비디오가 없습니다
                 </h3>
-                <p className="mt-2 text-gray-600">
-                  {searchQuery
-                    ? "다른 검색어를 입력해보세요"
-                    : "비디오를 좋아요하면 여기에 표시됩니다"}
+                <p className="text-gray-500 mb-4 max-w-md mx-auto">
+                  비디오를 좋아요하면 여기에 표시됩니다
                 </p>
               </div>
             ) : (
               // 비디오 그리드
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredVideos.map((video) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {likedVideos.map((video) => (
                   <div
                     key={video.id}
                     onClick={() => handleVideoClick(video.id)}
-                    className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md hover:border-sky-100 transition-all duration-300 cursor-pointer overflow-hidden group"
+                    className="bg-white rounded-lg shadow-sm border border-gray-200/80 hover:shadow-md hover:border-sky-200 transition-all duration-300 cursor-pointer overflow-hidden group"
                   >
-                    <div className="h-44 w-full bg-gray-100 relative overflow-hidden">
+                    <div className="aspect-video bg-gray-100 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-10">
+                        <div className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                          <Film className="w-6 h-6 text-sky-500" />
+                        </div>
+                      </div>
+
                       {video.thumbnailUrl ? (
                         <img
-                          src={video.thumbnailUrl || "/placeholder.svg"}
+                          src={video.thumbnailUrl}
                           alt={video.videoName}
                           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="flex items-center justify-center h-full bg-gray-200 group-hover:bg-gray-300 transition-colors duration-300">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-12 h-12 text-gray-400"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"
-                            />
-                          </svg>
+                        <div className="flex items-center justify-center h-full bg-gray-200">
+                          <Film className="w-12 h-12 text-gray-400" />
                         </div>
                       )}
 
+                      {/* 그라데이션 오버레이 */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+
                       {/* 좋아요 뱃지 */}
-                      <div className="absolute bottom-2 right-2 bg-white bg-opacity-90 rounded-full px-2.5 py-1 flex items-center text-xs font-medium shadow-sm border border-gray-100 group-hover:bg-sky-50 group-hover:border-sky-100 transition-all duration-300">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="w-4 h-4 text-sky-500 mr-1"
-                        >
-                          <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-                        </svg>
-                        {video.likeCount}
+                      <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center text-xs font-medium shadow-sm">
+                        <Heart className="w-3.5 h-3.5 text-sky-500 mr-1 fill-current" />
+                        <span>{video.likeCount}</span>
                       </div>
                     </div>
 
-                    <div className="p-4 group-hover:translate-y-[-2px] transition-transform duration-300">
-                      <h3 className="font-medium text-gray-900 truncate">
+                    <div className="p-3">
+                      <h3 className="font-medium text-sm line-clamp-1 text-gray-900 mb-1">
                         {video.videoName}
                       </h3>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-1">
                         {video.creator}
                       </p>
-                      <div className="flex items-center mt-2 text-xs text-gray-500">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="w-4 h-4 mr-1"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        {video.clickCount || 0}
+
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center">
+                          <Eye className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                          <span>{video.clickCount || 0}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Clock className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                          <span>{formatDate(video.createdAt)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -321,31 +232,20 @@ const MyLikedPage = () => {
       {/* 비디오 상세 정보 모달 */}
       {selectedVideoId !== null && (
         <div
-          className="fixed inset-0 flex justify-center items-center z-50 bg-black/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300"
           onClick={handleBackToList}
         >
           <div
-            className="relative bg-white rounded-lg shadow-2xl overflow-hidden w-full max-w-4xl mx-auto border border-gray-200"
+            className="relative bg-white rounded-xl shadow-xl overflow-hidden w-full max-w-4xl mx-auto border border-gray-200 animate-in zoom-in-95 duration-300"
             style={{ maxHeight: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-gray-700 hover:text-gray-900 hover:bg-white shadow-md border border-gray-200 hover:border-sky-100 transition-all duration-300 hover:scale-105"
+              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-gray-700 shadow-md hover:bg-gray-50 transition-colors border border-gray-200"
               onClick={handleBackToList}
+              aria-label="닫기"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <X className="w-4 h-4" />
             </button>
             <div className="h-full overflow-y-auto">
               <VideoDetail
