@@ -1,4 +1,4 @@
-import VideoReferencePage from "@/features/reference/video/main";
+import VideoReferencePage from "@/features/video/videoReference/main";
 
 export default function Page() {
   return <VideoReferencePage />;

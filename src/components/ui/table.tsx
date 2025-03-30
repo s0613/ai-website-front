@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { cn } from "@/features/reference/video/utils/utils";
+import { cn } from "@/features/video/types/utils";
 
 const Table = React.forwardRef<
   HTMLTableElement,

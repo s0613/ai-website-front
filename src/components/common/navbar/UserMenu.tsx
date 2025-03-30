@@ -2,8 +2,8 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "./UserAvatar";
+import { logout as userLogout } from "@/features/user/services/UserService";
 
 interface Props {
   email: string;
@@ -20,10 +20,18 @@ export const UserMenu = ({
   nickname,
   userRole,
   onLogout,
-  onBadgeClick,
   isOpen,
   setOpen,
 }: Props) => {
+  const handleLogout = async () => {
+    try {
+      await userLogout(); // UserService의 logout 함수 호출
+      onLogout(); // 기존 로그아웃 로직 실행 (상태 초기화)
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+    }
+  };
+
   return (
     <div className="relative" onMouseEnter={() => setOpen(true)}>
       <UserAvatar email={email} />
@@ -54,7 +62,7 @@ export const UserMenu = ({
             </Link>
           )}
           <button
-            onClick={onLogout}
+            onClick={handleLogout}
             className="w-full text-left block px-4 py-2 text-sm hover:bg-sky-50 hover:text-sky-600"
           >
             로그아웃

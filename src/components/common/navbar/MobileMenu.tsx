@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "./UserAvatar";
+import { logout as userLogout } from "@/features/user/services/UserService";
 
 interface Props {
   isLoggedIn: boolean;
@@ -20,9 +21,18 @@ export const MobileMenu = ({
   nickname,
   userRole,
   onLogout,
-  onBadgeClick,
   closeMenu,
 }: Props) => {
+  const handleLogout = async () => {
+    try {
+      await userLogout(); // UserService의 logout 함수 호출
+      closeMenu();
+      onLogout(); // 기존 로그아웃 로직 실행 (상태 초기화)
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+    }
+  };
+
   return (
     <div className="md:hidden px-4 pb-4 bg-white shadow-lg rounded-b-xl mt-1 mx-2 border border-gray-200/70 transition">
       <Link
@@ -73,10 +83,7 @@ export const MobileMenu = ({
             </Link>
           )}
           <button
-            onClick={() => {
-              closeMenu();
-              onLogout();
-            }}
+            onClick={handleLogout}
             className="block w-full text-left py-2.5 my-1 px-3 hover:bg-gray-50"
           >
             로그아웃

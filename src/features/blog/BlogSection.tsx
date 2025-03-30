@@ -5,15 +5,8 @@ import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { Calendar, User, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-
-interface Blog {
-  title: string;
-  subtitle: string;
-  author: string;
-  content: string; // Markdown
-  image: string;
-  date: string;
-}
+import { getBlogById } from "./services/BlogService";
+import { Blog } from "./types/Blog";
 
 const BlogSection: React.FC = () => {
   const { id } = useParams();
@@ -30,14 +23,13 @@ const BlogSection: React.FC = () => {
 
     const fetchData = async () => {
       try {
-        const res = await fetch(`/api/admin/blog/blogSection/${id}`);
-        if (!res.ok) {
-          throw new Error("블로그 데이터를 가져오는 데 실패했습니다.");
-        }
-        const data: Blog = await res.json();
+        // id가 배열인 경우 첫 번째 요소를 사용하도록 변환
+        const blogId = Array.isArray(id) ? id[0] : id;
+        const data = await getBlogById(blogId);
         setBlog(data);
-      } catch {
-        setError("오류 발생");
+      } catch (error) {
+        setError("블로그 데이터를 가져오는 데 실패했습니다.");
+        console.error("블로그 조회 오류:", error);
       } finally {
         setLoading(false);
       }
@@ -78,11 +70,10 @@ const BlogSection: React.FC = () => {
           </h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <Link
-            href="/blog"
+            href="/blog/blogList"
             className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors duration-200"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            블로그 목록으로 돌아가기
           </Link>
         </div>
       </div>
@@ -114,33 +105,40 @@ const BlogSection: React.FC = () => {
             요청하신 블로그 게시물이 존재하지 않거나 삭제되었습니다.
           </p>
           <Link
-            href="/blog"
+            href="/blog/blogList"
             className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors duration-200"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            블로그 목록으로 돌아가기
           </Link>
         </div>
       </div>
     );
   }
 
+  // 날짜 포맷팅
+  const formattedDate = blog.date
+    ? new Date(blog.date).toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "날짜 정보 없음";
+
   return (
     <section className="py-12 px-4 bg-white">
       <div className="max-w-4xl mx-auto">
         <Link
-          href="/blog"
+          href="/blog/blogList"
           className="inline-flex items-center text-gray-600 hover:text-sky-600 mb-8 transition-colors duration-200"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          <span>모든 블로그 글</span>
         </Link>
 
         <article>
           <div className="relative mb-8 rounded-xl overflow-hidden shadow-md">
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
             <img
-              src={blog.image || "/placeholder.svg"}
+              src={blog.image}
               alt={blog.title}
               className="w-full h-[400px] object-cover"
             />
@@ -161,7 +159,7 @@ const BlogSection: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                <span>{blog.date}</span>
+                <span>{formattedDate}</span>
               </div>
             </div>
           </div>

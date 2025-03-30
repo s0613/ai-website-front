@@ -1,4 +1,4 @@
-import ImageGallery from "@/features/gallery/ImageGallery";
+import ImageGallery from "@/features/hero/Gallery";
 import HeroSection from "../features/hero/HeroSection";
 
 export default function HomePage() {

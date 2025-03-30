@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
-import BlogCard from "./BlogCard";
+import { getBlogList } from "./services/BlogService";
+import { Blog } from "./types/Blog";
 
 // 애니메이션 효과
 const fadeIn = {
@@ -13,32 +14,20 @@ const fadeIn = {
   transition: { duration: 1.2 },
 };
 
-interface BlogPost {
-  id: number;
-  image: string;
-  title: string;
-  subtitle: string;
-  author: string;
-  date: string;
-}
-
 const BlogList = () => {
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [blogPosts, setBlogPosts] = useState<Blog[]>([]);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchBlogPosts = async () => {
       try {
-        const response = await fetch("/api/admin/blog/blogList");
-        if (!response.ok) {
-          throw new Error("블로그 데이터를 가져오는 데 실패했습니다.");
-        }
-        const data = await response.json();
+        // BlogService를 사용하여 데이터 가져오기
+        const data = await getBlogList();
         setBlogPosts(data);
       } catch (err) {
         console.error(err);
-        setError("오류 발생");
+        setError("블로그 데이터를 가져오는 데 실패했습니다.");
       } finally {
         setLoading(false);
       }
@@ -108,25 +97,12 @@ const BlogList = () => {
     >
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <motion.div
-            {...fadeIn}
-            className="inline-block mb-5 px-5 py-1.5 rounded-full bg-gray-100 text-gray-800 text-sm font-medium backdrop-blur-sm border border-gray-200/50"
-          >
-            지식의 공유
-          </motion.div>
           <motion.h1
             {...fadeIn}
             className="text-4xl md:text-5xl font-bold text-gray-900 mb-8"
           >
             AI 영상 제작의 <span className="text-sky-500">인사이트</span>
           </motion.h1>
-          <motion.p
-            {...fadeIn}
-            className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed"
-          >
-            창의적인 콘텐츠 제작의 세계를 탐험하고 전문가들의 노하우를
-            배워보세요.
-          </motion.p>
         </div>
 
         <motion.div
@@ -135,7 +111,7 @@ const BlogList = () => {
         >
           {blogPosts.map((post, index) => (
             <motion.div
-              key={post.id}
+              key={post.id || index}
               {...fadeIn}
               whileHover={{ y: -8, transition: { duration: 0.2 } }}
             >
@@ -175,7 +151,11 @@ const BlogList = () => {
                       <span className="text-gray-700 font-medium">
                         {post.author}
                       </span>
-                      <span className="text-gray-500">{post.date}</span>
+                      <span className="text-gray-500">
+                        {post.date
+                          ? new Date(post.date).toLocaleDateString("ko-KR")
+                          : "날짜 없음"}
+                      </span>
                     </div>
                   </div>
                 </div>

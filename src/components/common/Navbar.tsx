@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { FiSearch, FiMenu, FiX } from "react-icons/fi";
 import { Bell, Sparkles } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../features/user/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
