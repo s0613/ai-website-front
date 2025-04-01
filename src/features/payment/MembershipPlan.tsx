@@ -78,24 +78,21 @@ const PlanCard: React.FC<PlanProps> = ({
   return (
     <motion.div {...fadeIn} className="h-full">
       <Card
-        className={`h-full flex flex-col relative cursor-pointer transition-all duration-500 hover:shadow-xl overflow-hidden group ${
-          recommended
-            ? "border-sky-400 bg-gradient-to-br from-white to-sky-50"
-            : "border-gray-200 bg-white"
-        }`}
+        className={`h-full flex flex-col relative cursor-pointer transition-all duration-500 hover:shadow-xl overflow-hidden group ${recommended
+          ? "border-sky-400 bg-gradient-to-br from-white to-sky-50"
+          : "border-gray-200 bg-white"
+          }`}
       >
         <div
-          className={`absolute inset-0 ${
-            recommended
-              ? "bg-gradient-to-br from-sky-50 to-sky-100"
-              : "bg-gray-50"
-          } opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+          className={`absolute inset-0 ${recommended
+            ? "bg-gradient-to-br from-sky-50 to-sky-100"
+            : "bg-gray-50"
+            } opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
         />
 
         <div
-          className={`absolute bottom-0 left-0 w-full h-1 ${
-            recommended ? "bg-sky-500" : "bg-gray-300"
-          } transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out`}
+          className={`absolute bottom-0 left-0 w-full h-1 ${recommended ? "bg-sky-500" : "bg-gray-300"
+            } transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out`}
         />
 
         {recommended && (
@@ -108,11 +105,9 @@ const PlanCard: React.FC<PlanProps> = ({
           className={`relative z-10 pb-4 ${recommended ? "bg-sky-100/40" : ""}`}
         >
           <CardTitle
-            className={`text-center text-xl ${
-              recommended ? "text-sky-700" : "text-gray-900"
-            } group-hover:${
-              recommended ? "text-sky-800" : "text-gray-900"
-            } transition-colors duration-300`}
+            className={`text-center text-xl ${recommended ? "text-sky-700" : "text-gray-900"
+              } group-hover:${recommended ? "text-sky-800" : "text-gray-900"
+              } transition-colors duration-300`}
           >
             {title}
           </CardTitle>
@@ -121,9 +116,8 @@ const PlanCard: React.FC<PlanProps> = ({
         <CardContent className="flex-grow flex flex-col pt-2 pb-6 relative z-10">
           <div className="text-center mb-6">
             <span
-              className={`text-3xl font-bold ${
-                recommended ? "text-sky-700" : "text-gray-900"
-              }`}
+              className={`text-3xl font-bold ${recommended ? "text-sky-700" : "text-gray-900"
+                }`}
             >
               {typeof price === "number" ? `₩${price.toLocaleString()}` : price}
             </span>
@@ -138,9 +132,8 @@ const PlanCard: React.FC<PlanProps> = ({
               </div>
             )}
             <div
-              className={`font-medium mt-2 ${
-                recommended ? "text-sky-500" : "text-primary"
-              }`}
+              className={`font-medium mt-2 ${recommended ? "text-sky-500" : "text-primary"
+                }`}
             >
               {credits} 크레딧{" "}
               {!isStarterOrBusiness &&
@@ -159,17 +152,15 @@ const PlanCard: React.FC<PlanProps> = ({
               <div key={index} className="flex items-center">
                 {feature.included ? (
                   <Check
-                    className={`h-4 w-4 mr-3 flex-shrink-0 ${
-                      recommended ? "text-sky-500" : "text-primary"
-                    }`}
+                    className={`h-4 w-4 mr-3 flex-shrink-0 ${recommended ? "text-sky-500" : "text-primary"
+                      }`}
                   />
                 ) : (
                   <div className="w-4 mr-3 flex-shrink-0" />
                 )}
                 <span
-                  className={`text-sm ${
-                    feature.included ? "" : "text-muted-foreground"
-                  }`}
+                  className={`text-sm ${feature.included ? "" : "text-muted-foreground"
+                    }`}
                 >
                   {feature.text}
                 </span>
@@ -182,11 +173,10 @@ const PlanCard: React.FC<PlanProps> = ({
               <Link href="/">
                 <Button
                   variant="outline"
-                  className={`w-full ${
-                    recommended
-                      ? "bg-sky-100 hover:bg-sky-200 text-sky-700 border-sky-300"
-                      : "bg-primary/10 hover:bg-primary/20 text-primary"
-                  } active:scale-[0.98] shadow-sm hover:shadow`}
+                  className={`w-full ${recommended
+                    ? "bg-sky-100 hover:bg-sky-200 text-sky-700 border-sky-300"
+                    : "bg-primary/10 hover:bg-primary/20 text-primary"
+                    } active:scale-[0.98] shadow-sm hover:shadow`}
                   size="lg"
                 >
                   문의하기
@@ -196,17 +186,16 @@ const PlanCard: React.FC<PlanProps> = ({
               <Link
                 href={
                   title === "스타터"
-                    ? "/dashboard"
+                    ? "/generation/video"
                     : `/payment/form?plan=${title}&price=${getPriceString()}&credits=${credits}&billing=${billingType}`
                 }
               >
                 <Button
                   variant={recommended ? "default" : "outline"}
-                  className={`w-full ${
-                    recommended
-                      ? "bg-sky-500 hover:bg-sky-600 active:bg-sky-700"
-                      : "hover:bg-gray-100 active:bg-gray-200"
-                  } group-hover:translate-y-0.5 transition-all duration-300 active:scale-[0.98] shadow-sm hover:shadow`}
+                  className={`w-full ${recommended
+                    ? "bg-sky-500 hover:bg-sky-600 active:bg-sky-700"
+                    : "hover:bg-gray-100 active:bg-gray-200"
+                    } group-hover:translate-y-0.5 transition-all duration-300 active:scale-[0.98] shadow-sm hover:shadow`}
                   size="lg"
                 >
                   {title === "스타터" ? "시작하기" : "구매하기"}
@@ -230,15 +219,9 @@ export default function MembershipPlan() {
       title: "스타터",
       price: "무료",
       credits: 30,
-      description:
-        "AI 이미지 생성을 처음 시작하는 분들을 위한 무료 체험 패키지",
+      description: "AI 이미지 생성을 처음 시작하는 분들을 위한 무료 체험 크레딧",
       features: [
         { text: "30 크레딧 제공", included: true },
-        { text: "기본 이미지 편집 도구", included: true },
-        { text: "표준 해상도", included: true },
-        { text: "이메일 지원", included: true },
-        { text: "AI 스타일 추천", included: false },
-        { text: "크레딧 30일 유효기간", included: true },
       ],
       recommended: false,
       isBusinessPlan: false,
@@ -250,11 +233,6 @@ export default function MembershipPlan() {
       description: "개인 사용자를 위한 합리적인 크레딧 패키지",
       features: [
         { text: "100 크레딧 제공", included: true },
-        { text: "중급 이미지 편집 도구", included: true },
-        { text: "고해상도 지원", included: true },
-        { text: "이메일 지원", included: true },
-        { text: "AI 스타일 추천", included: false },
-        { text: "크레딧 45일 유효기간", included: true },
       ],
       recommended: false,
       isBusinessPlan: false,
@@ -266,11 +244,6 @@ export default function MembershipPlan() {
       description: "전문가를 위한 고급 크레딧 패키지",
       features: [
         { text: "250 크레딧 제공", included: true },
-        { text: "고급 이미지 편집 도구", included: true },
-        { text: "최고 해상도 출력", included: true },
-        { text: "우선 이메일 지원", included: true },
-        { text: "AI 스타일 추천", included: true },
-        { text: "크레딧 60일 유효기간", included: true },
       ],
       recommended: true,
       isBusinessPlan: false,
@@ -279,15 +252,9 @@ export default function MembershipPlan() {
       title: "비즈니스",
       price: "문의",
       credits: 500,
-      description:
-        "기업과 팀을 위한 대용량 크레딧과 맞춤형 기능이 필요하신가요? 비즈니스 전용 혜택과 함께 기업에 최적화된 견적을 제공합니다.",
+      description: "기업과 팀을 위한 대용량 크레딧 패키지",
       features: [
         { text: "500+ 크레딧 제공", included: true },
-        { text: "전체 편집 기능 액세스", included: true },
-        { text: "최대 해상도 출력", included: true },
-        { text: "24/7 전용 지원", included: true },
-        { text: "팀 협업 기능", included: true },
-        { text: "기업 전용 API 액세스", included: true },
       ],
       recommended: false,
       isBusinessPlan: true,
@@ -299,15 +266,9 @@ export default function MembershipPlan() {
       title: "스타터",
       price: "무료",
       credits: 30,
-      description:
-        "AI 이미지 생성을 처음 시작하는 분들을 위한 무료 체험 패키지",
+      description: "AI 이미지 생성을 처음 시작하는 분들을 위한 무료 체험 크레딧",
       features: [
         { text: "30 크레딧 제공", included: true },
-        { text: "기본 이미지 편집 도구", included: true },
-        { text: "표준 해상도", included: true },
-        { text: "이메일 지원", included: true },
-        { text: "AI 스타일 추천", included: false },
-        { text: "크레딧 30일 유효기간", included: true },
       ],
       recommended: false,
       isBusinessPlan: false,
@@ -315,17 +276,11 @@ export default function MembershipPlan() {
     {
       title: "베이직",
       price: 144000,
-      originalPrice: 180000, // 15000 * 12
+      originalPrice: 180000,
       credits: 100,
-      description:
-        "개인 사용자를 위한 합리적인 크레딧 패키지, 연간 결제 시 20% 할인",
+      description: "개인 사용자를 위한 합리적인 크레딧 패키지, 연간 결제 시 20% 할인",
       features: [
         { text: "매월 100 크레딧 제공", included: true },
-        { text: "중급 이미지 편집 도구", included: true },
-        { text: "고해상도 지원", included: true },
-        { text: "이메일 지원", included: true },
-        { text: "AI 스타일 추천", included: false },
-        { text: "크레딧 60일 유효기간", included: true },
       ],
       recommended: false,
       isBusinessPlan: false,
@@ -333,16 +288,11 @@ export default function MembershipPlan() {
     {
       title: "프리미엄",
       price: 287040,
-      originalPrice: 358800, // 29900 * 12
+      originalPrice: 358800,
       credits: 250,
       description: "전문가를 위한 고급 크레딧 패키지, 연간 결제 시 20% 할인",
       features: [
         { text: "매월 250 크레딧 제공", included: true },
-        { text: "고급 이미지 편집 도구", included: true },
-        { text: "최고 해상도 출력", included: true },
-        { text: "우선 이메일 지원", included: true },
-        { text: "AI 스타일 추천", included: true },
-        { text: "크레딧 90일 유효기간", included: true },
       ],
       recommended: true,
       isBusinessPlan: false,
@@ -351,15 +301,9 @@ export default function MembershipPlan() {
       title: "비즈니스",
       price: "문의",
       credits: 500,
-      description:
-        "기업과 팀을 위한 대용량 크레딧과 맞춤형 기능이 필요하신가요? 연간 계약 시 특별 할인과 전용 계정 관리자를 제공합니다.",
+      description: "기업과 팀을 위한 대용량 크레딧 패키지",
       features: [
         { text: "매월 500+ 크레딧 제공", included: true },
-        { text: "전체 편집 기능 액세스", included: true },
-        { text: "최대 해상도 출력", included: true },
-        { text: "24/7 전용 지원", included: true },
-        { text: "팀 협업 기능", included: true },
-        { text: "기업 전용 API 액세스", included: true },
       ],
       recommended: false,
       isBusinessPlan: true,
@@ -448,13 +392,10 @@ export default function MembershipPlan() {
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
                 <AccordionTrigger className="px-6 py-4 font-medium hover:text-sky-600">
-                  크레딧은 얼마나 오래 유효한가요?
+                  크레딧으로 어떤 기능을 사용할 수 있나요?
                 </AccordionTrigger>
                 <AccordionContent className="px-6 py-3 text-gray-600">
-                  크레딧 유효기간은 구매한 패키지에 따라 다릅니다. 스타터는
-                  30일, 베이직은 45일, 프리미엄은 60일, 비즈니스 패키지는 맞춤형
-                  유효기간을 제공합니다. 유효기간은 구매일로부터 계산됩니다.
-                  연간 구독의 경우 크레딧 유효기간이 더 길게 적용됩니다.
+                  크레딧으로 모든 AI 이미지 생성 기능을 사용할 수 있습니다. 고해상도 이미지 생성, 특수 효과, 고급 편집 기능 등 모든 기능이 크레딧으로 이용 가능합니다. 크레딧이 있다면 어떤 기능이든 제한 없이 사용하실 수 있습니다.
                 </AccordionContent>
               </AccordionItem>
 
@@ -463,9 +404,7 @@ export default function MembershipPlan() {
                   하나의 이미지 생성에 몇 크레딧이 사용되나요?
                 </AccordionTrigger>
                 <AccordionContent className="px-6 py-3 text-gray-600">
-                  기본 이미지 생성은 1크레딧이 소모됩니다. 고해상도 이미지는
-                  2크레딧, 초고해상도 이미지는 3크레딧이 소모됩니다. 특수 효과나
-                  고급 편집 기능을 사용할 경우 추가 크레딧이 소모될 수 있습니다.
+                  기본 이미지 생성은 1크레딧이 소모됩니다. 고해상도 이미지는 2크레딧, 초고해상도 이미지는 3크레딧이 소모됩니다. 특수 효과나 고급 편집 기능을 사용할 경우 추가 크레딧이 소모될 수 있습니다.
                 </AccordionContent>
               </AccordionItem>
 
@@ -474,9 +413,7 @@ export default function MembershipPlan() {
                   결제 방법은 어떤 것을 지원하나요?
                 </AccordionTrigger>
                 <AccordionContent className="px-6 py-3 text-gray-600">
-                  신용카드(VISA, MasterCard, AMEX), 체크카드, PayPal, 그리고
-                  국내 주요 간편결제(카카오페이, 네이버페이, 토스페이)를
-                  지원합니다. 기업 고객의 경우 세금계산서 발행도 가능합니다.
+                  신용카드(VISA, MasterCard, AMEX), 체크카드, PayPal, 그리고 국내 주요 간편결제(카카오페이, 네이버페이, 토스페이)를 지원합니다. 기업 고객의 경우 세금계산서 발행도 가능합니다.
                 </AccordionContent>
               </AccordionItem>
 
@@ -485,9 +422,7 @@ export default function MembershipPlan() {
                   남은 크레딧은 환불 가능한가요?
                 </AccordionTrigger>
                 <AccordionContent className="px-6 py-3 text-gray-600">
-                  구매 후 7일 이내에 사용하지 않은 크레딧에 한해 부분 환불이
-                  가능합니다. 환불 요청은 고객센터를 통해 접수하실 수 있으며,
-                  처리 시 수수료가 발생할 수 있습니다.
+                  구매 후 7일 이내에 사용하지 않은 크레딧에 한해 부분 환불이 가능합니다. 환불 요청은 고객센터를 통해 접수하실 수 있으며, 처리 시 수수료가 발생할 수 있습니다.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

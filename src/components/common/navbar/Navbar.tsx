@@ -7,11 +7,13 @@ import { Sparkles, Camera } from "lucide-react";
 import { useAuth } from "@/features/user/AuthContext";
 import { DesktopNav } from "./DesktopNav";
 import { MobileMenu } from "./MobileMenu";
+import CreditService from "./services/CreditService";
 
 const Navbar = () => {
-  const { isLoggedIn, email, logout, userRole, nickname } = useAuth();
+  const { isLoggedIn, email, logout, nickname } = useAuth();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [credits, setCredits] = useState<number | null>(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -22,6 +24,24 @@ const Navbar = () => {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (isLoggedIn) {
+        try {
+          const creditService = CreditService.getInstance();
+          const response = await creditService.getMyCredits();
+          console.log('크레딧 정보:', response); // 디버깅용 로그
+          setCredits(response.credits);
+        } catch (error) {
+          console.error('크레딧 조회 실패:', error);
+        }
+      } else {
+        setCredits(null);
+      }
+    };
+    fetchCredits();
+  }, [isLoggedIn]);
 
   useEffect(() => {
     setNotifications([
@@ -52,11 +72,10 @@ const Navbar = () => {
 
   const handleLogoutOnly = () => {
     logout();
-    // No router.push
   };
 
   const handleBadgeClick = () => {
-    // Still client-side, use <Link> for navigation instead of programmatic
+    router.push('/payment');
   };
 
   const toggleNotifications = (e: React.MouseEvent) => {
@@ -114,14 +133,14 @@ const Navbar = () => {
           isLoggedIn={isLoggedIn}
           email={email}
           nickname={nickname}
-          userRole={userRole}
+          credits={credits}
           notifications={notifications}
           isDropdownOpen={isDropdownOpen}
           setIsDropdownOpen={setIsDropdownOpen}
           isNotificationOpen={isNotificationOpen}
           setIsNotificationOpen={setIsNotificationOpen}
-          dropdownRef={dropdownRef}
-          notificationRef={notificationRef}
+          dropdownRef={dropdownRef as React.RefObject<HTMLDivElement>}
+          notificationRef={notificationRef as React.RefObject<HTMLDivElement>}
           handleLogout={handleLogoutOnly}
           handleBadgeClick={handleBadgeClick}
           toggleNotifications={toggleNotifications}
@@ -148,7 +167,7 @@ const Navbar = () => {
           isLoggedIn={isLoggedIn}
           email={email}
           nickname={nickname}
-          userRole={userRole}
+          credits={credits}
           onLogout={handleLogoutOnly}
           onBadgeClick={handleBadgeClick}
           closeMenu={() => setIsMenuOpen(false)}

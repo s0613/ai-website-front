@@ -70,14 +70,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // 백엔드 API를 통해 현재 인증 상태 확인 - UserService 사용
     const checkAuthStatus = async () => {
       try {
-        console.log("쿠키 확인:", document.cookie); // 현재 쿠키 상태 확인
-
         // UserService의 getCurrentUser 함수 호출
         const authData = await getCurrentUser();
 
         if (authData.isAuthenticated) {
-          console.log("인증 API 응답:", authData);
-
           setEmail(authData.email || "");
           setUserRole(authData.role || roleCookie || "");
           setNickname(authData.nickname || "");
@@ -86,14 +82,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // 로컬 스토리지에도 저장 (선택적)
           localStorage.setItem("email", authData.email || "");
           localStorage.setItem("userRole", authData.role || roleCookie || "");
-
-          console.log("인증 상태 설정 완료:", {
-            email: authData.email,
-            role: authData.role || roleCookie,
-            isLoggedIn: true,
-            nickname: authData.nickname,
-            cookies: document.cookie, // 인증 후 쿠키 상태 확인
-          });
         } else {
           console.log("인증되지 않은 상태 (API 응답)");
         }
@@ -114,8 +102,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     role: string = "",
     nickname: string = ""
   ) => {
-    console.log("AuthContext login 호출됨, 역할:", role);
-
     setEmail(email);
     setToken(token);
     setIsLoggedIn(true);
@@ -127,8 +113,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("userRole", role);
     localStorage.setItem("nickname", nickname);
-
-    console.log("로그인 처리 완료:", { email, role, isLoggedIn: true });
   };
 
   const logout = () => {

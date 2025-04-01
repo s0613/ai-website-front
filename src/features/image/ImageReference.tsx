@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // Next.js의 라우터
 import Sidebar, { FilterOptions } from "./sidebar";
-import ImageDetail from "./ImageDetail";
 import { getImages } from "./services/ImageService";
 import { ImageItem } from "./types/Image";
+import { useAuth } from "../user/AuthContext"; // AuthContext import
 
 export default function ImageReferencePage() {
+  const router = useRouter();
+  const { isLoggedIn } = useAuth(); // 인증 상태 확인
   const [selectedImageId, setSelectedImageId] = useState<number | null>(null);
   const [images, setImages] = useState<ImageItem[]>([]);
   const [filteredImages, setFilteredImages] = useState<ImageItem[]>([]);
@@ -56,6 +59,25 @@ export default function ImageReferencePage() {
 
     fetchImages();
   }, []);
+
+  // 이미지 다운로드 함수
+  const handleDownload = (e: React.MouseEvent, image: ImageItem) => {
+    e.stopPropagation(); // 이벤트 버블링 방지
+
+    // 로그인 확인 - 로그인 되어있지 않으면 로그인 페이지로 이동
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+
+    // 로그인된 경우에만 다운로드 진행
+    const link = document.createElement("a");
+    link.href = image.url;
+    link.download = image.fileName || `image-${image.id}.${image.format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleFilterChange = (filters: FilterOptions) => {
     let filtered = [...images];
@@ -115,6 +137,15 @@ export default function ImageReferencePage() {
     ? images.find((v) => v.id === selectedImageId)
     : null;
 
+  // 로딩 상태 표시
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* 사이드바 */}
@@ -123,18 +154,7 @@ export default function ImageReferencePage() {
       {/* 메인 콘텐츠 */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8">
-          <header className="mb-8">
-            <h1 className="text-3xl font-semibold mb-2">이미지 레퍼런스</h1>
-            <p className="text-lg text-gray-600">
-              크리에이티브 작업을 위한 영감
-            </p>
-          </header>
-
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="text-center py-12">
               <svg
                 className="mx-auto h-12 w-12 text-red-500"
@@ -159,8 +179,7 @@ export default function ImageReferencePage() {
               {filteredImages.map((image) => (
                 <div
                   key={image.id}
-                  className="mb-4 break-inside-avoid bg-white rounded-lg shadow overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
-                  onClick={() => handleImageClick(image.id!)}
+                  className="mb-4 break-inside-avoid bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow duration-300 group relative"
                 >
                   <div className="relative">
                     <img
@@ -169,24 +188,33 @@ export default function ImageReferencePage() {
                       className="w-full object-cover"
                       loading="lazy"
                     />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-medium text-gray-900">
-                      {image.fileName}
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                      {image.category || "미분류"}
-                    </p>
-                    <div className="mt-2 flex items-center text-sm text-gray-500">
-                      <span>{formatFileSize(image.fileSize || 0)}</span>
-                      {image.width && image.height && (
-                        <>
-                          <span className="mx-1">•</span>
-                          <span>
-                            {image.width}×{image.height}
-                          </span>
-                        </>
-                      )}
+                    {/* 호버 시 표시되는 어두운 오버레이 효과 */}
+                    <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                    {/* 왼쪽 하단 파일명과 다운로드 버튼 - 호버 시에만 표시 */}
+                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent text-white flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="text-sm font-medium truncate">
+                        {image.fileName}
+                      </span>
+                      <button
+                        onClick={(e) => handleDownload(e, image)}
+                        className="bg-blue-500 hover:bg-blue-600 rounded-full p-1.5 ml-2 transition-colors"
+                        title="다운로드 (로그인 필요)"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -194,7 +222,7 @@ export default function ImageReferencePage() {
             </div>
           )}
 
-          {filteredImages.length === 0 && !isLoading && !error && (
+          {filteredImages.length === 0 && !error && (
             <div className="text-center py-12">
               <svg
                 className="mx-auto h-12 w-12 text-gray-400"
@@ -219,42 +247,6 @@ export default function ImageReferencePage() {
           )}
         </div>
       </div>
-
-      {/* 이미지 상세 정보 모달 */}
-      {selectedImageId && selectedImage && (
-        <div
-          className="fixed inset-0 flex justify-center items-center z-50 bg-black/80 p-4"
-          onClick={handleBackToList}
-        >
-          <div
-            className="relative bg-white rounded-lg shadow-xl overflow-hidden w-full max-w-4xl mx-auto"
-            style={{ maxHeight: "85vh" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-gray-800 hover:bg-white shadow-md"
-              onClick={handleBackToList}
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-            <div className="h-full overflow-y-auto">
-              <ImageDetail image={selectedImage} onBack={handleBackToList} />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

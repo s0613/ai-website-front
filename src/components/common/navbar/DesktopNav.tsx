@@ -10,7 +10,7 @@ interface Props {
   isLoggedIn: boolean;
   email: string;
   nickname: string;
-  userRole: string | null;
+  credits: number | null;
   notifications: { id: number; message: string; date: string }[];
   isDropdownOpen: boolean;
   setIsDropdownOpen: (value: boolean) => void;
@@ -27,7 +27,7 @@ export const DesktopNav = ({
   isLoggedIn,
   email,
   nickname,
-  userRole,
+  credits,
   notifications,
   isDropdownOpen,
   setIsDropdownOpen,
@@ -56,15 +56,14 @@ export const DesktopNav = ({
 
       {isLoggedIn ? (
         <div className="relative flex items-center" ref={dropdownRef}>
-          {userRole && (
-            <Link href="/payment" passHref>
-              <Badge
-                variant="outline"
-                className="mr-2 capitalize border-sky-400 text-sky-600 cursor-pointer hover:bg-sky-50 transition"
-              >
-                {userRole}
-              </Badge>
-            </Link>
+          {credits !== null && (
+            <Badge
+              variant="outline"
+              className="mr-2 px-2 py-0.5 text-base font-semibold capitalize border-sky-400 text-sky-600 cursor-pointer hover:bg-sky-50 transition"
+              onClick={handleBadgeClick}
+            >
+              {credits.toLocaleString()} 크레딧
+            </Badge>
           )}
 
           <NotificationBell
@@ -77,7 +76,7 @@ export const DesktopNav = ({
           <UserMenu
             email={email}
             nickname={nickname}
-            userRole={userRole}
+            credits={credits}
             onLogout={handleLogout}
             onBadgeClick={handleBadgeClick}
             isOpen={isDropdownOpen}

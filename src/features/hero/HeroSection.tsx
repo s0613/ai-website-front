@@ -66,10 +66,10 @@ const CategoryBox = ({
             className="cursor-pointer transition-all h-full duration-500 hover:shadow-xl overflow-hidden group relative border-gray-200 bg-white"
             onClick={() => onSelect(videoReference)}
           >
-            <div className="absolute inset-0 bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out" />
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-50 to-sky-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out" />
             <CardHeader className="p-5 relative z-10 pb-5 text-center flex flex-col items-center justify-center h-full">
-              <CardTitle className="text-lg font-bold text-gray-900 group-hover:translate-y-1 transition-transform duration-500">
+              <CardTitle className="text-lg font-bold text-gray-900 group-hover:text-sky-700 transition-colors duration-300">
                 {videoReference.title}
               </CardTitle>
               <p className="text-xs text-gray-600 mt-2">
@@ -86,10 +86,10 @@ const CategoryBox = ({
             className="cursor-pointer transition-all duration-500 hover:shadow-xl overflow-hidden group relative border border-gray-200 bg-white h-full"
             onClick={() => onSelect(item)}
           >
-            <div className="absolute inset-0 bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out" />
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-50 to-sky-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out" />
             <CardHeader className="p-5 relative z-10 pb-5 text-center flex flex-col items-center justify-center h-full">
-              <CardTitle className="text-lg font-bold text-gray-900 group-hover:translate-y-1 transition-transform duration-500">
+              <CardTitle className="text-lg font-bold text-gray-900 group-hover:text-sky-700 transition-colors duration-300">
                 {item.title}
               </CardTitle>
               <p className="text-xs text-gray-600 mt-2">{item.subtitle}</p>

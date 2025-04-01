@@ -27,7 +27,7 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
     sortBy: "최신순",
   });
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

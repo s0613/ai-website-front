@@ -30,7 +30,8 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
     sortBy: "최신순",
   });
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // 변경: 초기값을 true로 설정하여 사이드바가 기본적으로 닫힌 상태로 시작
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

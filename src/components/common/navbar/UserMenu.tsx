@@ -2,13 +2,14 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { UserAvatar } from "./UserAvatar";
 import { logout as userLogout } from "@/features/user/services/UserService";
 
 interface Props {
   email: string;
   nickname: string;
-  userRole: string | null;
+  credits: number | null;
   onLogout: () => void;
   onBadgeClick: () => void;
   isOpen: boolean;
@@ -18,15 +19,18 @@ interface Props {
 export const UserMenu = ({
   email,
   nickname,
-  userRole,
+  credits,
   onLogout,
   isOpen,
   setOpen,
 }: Props) => {
+  const router = useRouter();
+
   const handleLogout = async () => {
     try {
       await userLogout(); // UserService의 logout 함수 호출
       onLogout(); // 기존 로그아웃 로직 실행 (상태 초기화)
+      router.push("/"); // 홈으로 이동
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }
@@ -46,6 +50,11 @@ export const UserMenu = ({
             <p className="text-sm font-medium text-gray-900">
               {nickname || email}
             </p>
+            {credits !== null && (
+              <p className="text-sm text-sky-600 mt-1">
+                {credits} 크레딧
+              </p>
+            )}
           </div>
           <Link
             href="/my"
@@ -53,14 +62,12 @@ export const UserMenu = ({
           >
             내정보
           </Link>
-          {userRole === "admin" && (
-            <Link
-              href="/admin"
-              className="block px-4 py-2 text-sm hover:bg-sky-50 hover:text-sky-600"
-            >
-              관리자 페이지
-            </Link>
-          )}
+          <Link
+            href="/payment"
+            className="block px-4 py-2 text-sm hover:bg-sky-50 hover:text-sky-600"
+          >
+            크레딧 충전
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full text-left block px-4 py-2 text-sm hover:bg-sky-50 hover:text-sky-600"

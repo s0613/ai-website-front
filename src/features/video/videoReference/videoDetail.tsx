@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Eye, FileVideo, Info, Layers } from "lucide-react";
 import { getVideoById, updateVideoLike } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
+import { useAuth } from "@/features/user/AuthContext"; // AuthContext에서 useAuth 가져오기
 
 // 기본 비디오 정보 인터페이스
 interface VideoBasicInfo {
@@ -53,6 +54,7 @@ export default function VideoDetail({
   onBack,
 }: VideoDetailProps) {
   const router = useRouter();
+  const { isLoggedIn } = useAuth(); // 로그인 상태 가져오기
   const [videoDetail, setVideoDetail] = useState<VideoDetailInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +124,15 @@ export default function VideoDetail({
 
   // 비디오 재사용 핸들러
   const handleReuseVideo = () => {
+    // 로그인 상태 확인
+    if (!isLoggedIn) {
+      // 로그인되지 않은 경우, 로그인 페이지로 이동하고 현재 페이지를 콜백 URL로 설정
+      const currentUrl = window.location.href;
+      router.push(`/login?callbackUrl=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+
+    // 로그인된 경우만 아래 코드 실행
     // 프롬프트가 있으면 사용, 없으면 제목 사용
     const prompt = videoDetail?.prompt || videoBasicInfo.name;
 
@@ -350,9 +361,18 @@ export default function VideoDetail({
 
             <button
               onClick={handleReuseVideo}
-              className="flex-1 py-3 px-5 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-md shadow-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 hover:shadow-md hover:translate-y-[-1px]"
+              className={`flex-1 py-3 px-5 text-white font-medium rounded-md shadow-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 hover:shadow-md hover:translate-y-[-1px] ${
+                isLoggedIn
+                  ? "bg-gray-900 hover:bg-gray-800"
+                  : "bg-gray-600 hover:bg-gray-700"
+              }`}
+              title={
+                isLoggedIn
+                  ? "이 영상을 기반으로 새 영상 만들기"
+                  : "로그인이 필요한 기능입니다"
+              }
             >
-              <span>재사용하기</span>
+              <span>{isLoggedIn ? "재사용하기" : "재사용하기"}</span>
             </button>
           </div>
         </div>

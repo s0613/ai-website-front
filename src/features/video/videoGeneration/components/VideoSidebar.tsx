@@ -242,10 +242,14 @@ export default function VideoSidebar(props: VideoSidebarProps) {
               >
                 {activeTab === "image" ? (
                   <>
-                    <option value="kling">KLING - 높은 품질, 느린 속도</option>
-                    <option value="wan">WAN - 중간 품질, 빠른 속도</option>
+                    <option value="kling">
+                      KLING - 자연스러운 동작과 고해상도, 사실적인 영상 생성.
+                    </option>
+                    <option value="wan">
+                      WAN - 정적 이미지에 생동감 있는 움직임 추가.
+                    </option>
                     <option value="hunyuan">
-                      HUNYUAN - 최고 품질, 가장 느림
+                      HUNYUAN - 세밀한 디테일과 복잡한 장면 표현 가능.
                     </option>
                   </>
                 ) : (

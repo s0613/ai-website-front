@@ -165,13 +165,6 @@ export default function VideoReferencePage() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8">
-          <header className="mb-8">
-            <h1 className="text-3xl font-semibold mb-2">비디오 레퍼런스</h1>
-            <p className="text-lg text-gray-600">
-              크리에이티브 작업을 위한 영감
-            </p>
-          </header>
-
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

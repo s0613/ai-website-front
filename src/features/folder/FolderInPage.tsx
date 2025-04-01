@@ -39,6 +39,13 @@ const isImageFile = (fileName: string): boolean => {
   return imageExtensions.includes(extension);
 };
 
+// 비디오 파일인지 확인하는 함수 추가
+const isVideoFile = (fileName: string): boolean => {
+  const videoExtensions = ["mp4", "webm", "ogg", "mov", "avi", "mkv"];
+  const extension = fileName.split(".").pop()?.toLowerCase() || "";
+  return videoExtensions.includes(extension);
+};
+
 const FolderPage = () => {
   // 1) /my/folder/[id]의 [id] 추출
   const params = useParams();
@@ -250,27 +257,48 @@ const FolderPage = () => {
               >
                 {/* 파일 미리보기 */}
                 <div className="aspect-square relative bg-gray-100 overflow-hidden">
-                  {file.url && isImageFile(file.name || "")} ? (
-                  <>
-                    <Image
-                      src={file.url}
-                      alt={file.url || ""}
-                      fill
-                      style={{ objectFit: "cover" }}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                      className="transform group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  </>
-                  ) : (
-                  <div className="flex items-center justify-center h-full">
-                    {isImageFile(file.name || "") ? (
-                      <FileText className="h-16 w-16 text-sky-500" />
+                  {file.url ? (
+                    isImageFile(file.name || "") ? (
+                      // 이미지 파일인 경우
+                      <>
+                        <Image
+                          src={file.url}
+                          alt={file.name || "이미지"}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                          className="transform group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      </>
+                    ) : isVideoFile(file.name || "") ? (
+                      // 비디오 파일인 경우
+                      <>
+                        <video
+                          src={file.url}
+                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                          preload="metadata"
+                          muted
+                          loop
+                          onMouseEnter={(e) => e.currentTarget.play()}
+                          onMouseLeave={(e) => e.currentTarget.pause()}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      </>
                     ) : (
+                      // 기타 파일인 경우
+                      <div className="flex items-center justify-center h-full">
+                        <FileText className="h-16 w-16 text-gray-400" />
+                      </div>
+                    )
+                  ) : (
+                    // URL이 없는 경우
+                    <div className="flex items-center justify-center h-full">
                       <FileText className="h-16 w-16 text-gray-400" />
-                    )}
-                  </div>
-                  ){/* 작업 드롭다운 */}
+                    </div>
+                  )}
+
+                  {/* 작업 드롭다운 */}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

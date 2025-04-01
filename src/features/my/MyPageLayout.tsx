@@ -55,9 +55,6 @@ const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
       <div className="w-64 border-r border-gray-200 bg-white shadow-sm flex-shrink-0 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center space-x-3">
-            <div className="bg-sky-100 text-sky-600 rounded-full p-2">
-              <User className="h-5 w-5" />
-            </div>
             <div>
               <h2 className="font-semibold text-gray-900">마이페이지</h2>
               <p className="text-xs text-gray-500">계정 및 콘텐츠 관리</p>

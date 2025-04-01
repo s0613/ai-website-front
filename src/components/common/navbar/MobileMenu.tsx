@@ -1,6 +1,7 @@
 // components/navbar/MobileMenu.tsx
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "./UserAvatar";
 import { logout as userLogout } from "@/features/user/services/UserService";
@@ -9,7 +10,7 @@ interface Props {
   isLoggedIn: boolean;
   email: string;
   nickname: string;
-  userRole: string | null;
+  credits: number | null;
   onLogout: () => void;
   onBadgeClick: () => void;
   closeMenu: () => void;
@@ -19,15 +20,18 @@ export const MobileMenu = ({
   isLoggedIn,
   email,
   nickname,
-  userRole,
+  credits,
   onLogout,
   closeMenu,
 }: Props) => {
+  const router = useRouter();
+
   const handleLogout = async () => {
     try {
       await userLogout(); // UserService의 logout 함수 호출
       closeMenu();
       onLogout(); // 기존 로그아웃 로직 실행 (상태 초기화)
+      router.push("/"); // 홈으로 이동
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }
@@ -55,13 +59,13 @@ export const MobileMenu = ({
           <div className="flex items-center gap-3 py-2.5 my-1 px-3 bg-gray-50 rounded-lg">
             <UserAvatar email={email} />
             <span className="font-medium">{nickname || email}</span>
-            {userRole && (
+            {credits !== null && (
               <Link href="/payment" passHref>
                 <Badge
                   variant="outline"
-                  className="mr-2 capitalize border-sky-400 text-sky-600 cursor-pointer hover:bg-sky-50 transition"
+                  className="px-2 py-0.5 text-base font-semibold capitalize border-sky-400 text-sky-600 cursor-pointer hover:bg-sky-50 transition"
                 >
-                  {userRole}
+                  {credits.toLocaleString()} 크레딧
                 </Badge>
               </Link>
             )}
@@ -73,15 +77,6 @@ export const MobileMenu = ({
           >
             내정보
           </Link>
-          {userRole === "admin" && (
-            <Link
-              href="/admin"
-              className="block py-2.5 my-1 px-3 hover:bg-gray-50"
-              onClick={closeMenu}
-            >
-              관리자 페이지
-            </Link>
-          )}
           <button
             onClick={handleLogout}
             className="block w-full text-left py-2.5 my-1 px-3 hover:bg-gray-50"
