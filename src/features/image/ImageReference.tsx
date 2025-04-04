@@ -147,7 +147,7 @@ export default function ImageReferencePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-black">
       {/* 사이드바 */}
       <Sidebar onFilterChange={handleFilterChange} />
 
@@ -169,17 +169,17 @@ export default function ImageReferencePage() {
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
               </svg>
-              <h3 className="mt-2 text-xl font-medium text-gray-900">
+              <h3 className="mt-2 text-xl font-medium text-white">
                 오류가 발생했습니다
               </h3>
-              <p className="mt-1 text-gray-500">{error}</p>
+              <p className="mt-1 text-gray-400">{error}</p>
             </div>
           ) : (
             <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
               {filteredImages.map((image) => (
                 <div
                   key={image.id}
-                  className="mb-4 break-inside-avoid bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow duration-300 group relative"
+                  className="mb-4 break-inside-avoid bg-black/40 backdrop-blur-xl rounded-lg border border-white/20 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 group relative hover:scale-[1.02] hover:bg-black/80 hover:border-white/30"
                 >
                   <div className="relative">
                     <img
@@ -188,17 +188,19 @@ export default function ImageReferencePage() {
                       className="w-full object-cover"
                       loading="lazy"
                     />
-                    {/* 호버 시 표시되는 어두운 오버레이 효과 */}
-                    <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    {/* 호버 시 표시되는 그라데이션 효과 */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent opacity-100 group-hover:opacity-0 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:250%_250%] opacity-100 group-hover:opacity-0 transition-opacity duration-300"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out"></div>
 
-                    {/* 왼쪽 하단 파일명과 다운로드 버튼 - 호버 시에만 표시 */}
-                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent text-white flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="text-sm font-medium truncate">
+                    {/* 왼쪽 하단 파일명과 다운로드 버튼 */}
+                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent text-white flex justify-between items-center">
+                      <span className="text-sm font-medium truncate group-hover:text-sky-500 transition-colors duration-300">
                         {image.fileName}
                       </span>
                       <button
                         onClick={(e) => handleDownload(e, image)}
-                        className="bg-blue-500 hover:bg-blue-600 rounded-full p-1.5 ml-2 transition-colors"
+                        className="bg-sky-500 hover:bg-sky-600 rounded-full p-1.5 ml-2 transition-colors"
                         title="다운로드 (로그인 필요)"
                       >
                         <svg
@@ -237,10 +239,10 @@ export default function ImageReferencePage() {
                   d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <h3 className="mt-2 text-xl font-medium text-gray-900">
+              <h3 className="mt-2 text-xl font-medium text-white">
                 검색 결과가 없습니다
               </h3>
-              <p className="mt-1 text-gray-500">
+              <p className="mt-1 text-gray-400">
                 다른 검색어나 필터를 시도해보세요.
               </p>
             </div>

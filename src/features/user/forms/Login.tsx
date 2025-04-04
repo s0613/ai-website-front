@@ -57,10 +57,10 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-black">
+      <Card className="w-full max-w-md bg-black/40 backdrop-blur-xl border-white/20">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">
+          <CardTitle className="text-2xl font-bold text-center text-white">
             로그인
           </CardTitle>
         </CardHeader>
@@ -71,7 +71,7 @@ const Login = () => {
               <div className="mb-4">
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-400"
                 >
                   이메일
                 </label>
@@ -81,13 +81,13 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="mt-1 block w-full"
+                  className="mt-1 block w-full bg-black/40 backdrop-blur-xl border-white/20 text-white"
                 />
               </div>
               <div className="mb-4">
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-400"
                 >
                   비밀번호
                 </label>
@@ -97,11 +97,11 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="mt-1 block w-full"
+                  className="mt-1 block w-full bg-black/40 backdrop-blur-xl border-white/20 text-white"
                 />
               </div>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <Button type="submit" className="w-full">
+              {error && <p className="text-red-400 text-sm">{error}</p>}
+              <Button type="submit" className="w-full bg-sky-500 hover:bg-sky-600 text-white">
                 이메일/비밀번호 로그인
               </Button>
             </form>
@@ -110,7 +110,7 @@ const Login = () => {
           {/* 구글 로그인 버튼만 표시 */}
           <Button
             type="button"
-            className="w-full flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 text-white"
             onClick={handleGoogleLogin}
           >
             <svg
@@ -143,9 +143,9 @@ const Login = () => {
           </Button>
         </CardContent>
         <CardFooter className="text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-400">
             계정이 없으신가요?{" "}
-            <a href="/signup" className="text-blue-500">
+            <a href="/signup" className="text-sky-500 hover:text-sky-400">
               회원가입
             </a>
           </p>

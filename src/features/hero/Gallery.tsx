@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Loader2, FileVideo } from "lucide-react";
+import { Download, Loader2, FileVideo, Heart } from "lucide-react";
 import {
   getSharedVideos,
   getSharedVideosNoLogin,
@@ -126,13 +126,36 @@ const VideoGallery = () => {
     return Math.ceil((1 / aspectRatio) * 10);
   };
 
+  const handleLikeClick = async (videoId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // 비디오 클릭 이벤트 전파 방지
+
+    if (!isLoggedIn) {
+      // 로그인하지 않은 경우 처리
+      alert("좋아요를 누르려면 로그인이 필요합니다.");
+      return;
+    }
+
+    try {
+      const updatedVideo = await updateVideoLike(videoId, !videos.find(v => v.id === videoId)?.liked);
+      setVideos(prevVideos =>
+        prevVideos.map(video =>
+          video.id === videoId
+            ? { ...video, liked: updatedVideo.liked, likeCount: updatedVideo.likeCount }
+            : video
+        )
+      );
+    } catch (error) {
+      console.error("좋아요 업데이트 실패:", error);
+    }
+  };
+
   return (
-    <div className="w-full bg-gradient-to-b from-gray-200 via-gray-100 to-gray-50">
+    <div className="w-full bg-black">
       {/* 상단 컨트롤 영역 */}
       <div className="px-4 mb-8">
         <div>
-          <h2 className="text-lg font-bold mb-2 flex items-center text-gray-900">
-            <span className="inline-block w-1.5 h-4 bg-gradient-to-b from-sky-400 to-sky-500 mr-3 rounded-full"></span>
+          <h2 className="text-lg font-bold mb-2 flex items-center text-white">
+            <span className="inline-block w-1.5 h-4 bg-sky-500 mr-3 rounded-full"></span>
             트렌딩 비디오
           </h2>
         </div>
@@ -141,21 +164,21 @@ const VideoGallery = () => {
       {/* 로딩, 에러, 또는 비디오 표시 */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-gradient-to-r from-sky-400/15 to-sky-500/15 mb-4 shadow-sm">
-            <Loader2 className="h-10 w-10 text-sky-600 animate-spin" />
+          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md mb-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10">
+            <Loader2 className="h-10 w-10 text-sky-500 animate-spin" />
           </div>
-          <p className="text-sky-700 font-medium">
+          <p className="text-sky-500 font-medium">
             비디오를 불러오는 중입니다...
           </p>
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl mb-4 border border-red-100 shadow-sm">
-            <p className="text-red-600">{error}</p>
+          <div className="bg-black/30 backdrop-blur-md p-6 rounded-xl mb-4 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+            <p className="text-red-400">{error}</p>
           </div>
           <button
             onClick={fetchVideos}
-            className="px-6 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-full hover:from-sky-600 hover:to-sky-700 transition-colors shadow-sm"
+            className="px-6 py-2 bg-sky-500/20 backdrop-blur-md text-white rounded-full hover:bg-sky-500/30 transition-colors shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10"
           >
             다시 시도
           </button>
@@ -165,10 +188,9 @@ const VideoGallery = () => {
           {videos.length > 0 ? (
             <div
               className={`
-                ${
-                  view === "masonry"
-                    ? "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-5"
-                    : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
+                ${view === "masonry"
+                  ? "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-5"
+                  : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
                 }
                 px-4
               `}
@@ -182,15 +204,16 @@ const VideoGallery = () => {
                     className={`
                       relative group overflow-hidden rounded-xl mb-5 cursor-pointer
                       ${view === "grid" ? "" : "break-inside-avoid"}
-                      transform transition duration-300 hover:shadow-xl hover:-translate-y-1
+                      transform transition duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1
+                      bg-black/30 backdrop-blur-md border border-white/10
                     `}
                     style={
                       view === "grid"
                         ? {
-                            gridRowEnd: `span ${getAspectRatio(
-                              video.aspectRatio
-                            )}`,
-                          }
+                          gridRowEnd: `span ${getAspectRatio(
+                            video.aspectRatio || 16 / 9
+                          )}`,
+                        }
                         : {}
                     }
                     onClick={() => handleVideoClick(video.id)}
@@ -226,56 +249,31 @@ const VideoGallery = () => {
                         }}
                       />
 
-                      {/* 플레이 아이콘 오버레이 */}
-                      <div className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                        <div className="bg-black/40 rounded-full p-3">
-                          <svg
-                            className="w-8 h-8 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        </div>
-                      </div>
-
                       {/* 그라데이션 오버레이 */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-white z-30">
+                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent text-white z-30">
                         <div className="flex justify-between items-center">
                           <div>
                             <h3 className="text-sm font-medium text-white truncate">
                               {video.name}
                             </h3>
-                            <p className="text-xs text-white/80">
+                            <p className="text-xs text-gray-400">
                               {video.creator}
                             </p>
                           </div>
-                          <div className="flex items-center">
-                            {video.liked ? (
-                              <svg
-                                className="w-4 h-4 fill-current text-red-500"
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                              </svg>
-                            ) : (
-                              <svg
-                                className="w-4 h-4 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                                />
-                              </svg>
-                            )}
-                            <span className="ml-1 text-xs">
-                              {video.likeCount || 0}
-                            </span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={(e) => handleLikeClick(video.id, e)}
+                              className="flex items-center space-x-1"
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${video.liked ? "text-red-500 fill-red-500" : "text-gray-400"
+                                  }`}
+                              />
+                              <span className="text-xs text-gray-400">
+                                {video.likeCount || 0}
+                              </span>
+                            </button>
+                            <Download className="w-4 h-4 text-gray-400" />
                           </div>
                         </div>
                       </div>
@@ -285,17 +283,10 @@ const VideoGallery = () => {
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="bg-gradient-to-r from-sky-50 to-sky-100 p-6 rounded-full mb-4 shadow-sm">
-                <FileVideo className="h-10 w-10 text-sky-400" />
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="bg-black/30 backdrop-blur-md p-6 rounded-xl mb-4 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+                <p className="text-gray-400">표시할 비디오가 없습니다.</p>
               </div>
-              <h3 className="text-lg font-medium text-sky-700 mb-2">
-                비디오가 없습니다
-              </h3>
-              <p className="text-gray-600 max-w-md">
-                현재 표시할 비디오가 없습니다. 나중에 다시 확인하거나 새로운
-                비디오를 생성해 보세요.
-              </p>
             </div>
           )}
         </>
@@ -304,16 +295,16 @@ const VideoGallery = () => {
       {/* 비디오 상세 정보 모달 */}
       {selectedVideoId !== null && (
         <div
-          className="fixed inset-0 flex justify-center items-center z-50 bg-black/80 p-4"
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/90 backdrop-blur-sm p-4"
           onClick={handleBackToList}
         >
           <div
-            className="relative bg-white rounded-lg shadow-xl overflow-hidden w-full max-w-4xl mx-auto"
+            className="relative bg-black/30 backdrop-blur-md rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden w-full max-w-4xl mx-auto border border-white/10"
             style={{ maxHeight: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-gray-800 hover:bg-white shadow-md"
+              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
               onClick={handleBackToList}
             >
               <svg

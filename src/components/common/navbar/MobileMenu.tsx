@@ -1,5 +1,6 @@
 // components/navbar/MobileMenu.tsx
 "use client";
+import React from 'react';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +11,9 @@ interface Props {
   isLoggedIn: boolean;
   email: string;
   nickname: string;
-  credits: number | null;
+  credits: number;
   onLogout: () => void;
-  onBadgeClick: () => void;
-  closeMenu: () => void;
+  onClose: () => void;
 }
 
 export const MobileMenu = ({
@@ -22,86 +22,106 @@ export const MobileMenu = ({
   nickname,
   credits,
   onLogout,
-  closeMenu,
+  onClose,
 }: Props) => {
   const router = useRouter();
 
   const handleLogout = async () => {
     try {
-      await userLogout(); // UserService의 logout 함수 호출
-      closeMenu();
-      onLogout(); // 기존 로그아웃 로직 실행 (상태 초기화)
-      router.push("/"); // 홈으로 이동
+      await userLogout();
+      onLogout();
+      router.push("/");
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }
   };
 
   return (
-    <div className="md:hidden px-4 pb-4 bg-white shadow-lg rounded-b-xl mt-1 mx-2 border border-gray-200/70 transition">
-      <Link
-        href="/blog/blogList"
-        className="block py-2.5 my-1 px-3 hover:bg-gray-50"
-        onClick={closeMenu}
-      >
-        BLOG
-      </Link>
-      <Link
-        href="/contact"
-        className="block py-2.5 my-1 px-3 hover:bg-gray-50"
-        onClick={closeMenu}
-      >
-        Contact Us
-      </Link>
-
-      {isLoggedIn ? (
-        <>
-          <div className="flex items-center gap-3 py-2.5 my-1 px-3 bg-gray-50 rounded-lg">
-            <UserAvatar email={email} />
-            <span className="font-medium">{nickname || email}</span>
-            {credits !== null && (
-              <Link href="/payment" passHref>
-                <Badge
-                  variant="outline"
-                  className="px-2 py-0.5 text-base font-semibold capitalize border-sky-400 text-sky-600 cursor-pointer hover:bg-sky-50 transition"
-                >
-                  {credits.toLocaleString()} 크레딧
-                </Badge>
-              </Link>
-            )}
-          </div>
-          <Link
-            href="/my"
-            className="block py-2.5 my-1 px-3 hover:bg-gray-50"
-            onClick={closeMenu}
-          >
-            내정보
-          </Link>
+    <div className="md:hidden fixed inset-0 z-50 bg-black/95">
+      <div className="flex flex-col h-full">
+        <div className="flex justify-end p-4">
           <button
-            onClick={handleLogout}
-            className="block w-full text-left py-2.5 my-1 px-3 hover:bg-gray-50"
+            onClick={onClose}
+            className="text-white hover:text-sky-500 focus:outline-none"
           >
-            로그아웃
+            닫기
           </button>
-        </>
-      ) : (
-        <div className="flex flex-col gap-2 mt-2">
-          <Link
-            href="/login"
-            className="block py-2.5 text-center bg-gray-100 hover:bg-gray-200 rounded-lg"
-            onClick={closeMenu}
-          >
-            로그인
-          </Link>
-          <Link
-            href="/signup"
-            className="block py-2.5 text-center bg-sky-500 text-white hover:bg-sky-600 rounded-lg"
-            onClick={closeMenu}
-          >
-            회원가입
-          </Link>
         </div>
-      )}
+
+        <div className="flex-1 px-4 py-2">
+          <nav className="space-y-1 mb-6">
+            <Link
+              href="/blog/blogList"
+              className="block px-4 py-2 text-white hover:bg-white/5 rounded-lg"
+              onClick={onClose}
+            >
+              블로그
+            </Link>
+            <Link
+              href="/contact"
+              className="block px-4 py-2 text-white hover:bg-white/5 rounded-lg"
+              onClick={onClose}
+            >
+              문의하기
+            </Link>
+          </nav>
+
+          {isLoggedIn ? (
+            <>
+              <div className="flex items-center gap-3 mb-6 p-4 rounded-lg bg-white/5">
+                <UserAvatar email={email} />
+                <div>
+                  <p className="font-medium text-white">{nickname || email}</p>
+                  <p className="text-sm text-sky-500">{credits} 크레딧</p>
+                </div>
+              </div>
+
+              <nav className="space-y-1">
+                <Link
+                  href="/my"
+                  className="block px-4 py-2 text-white hover:bg-white/5 rounded-lg"
+                  onClick={onClose}
+                >
+                  내 정보
+                </Link>
+                <Link
+                  href="/billing"
+                  className="block px-4 py-2 text-white hover:bg-white/5 rounded-lg"
+                  onClick={onClose}
+                >
+                  크레딧 충전
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    onClose();
+                  }}
+                  className="w-full text-left block px-4 py-2 text-white hover:bg-white/5 rounded-lg"
+                >
+                  로그아웃
+                </button>
+              </nav>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <Link
+                href="/login"
+                className="block w-full py-2 text-center text-white bg-sky-500 hover:bg-sky-600 rounded-lg"
+                onClick={onClose}
+              >
+                로그인
+              </Link>
+              <Link
+                href="/register"
+                className="block w-full py-2 text-center text-white bg-white/10 hover:bg-white/20 rounded-lg"
+                onClick={onClose}
+              >
+                회원가입
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

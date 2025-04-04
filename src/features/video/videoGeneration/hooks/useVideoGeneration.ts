@@ -10,6 +10,7 @@ import {
   readFileAsBase64,
   getVideoEndpointUrl
 } from "../../services/GenerateService";
+import { BillingService } from "@/features/payment/services/BillingService";
 
 // 타입 정의 추가
 interface VideoGenerationData {
@@ -86,9 +87,19 @@ export default function useVideoGeneration() {
     setSaveError("");
 
     try {
+      // 크레딧 소비 요청
+      try {
+        await BillingService.consumeCredit({
+          amount: -10,
+          reason: "비디오 생성"
+        });
+      } catch (error) {
+        throw new Error("크레딧이 부족합니다. 크레딧을 충전해주세요.");
+      }
+
       // getVideoEndpointUrl 함수를 사용하여 엔드포인트 URL 가져오기
       const endpointUrl = getVideoEndpointUrl(data.endpoint, data.imageFile || data.fileUrl ? true : false);
-      
+
       let imageBase64 = "";
       if (data.imageFile) {
         imageBase64 = await readFileAsBase64(data.imageFile);
@@ -128,7 +139,7 @@ export default function useVideoGeneration() {
       } else {
         setErrorMessage(
           "videoUrl이 아직 생성되지 않았습니다. Job ID: " +
-            JSON.stringify(result)
+          JSON.stringify(result)
         );
       }
     } catch (error: unknown) {

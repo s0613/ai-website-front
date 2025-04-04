@@ -23,4 +23,5 @@ export type FolderSidebarProps = {
   onEndpointChange: React.Dispatch<React.SetStateAction<string>>;
   onQualityChange: React.Dispatch<React.SetStateAction<"standard" | "high">>;
   onStyleChange: React.Dispatch<React.SetStateAction<"realistic" | "creative">>;
+  className?: string;
 };

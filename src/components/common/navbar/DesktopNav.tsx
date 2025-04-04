@@ -40,18 +40,18 @@ export const DesktopNav = ({
   toggleNotifications,
 }: Props) => {
   return (
-    <nav className="hidden md:flex space-x-6 text-gray-700 items-center">
+    <nav className="hidden md:flex space-x-6 text-gray-300 items-center backdrop-blur-sm bg-white/5 px-6 py-2 rounded-full border border-white/10 shadow-lg">
       <Link
         href="/blog/blogList"
-        className="hover:text-sky-600 hover:bg-white px-3 py-1.5 rounded-full transition"
+        className="hover:text-sky-500 hover:bg-white/10 px-3 py-1.5 rounded-full transition"
       >
-        BLOG
+        블로그
       </Link>
       <Link
         href="/contact"
-        className="hover:text-sky-600 hover:bg-white px-3 py-1.5 rounded-full transition"
+        className="hover:text-sky-500 hover:bg-white/10 px-3 py-1.5 rounded-full transition"
       >
-        Contact Us
+        문의하기
       </Link>
 
       {isLoggedIn ? (
@@ -59,10 +59,10 @@ export const DesktopNav = ({
           {credits !== null && (
             <Badge
               variant="outline"
-              className="mr-2 px-2 py-0.5 text-base font-semibold capitalize border-sky-400 text-sky-600 cursor-pointer hover:bg-sky-50 transition"
+              className="mr-2 px-2 py-0.5 text-sm font-medium capitalize bg-gradient-to-r from-sky-400/20 to-blue-500/20 border-sky-500/50 text-sky-400 cursor-pointer hover:bg-white/10 transition shadow-[0_0_10px_rgba(14,165,233,0.3)] animate-pulse"
               onClick={handleBadgeClick}
             >
-              {credits.toLocaleString()} 크레딧
+              {credits.toLocaleString()}c
             </Badge>
           )}
 
@@ -87,13 +87,13 @@ export const DesktopNav = ({
         <>
           <Link
             href="/login"
-            className="px-4 py-1.5 rounded-full bg-white shadow-sm hover:text-sky-600"
+            className="px-4 py-1.5 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-white/5 transition shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10"
           >
             로그인
           </Link>
           <Link
             href="/signup"
-            className="px-4 py-1.5 rounded-full bg-sky-500 text-white hover:bg-sky-600"
+            className="px-4 py-1.5 rounded-full bg-sky-500/20 backdrop-blur-md text-white hover:bg-sky-500/30 transition shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/10"
           >
             회원가입
           </Link>

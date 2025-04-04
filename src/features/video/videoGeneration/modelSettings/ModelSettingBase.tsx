@@ -9,9 +9,9 @@ export abstract class ModelSettingBase {
   // 모델 설명 표시 헬퍼 메소드
   renderDescription(description: string) {
     return (
-      <div className="mt-1 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-start gap-2">
-        <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-        <p className="text-xs text-blue-700">{description}</p>
+      <div className="mt-1 p-2 bg-black/30 backdrop-blur-md border border-white/10 rounded-lg flex items-start gap-2 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+        <Info className="h-4 w-4 text-sky-500 mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-gray-300">{description}</p>
       </div>
     );
   }

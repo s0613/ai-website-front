@@ -16,10 +16,13 @@ import {
   RefreshCw,
   Globe,
   Download,
+  ArrowUpToLine,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getVideoById, toggleVideoShare } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
+import { upscaleVideo } from "../services/GenerateService";
 
 interface CreationDetailProps {
   videoId: number;
@@ -35,6 +38,9 @@ export default function CreationDetail({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [isUpscaling, setIsUpscaling] = useState(false);
+  const [hasUpscaled, setHasUpscaled] = useState(false);
+  const [upscaledVideoUrl, setUpscaledVideoUrl] = useState("");
 
   useEffect(() => {
     const fetchVideoDetail = async () => {
@@ -109,26 +115,49 @@ export default function CreationDetail({
     document.body.removeChild(link);
   };
 
+  // 업스케일링 처리 함수
+  const handleUpscaleVideo = async () => {
+    if (!video?.url) return;
+
+    try {
+      setIsUpscaling(true);
+      setUpscaledVideoUrl("");
+      const result = await upscaleVideo(video.url);
+      if (result.data && result.data.video_upscaled) {
+        setUpscaledVideoUrl(result.data.video_upscaled);
+        setHasUpscaled(true);
+        toast.success("비디오 업스케일링이 완료되었습니다!");
+      } else {
+        throw new Error("업스케일링된 비디오 URL을 찾을 수 없습니다");
+      }
+    } catch (error: unknown) {
+      console.error("비디오 업스케일링 오류:", error);
+      toast.error(error instanceof Error ? error.message : "업스케일링 중 오류가 발생했습니다");
+    } finally {
+      setIsUpscaling(false);
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="flex flex-col justify-center items-center h-full p-8 bg-white/80 rounded-lg">
+      <div className="flex flex-col justify-center items-center h-full p-8 bg-black/40 backdrop-blur-xl rounded-lg border border-white/20">
         <Loader2 className="h-10 w-10 text-sky-500 animate-spin mb-4" />
-        <p className="text-gray-600 font-medium">작업물을 불러오는 중...</p>
+        <p className="text-gray-400 font-medium">작업물을 불러오는 중...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-white/80 rounded-lg">
-        <div className="bg-red-50 text-red-500 rounded-full p-4 mb-4">
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-black/40 backdrop-blur-xl rounded-lg border border-white/20">
+        <div className="bg-red-500/20 text-red-400 rounded-full p-4 mb-4">
           <AlertTriangle className="h-10 w-10" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <h3 className="text-lg font-semibold text-white mb-2">
           오류가 발생했습니다
         </h3>
-        <p className="text-red-500 mb-4 text-center">{error}</p>
-        <Button onClick={onBack} variant="outline" className="gap-2">
+        <p className="text-red-400 mb-4 text-center">{error}</p>
+        <Button onClick={onBack} variant="outline" className="gap-2 bg-black/40 backdrop-blur-xl border-white/20 text-white hover:bg-black/60">
           <X className="h-4 w-4" />
           돌아가기
         </Button>
@@ -139,15 +168,15 @@ export default function CreationDetail({
   if (!video) return null;
 
   return (
-    <div className="bg-white w-full h-full max-h-[85vh] flex flex-col md:flex-row rounded-xl shadow-md overflow-hidden border border-gray-200/80">
+    <div className="bg-black/40 backdrop-blur-xl w-full h-full max-h-[85vh] flex flex-col md:flex-row rounded-xl border border-white/20 overflow-hidden">
       {/* 왼쪽: 비디오 플레이어 */}
       <div className="md:w-3/5 bg-black flex items-center justify-center">
         <div className="w-full h-full flex items-center">
           <video
-            src={video.url}
+            src={upscaledVideoUrl || video?.url}
             controls
             className="w-full max-h-[70vh] object-contain"
-            poster={video.thumbnailUrl}
+            poster={video?.thumbnailUrl}
             autoPlay
             controlsList="nodownload"
           >
@@ -157,27 +186,29 @@ export default function CreationDetail({
       </div>
 
       {/* 오른쪽: 비디오 정보 */}
-      <div className="md:w-2/5 p-6 overflow-y-auto bg-white border-l border-gray-200">
+      <div className="md:w-2/5 p-6 overflow-y-auto bg-black/40 backdrop-blur-xl border-l border-white/20">
         <div className="flex justify-between items-center mb-5">
-          <h2 className="text-xl font-bold text-gray-900 leading-tight">
+          <h2 className="text-xl font-bold text-white leading-tight">
             {video.name}
           </h2>
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="rounded-full h-8 w-8 hover:bg-gray-100"
+            className="rounded-full h-8 w-8 hover:bg-black/60 text-white"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
         <div className="space-y-5">
-          <div className="bg-gray-50/80 p-4 rounded-lg border border-gray-100">
-            <h3 className="text-sm font-medium text-gray-600 mb-2">프롬프트</h3>
-            <p className="text-gray-800 whitespace-pre-wrap text-sm">
-              {video.prompt || "프롬프트 정보가 없습니다."}
-            </p>
+          <div className="bg-black/40 backdrop-blur-xl p-4 rounded-lg border border-white/20">
+            <h3 className="text-sm font-medium text-gray-400 mb-2">프롬프트</h3>
+            <div className="max-h-[100px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-track]:bg-black/20 hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
+              <p className="text-white whitespace-pre-wrap text-sm pr-2">
+                {video.prompt || "프롬프트 정보가 없습니다."}
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -185,7 +216,7 @@ export default function CreationDetail({
               label="모델"
               value={video.model || "정보 없음"}
               icon={
-                <div className="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center text-sky-500">
+                <div className="w-6 h-6 bg-sky-500/20 rounded-full flex items-center justify-center text-sky-400">
                   AI
                 </div>
               }
@@ -194,7 +225,7 @@ export default function CreationDetail({
               label="모드"
               value={video.mode || "정보 없음"}
               icon={
-                <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-purple-500">
+                <div className="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400">
                   M
                 </div>
               }
@@ -219,7 +250,7 @@ export default function CreationDetail({
               value={isSharing ? "공개" : "비공개"}
               icon={
                 isSharing ? (
-                  <Globe className="h-4 w-4 text-emerald-500" />
+                  <Globe className="h-4 w-4 text-emerald-400" />
                 ) : (
                   <Lock className="h-4 w-4 text-gray-400" />
                 )
@@ -228,21 +259,20 @@ export default function CreationDetail({
           </div>
 
           {/* 작업 버튼 영역 */}
-          <div className="pt-5 border-t border-gray-200 grid grid-cols-2 gap-3">
+          <div className="pt-5 border-t border-white/20 grid grid-cols-2 gap-3">
             <Button
               onClick={handleReuseVideo}
-              className="py-2 gap-1.5 bg-gray-900 hover:bg-gray-800 text-white"
+              className="py-2 gap-1.5 bg-sky-500 hover:bg-sky-600 text-white"
             >
               <RefreshCw className="h-4 w-4" />
               재사용하기
             </Button>
             <Button
               onClick={handleToggleShare}
-              className={`py-2 gap-1.5 ${
-                isSharing
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-sky-500 hover:bg-sky-600"
-              } text-white`}
+              className={`py-2 gap-1.5 ${isSharing
+                ? "bg-red-500 hover:bg-red-600"
+                : "bg-sky-500 hover:bg-sky-600"
+                } text-white`}
             >
               {isSharing ? (
                 <>
@@ -253,6 +283,32 @@ export default function CreationDetail({
                 <>
                   <Share2 className="h-4 w-4" />
                   공개로 전환
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleUpscaleVideo}
+              disabled={isUpscaling || hasUpscaled}
+              className={`py-2 gap-1.5 ${hasUpscaled
+                ? "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400"
+                : "bg-sky-500/20 hover:bg-sky-500/30 text-white"
+                } col-span-2 border border-white/10 relative`}
+            >
+              {isUpscaling ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>업스케일링 중...</span>
+                </>
+              ) : hasUpscaled ? (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <span>업스케일링 완료</span>
+                </>
+              ) : (
+                <>
+                  <ArrowUpToLine className="h-4 w-4 mr-2" />
+                  <span>고화질 업스케일링</span>
+                  <span className="absolute right-3 text-sm text-red-400">-1 크레딧</span>
                 </>
               )}
             </Button>
@@ -281,11 +337,11 @@ const InfoCard = ({
   value: string;
   icon?: React.ReactNode;
 }) => (
-  <div className="flex items-center space-x-2.5">
-    {icon}
-    <div>
-      <h3 className="text-xs font-medium text-gray-500">{label}</h3>
-      <p className="text-sm font-medium text-gray-900 mt-0.5">{value}</p>
+  <div className="bg-black/40 backdrop-blur-xl p-3 rounded-lg border border-white/20">
+    <div className="flex items-center gap-2 mb-1">
+      {icon}
+      <span className="text-sm font-medium text-gray-400">{label}</span>
     </div>
+    <p className="text-sm text-white">{value}</p>
   </div>
 );

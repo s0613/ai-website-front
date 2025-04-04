@@ -3,75 +3,51 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FiSearch, FiMenu, FiX } from "react-icons/fi";
-import { Sparkles, Camera } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useAuth } from "@/features/user/AuthContext";
 import { DesktopNav } from "./DesktopNav";
 import { MobileMenu } from "./MobileMenu";
-import CreditService from "./services/CreditService";
+import { BillingService } from "@/features/payment/services/BillingService";
+import { NotificationBell } from "./NotificationBell";
+import { UserMenu } from "./UserMenu";
+
+interface Notification {
+  id: number;
+  message: string;
+  date: string;
+}
 
 const Navbar = () => {
   const { isLoggedIn, email, logout, nickname } = useAuth();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [credits, setCredits] = useState<number | null>(null);
-
+  const [creditInfo, setCreditInfo] = useState<{ currentCredit: number } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState<
-    { id: number; message: string; date: string }[]
-  >([]);
+  const [notifications, setNotifications] = useState<Notification[]>([
+    { id: 1, message: "크레딧이 충전되었습니다.", date: "방금 전" }
+  ]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchCredits = async () => {
-      if (isLoggedIn) {
-        try {
-          const creditService = CreditService.getInstance();
-          const response = await creditService.getMyCredits();
-          console.log('크레딧 정보:', response); // 디버깅용 로그
-          setCredits(response.credits);
-        } catch (error) {
-          console.error('크레딧 조회 실패:', error);
-        }
-      } else {
-        setCredits(null);
-      }
-    };
-    fetchCredits();
-  }, [isLoggedIn]);
-
-  useEffect(() => {
-    setNotifications([
-      { id: 1, message: "새로운 댓글이 달렸습니다.", date: "2025-03-25" },
-      { id: 2, message: "프로필이 업데이트되었습니다.", date: "2025-03-24" },
-    ]);
+    loadCreditInfo();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
+  const loadCreditInfo = async () => {
+    try {
+      const response = await BillingService.getCurrentCredit();
+      setCreditInfo(response);
+    } catch (error) {
+      console.error("Failed to load credit info:", error);
+    }
+  };
 
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target as Node)
-      ) {
-        setIsNotificationOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLogoutOnly = () => {
+  const handleLogout = () => {
     logout();
+    router.push("/login");
   };
 
   const handleBadgeClick = () => {
@@ -80,7 +56,7 @@ const Navbar = () => {
 
   const toggleNotifications = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsNotificationOpen((prev) => !prev);
+    setIsNotificationOpen(!isNotificationOpen);
     if (isDropdownOpen) setIsDropdownOpen(false);
   };
 
@@ -92,20 +68,18 @@ const Navbar = () => {
   };
 
   return (
-    <header className="bg-gradient-to-r from-gray-50 via-gray-100 to-gray-100 border-b border-gray-200/50 shadow-sm sticky top-0 z-50 h-16 backdrop-blur-sm">
+    <header className="bg-black shadow-[0_8px_30px_rgb(0,0,0,0.12)] sticky top-0 z-50 h-16">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between relative">
-        {/* 로고 */}
         <Link
           href="/"
-          className="text-2xl font-bold text-gray-900 px-3 py-1 rounded-full flex items-center group transition-all duration-300"
+          className="text-2xl font-bold text-white px-3 py-1 rounded-full flex items-center group transition-all duration-300 hover:bg-white/5"
         >
           <Sparkles className="w-5 h-5 mr-2 text-sky-500 transform group-hover:rotate-12 transition-transform duration-300" />
-          <span className="group-hover:text-sky-600 transition-colors duration-300">
+          <span className="group-hover:text-sky-500 transition-colors duration-300">
             Crazy Space
           </span>
         </Link>
 
-        {/* 검색창 */}
         <div className="flex-1 mx-4 relative">
           <form onSubmit={handleSearch} className="relative">
             <label htmlFor="navbar-search" className="sr-only">
@@ -115,62 +89,84 @@ const Navbar = () => {
               id="navbar-search"
               type="text"
               placeholder="원하는 영상 콘셉트를 입력하세요 (예: 우주 여행 영상, 제품 광고)"
-              className="w-full h-10 border border-gray-300 rounded-full pl-10 pr-4 bg-white/90 text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-200 shadow-sm transition-all duration-300 focus:shadow-md"
+              className="w-full h-10 border border-white/10 rounded-full pl-10 pr-4 bg-black/30 backdrop-blur-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all duration-300 focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <button
               type="submit"
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
             >
               <FiSearch className="w-5 h-5" />
             </button>
           </form>
         </div>
 
-        {/* 데스크탑 네비게이션 */}
-        <DesktopNav
-          isLoggedIn={isLoggedIn}
-          email={email}
-          nickname={nickname}
-          credits={credits}
-          notifications={notifications}
-          isDropdownOpen={isDropdownOpen}
-          setIsDropdownOpen={setIsDropdownOpen}
-          isNotificationOpen={isNotificationOpen}
-          setIsNotificationOpen={setIsNotificationOpen}
-          dropdownRef={dropdownRef as React.RefObject<HTMLDivElement>}
-          notificationRef={notificationRef as React.RefObject<HTMLDivElement>}
-          handleLogout={handleLogoutOnly}
-          handleBadgeClick={handleBadgeClick}
-          toggleNotifications={toggleNotifications}
-        />
+        <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/blog/blogList"
+              className="text-gray-300 hover:text-sky-500 px-3 py-2 rounded-lg transition-colors duration-300"
+            >
+              블로그
+            </Link>
+            <Link
+              href="/contact"
+              className="text-gray-300 hover:text-sky-500 px-3 py-2 rounded-lg transition-colors duration-300"
+            >
+              문의하기
+            </Link>
+          </div>
+          <Link href="/billing" className="group relative flex items-center gap-2 px-4 py-2 rounded-lg bg-black/40 backdrop-blur-xl border border-[#ff00ff]/20 hover:border-[#00ffff]/40 transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#ff00ff]/10 to-[#00ffff]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-[conic-gradient(from_0deg,#ff00ff,#00ffff,#ff00ff)] opacity-[0.15] animate-spin-slow"></div>
+            <div className="relative flex items-center">
+              <span className="text-sm font-mono tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[#ff00ff] to-[#00ffff] animate-pulse">
+                {creditInfo?.currentCredit || 0}
+              </span>
+              <span className="ml-2 text-sm font-medium text-white/80 group-hover:text-white/90 transition-colors duration-300">크레딧</span>
+            </div>
+            <div className="absolute -inset-[1px] bg-gradient-to-r from-[#ff00ff] to-[#00ffff] opacity-20 group-hover:opacity-30 blur-sm transition-opacity duration-300"></div>
+          </Link>
+          <NotificationBell
+            notifications={notifications}
+            isOpen={isNotificationOpen}
+            toggle={toggleNotifications}
+            refObj={notificationRef}
+          />
+          <UserMenu
+            email={email}
+            nickname={nickname}
+            credits={creditInfo?.currentCredit || 0}
+            onLogout={handleLogout}
+            onBadgeClick={handleBadgeClick}
+            isOpen={isDropdownOpen}
+            setOpen={setIsDropdownOpen}
+          />
+        </div>
 
-        {/* 모바일 메뉴 버튼 */}
         <div className="md:hidden">
           <button
-            onClick={() => setIsMenuOpen((prev) => !prev)}
-            className="text-gray-800 focus:outline-none hover:bg-white p-2 rounded-full shadow-sm transition"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="text-white hover:text-sky-500 focus:outline-none p-2"
           >
             {isMenuOpen ? (
-              <FiX className="w-5 h-5" />
+              <FiX className="w-6 h-6" />
             ) : (
-              <FiMenu className="w-5 h-5" />
+              <FiMenu className="w-6 h-6" />
             )}
           </button>
         </div>
       </div>
 
-      {/* 모바일 메뉴 */}
       {isMenuOpen && (
         <MobileMenu
           isLoggedIn={isLoggedIn}
           email={email}
           nickname={nickname}
-          credits={credits}
-          onLogout={handleLogoutOnly}
-          onBadgeClick={handleBadgeClick}
-          closeMenu={() => setIsMenuOpen(false)}
+          credits={creditInfo?.currentCredit || 0}
+          onLogout={handleLogout}
+          onClose={() => setIsMenuOpen(false)}
         />
       )}
     </header>

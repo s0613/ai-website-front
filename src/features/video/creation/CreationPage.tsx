@@ -61,11 +61,11 @@ export default function CreationPage() {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-black">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">내 작업물</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-white">내 작업물</h1>
+          <p className="text-sm text-gray-400 mt-1">
             생성된 비디오와 이미지를 관리하세요
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function CreationPage() {
           value={selectedFilter}
           onValueChange={(value) => setSelectedFilter(value as VideoType)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] bg-black/40 backdrop-blur-xl border-white/20 text-white">
             <SelectValue placeholder="필터" />
           </SelectTrigger>
           <SelectContent>
@@ -100,18 +100,18 @@ export default function CreationPage() {
           <div className="flex justify-center items-center h-64">
             <div className="flex flex-col items-center">
               <Loader2 className="h-10 w-10 text-sky-500 animate-spin mb-3" />
-              <p className="text-gray-500 text-sm">작업물을 불러오는 중...</p>
+              <p className="text-gray-400 text-sm">작업물을 불러오는 중...</p>
             </div>
           </div>
         ) : videos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-xl border border-gray-200 p-12 text-center">
-            <div className="bg-sky-50 text-sky-500 rounded-full p-4 mb-4">
+          <div className="flex flex-col items-center justify-center h-64 bg-black/40 backdrop-blur-xl rounded-xl border border-white/20 p-12 text-center">
+            <div className="bg-sky-500/20 text-sky-500 rounded-full p-4 mb-4">
               <Video className="w-10 h-10" />
             </div>
-            <h3 className="text-xl font-medium text-gray-700 mb-2">
+            <h3 className="text-xl font-medium text-white mb-2">
               작업물이 없습니다
             </h3>
-            <p className="text-gray-500 mb-5 max-w-md">
+            <p className="text-gray-400 mb-5 max-w-md">
               새로운 영상이나 이미지를 생성해보세요!
             </p>
             <Link href="/generation/video">
@@ -125,10 +125,10 @@ export default function CreationPage() {
             {videos.map((video) => (
               <div
                 key={video.id}
-                className="overflow-hidden transition-all cursor-pointer bg-white rounded-lg border border-gray-200/80 hover:shadow-md hover:border-sky-200 group"
+                className="overflow-hidden transition-all cursor-pointer bg-black/40 backdrop-blur-xl rounded-lg border border-white/20 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-[1.02] hover:bg-black/80 hover:border-white/30 group"
                 onClick={() => handleVideoClick(video.id!)}
               >
-                <div className="aspect-video bg-gray-100 relative overflow-hidden">
+                <div className="aspect-video bg-black/60 relative overflow-hidden">
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-10">
                     <div className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center">
                       <Video className="w-6 h-6 text-sky-500" />
@@ -145,27 +145,26 @@ export default function CreationPage() {
                 </div>
                 <div className="p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium text-sm line-clamp-1 text-gray-900">
+                    <h3 className="font-medium text-sm line-clamp-1 text-white">
                       {video.name}
                     </h3>
                     <span
-                      className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        video.share
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
+                      className={`text-xs px-1.5 py-0.5 rounded-full ${video.share
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-gray-500/20 text-gray-400"
+                        }`}
                     >
                       {video.share ? "공개" : "비공개"}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 line-clamp-1">
+                  <p className="text-xs text-gray-400 line-clamp-1">
                     {video.prompt}
                   </p>
                   <div className="flex items-center justify-between mt-2">
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-500">
                       {new Date(video.createdAt || "").toLocaleDateString()}
                     </p>
-                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded-full text-gray-500">
+                    <span className="text-xs px-1.5 py-0.5 bg-gray-500/20 rounded-full text-gray-400">
                       {video.model}
                     </span>
                   </div>

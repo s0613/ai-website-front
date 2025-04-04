@@ -42,35 +42,35 @@ export const UserMenu = ({
 
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50"
+          className="absolute right-0 top-full mt-2 w-56 bg-gray-900 border border-gray-800/50 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] py-1 z-50"
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
         >
-          <div className="px-4 py-3 border-b bg-gray-50">
-            <p className="text-sm font-medium text-gray-900">
+          <div className="px-4 py-3 border-b border-gray-800/50 bg-gray-800/50">
+            <p className="text-sm font-medium text-white">
               {nickname || email}
             </p>
             {credits !== null && (
-              <p className="text-sm text-sky-600 mt-1">
+              <p className="text-sm text-sky-500 mt-1">
                 {credits} 크레딧
               </p>
             )}
           </div>
           <Link
             href="/my"
-            className="block px-4 py-2 text-sm hover:bg-sky-50 hover:text-sky-600"
+            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-sky-500 transition"
           >
             내정보
           </Link>
           <Link
-            href="/payment"
-            className="block px-4 py-2 text-sm hover:bg-sky-50 hover:text-sky-600"
+            href="/billing"
+            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-sky-500 transition"
           >
             크레딧 충전
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full text-left block px-4 py-2 text-sm hover:bg-sky-50 hover:text-sky-600"
+            className="w-full text-left block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800/50 hover:text-sky-500 transition"
           >
             로그아웃
           </button>

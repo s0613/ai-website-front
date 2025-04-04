@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export type SidebarFormData = {
   prompt: string;
@@ -16,6 +17,10 @@ export type SidebarFormData = {
   seed?: number;
   resolution?: string;
   numFrames?: number;
+  framesPerSecond?: number;
+  numInferenceSteps?: number;
+  enableSafetyChecker?: boolean;
+  enablePromptExpansion?: boolean;
 };
 
 export interface UseVideoSidebarProps {
@@ -35,6 +40,7 @@ export function useVideoSidebar({
   referencePrompt,
   referenceModel,
 }: UseVideoSidebarProps) {
+  const { toast } = useToast();
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -128,6 +134,14 @@ export function useVideoSidebar({
   // 폼 제출 핸들러 (업스케일링 옵션은 제거됨)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 비디오 생성 요청 전 토스트 알림
+    toast({
+      title: "비디오 생성 시작",
+      description: "비디오 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.",
+      duration: 5000,
+    });
+
     onSubmit({
       prompt,
       imageFile,
@@ -145,8 +159,8 @@ export function useVideoSidebar({
         endpoint === "hunyuan"
           ? numFrames
           : endpoint === "wan"
-          ? numFrames
-          : undefined,
+            ? numFrames
+            : undefined,
       framesPerSecond: endpoint === "wan" ? framesPerSecond : undefined,
       numInferenceSteps: endpoint === "wan" ? numInferenceSteps : undefined,
       enableSafetyChecker: endpoint === "wan" ? enableSafetyChecker : undefined,

@@ -16,6 +16,7 @@ export default function VideoReferencePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest');
 
   useEffect(() => {
     // 로그인 상태 확인
@@ -34,14 +35,6 @@ export default function VideoReferencePage() {
         cookies["auth-token"] || // 쿠키에서 auth-token 확인
         localStorage.getItem("auth-token");
 
-      console.log("감지된 인증 토큰:", {
-        access_token: cookies.access_token || "없음",
-        jwt: cookies.jwt || "없음",
-        "auth-token (쿠키)": cookies["auth-token"] || "없음",
-        "auth-token (로컬스토리지)":
-          localStorage.getItem("auth-token") || "없음",
-      });
-
       const isLoggedIn = !!hasAuthToken;
       setIsLoggedIn(isLoggedIn);
       return isLoggedIn;
@@ -54,16 +47,10 @@ export default function VideoReferencePage() {
         // 로그인 상태 확인
         const loggedIn = checkLoginStatus();
 
-        console.log(
-          `사용자 로그인 상태: ${loggedIn ? "로그인됨" : "로그인되지 않음"}`
-        );
-
         // 로그인 상태에 따라 다른 MyVideoService 함수 호출
         const sharedVideos: VideoDto[] = loggedIn
           ? await getSharedVideos()
           : await getSharedVideosNoLogin();
-
-        console.log("공유 비디오:", sharedVideos.length);
 
         // 비디오 데이터 처리
         const sizes: Array<"small" | "medium" | "large"> = [
@@ -140,13 +127,20 @@ export default function VideoReferencePage() {
       );
     }
 
-    if (filters.sortBy === "최신순") {
-      result = result.sort((a, b) => b.id - a.id);
-    } else if (filters.sortBy === "오래된순") {
-      result = result.sort((a, b) => a.id - b.id);
+    setFilteredVideos(result);
+  };
+
+  const handleSortChange = (newSortBy: 'latest' | 'popular') => {
+    setSortBy(newSortBy);
+    let sortedVideos = [...filteredVideos];
+
+    if (newSortBy === 'latest') {
+      sortedVideos.sort((a, b) => b.id - a.id);
+    } else if (newSortBy === 'popular') {
+      sortedVideos.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     }
 
-    setFilteredVideos(result);
+    setFilteredVideos(sortedVideos);
   };
 
   const handleVideoClick = (videoId: number) => {
@@ -158,16 +152,38 @@ export default function VideoReferencePage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-black">
       {/* Sidebar */}
       <Sidebar onFilterChange={handleFilterChange} />
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8">
+          {/* Sort Buttons */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => handleSortChange('latest')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${sortBy === 'latest'
+                ? 'bg-sky-500 text-white'
+                : 'bg-black/40 text-gray-300 hover:bg-black/60'
+                }`}
+            >
+              최신순
+            </button>
+            <button
+              onClick={() => handleSortChange('popular')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${sortBy === 'popular'
+                ? 'bg-sky-500 text-white'
+                : 'bg-black/40 text-gray-300 hover:bg-black/60'
+                }`}
+            >
+              인기순
+            </button>
+          </div>
+
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
@@ -184,10 +200,10 @@ export default function VideoReferencePage() {
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
               </svg>
-              <h3 className="mt-2 text-xl font-medium text-gray-900">
+              <h3 className="mt-2 text-xl font-medium text-white">
                 오류가 발생했습니다
               </h3>
-              <p className="mt-1 text-gray-500">{error}</p>
+              <p className="mt-1 text-gray-400">{error}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-auto">
@@ -197,13 +213,16 @@ export default function VideoReferencePage() {
                 return (
                   <div
                     key={video.id}
-                    className="relative group rounded-lg overflow-hidden bg-white shadow transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg"
+                    className="relative group rounded-lg overflow-hidden bg-black/40 backdrop-blur-xl border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transform transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:bg-black/80 hover:border-white/30"
                     style={{
                       gridRowEnd: `span ${rowSpan}`,
                       minHeight: "180px",
                     }}
                     onClick={() => handleVideoClick(video.id)}
                   >
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent opacity-100 group-hover:opacity-0 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:250%_250%] opacity-100 group-hover:opacity-0 transition-opacity duration-300" />
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out" />
                     <div className="relative w-full h-full">
                       {/* 포인터 이벤트를 비디오로 전달하기 위해 썸네일 이미지에 pointer-events-none 적용 */}
                       <img
@@ -220,13 +239,12 @@ export default function VideoReferencePage() {
                         playsInline
                         loop
                         onLoadedMetadata={(e) =>
-                          console.log("비디오 메타데이터 로드됨:", video.id)
+                          console.error("비디오 메타데이터 로드 실패:", e)
                         }
                         onError={(e) =>
                           console.error("비디오 로드 오류:", video.id, e)
                         }
                         onMouseEnter={(e) => {
-                          console.log("비디오 재생 시도:", video.id);
                           const playPromise = e.currentTarget.play();
                           if (playPromise !== undefined) {
                             playPromise.catch((error) => {

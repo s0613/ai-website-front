@@ -64,16 +64,15 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
 
   return (
     <div
-      className={`bg-white h-full ${
-        isCollapsed ? "w-16" : "w-64"
-      } flex flex-col border-r border-gray-200 transition-all duration-300`}
+      className={`bg-black/40 backdrop-blur-xl h-full ${isCollapsed ? "w-16" : "w-64"
+        } flex flex-col border-r border-white/20 transition-all duration-300`}
     >
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        {!isCollapsed && <h2 className="text-xl font-semibold">필터</h2>}
+      <div className="p-4 border-b border-white/20 flex items-center justify-between">
+        {!isCollapsed && <h2 className="text-xl font-semibold text-white">필터</h2>}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-full hover:bg-gray-100"
+          className="p-2 rounded-full hover:bg-white/10 text-white"
         >
           {isCollapsed ? (
             <svg
@@ -114,7 +113,7 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
               <input
                 type="text"
                 placeholder="이미지 검색..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 bg-black/40 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-gray-400"
                 value={filters.search}
                 onChange={handleSearchChange}
               />
@@ -136,14 +135,13 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
           {/* Categories Section */}
           <div className="mb-6">
             <button
-              className="flex items-center justify-between w-full text-left font-medium mb-2"
+              className="flex items-center justify-between w-full text-left font-medium mb-2 text-white"
               onClick={() => toggleSection("categories")}
             >
               <span>카테고리</span>
               <svg
-                className={`h-5 w-5 transition-transform ${
-                  activeSection === "categories" ? "rotate-180" : ""
-                }`}
+                className={`h-5 w-5 transition-transform ${activeSection === "categories" ? "rotate-180" : ""
+                  }`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -164,11 +162,11 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                       id={category}
                       checked={filters.categories.includes(category)}
                       onChange={() => handleCategoryChange(category)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="h-4 w-4 text-sky-500 border-white/20 rounded focus:ring-sky-500 bg-black/40"
                     />
                     <label
                       htmlFor={category}
-                      className="ml-2 text-sm text-gray-700"
+                      className="ml-2 text-sm text-gray-300"
                     >
                       {category}
                     </label>
@@ -181,14 +179,13 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
           {/* Size Section */}
           <div className="mb-6">
             <button
-              className="flex items-center justify-between w-full text-left font-medium mb-2"
+              className="flex items-center justify-between w-full text-left font-medium mb-2 text-white"
               onClick={() => toggleSection("size")}
             >
               <span>이미지 크기</span>
               <svg
-                className={`h-5 w-5 transition-transform ${
-                  activeSection === "size" ? "rotate-180" : ""
-                }`}
+                className={`h-5 w-5 transition-transform ${activeSection === "size" ? "rotate-180" : ""
+                  }`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -210,11 +207,11 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                       name="size"
                       checked={filters.size === size}
                       onChange={() => handleSizeChange(size)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      className="h-4 w-4 text-sky-500 border-white/20 focus:ring-sky-500 bg-black/40"
                     />
                     <label
                       htmlFor={size}
-                      className="ml-2 text-sm text-gray-700"
+                      className="ml-2 text-sm text-gray-300"
                     >
                       {size}
                     </label>
@@ -227,14 +224,13 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
           {/* Sort By Section */}
           <div className="mb-6">
             <button
-              className="flex items-center justify-between w-full text-left font-medium mb-2"
+              className="flex items-center justify-between w-full text-left font-medium mb-2 text-white"
               onClick={() => toggleSection("sortBy")}
             >
               <span>정렬 기준</span>
               <svg
-                className={`h-5 w-5 transition-transform ${
-                  activeSection === "sortBy" ? "rotate-180" : ""
-                }`}
+                className={`h-5 w-5 transition-transform ${activeSection === "sortBy" ? "rotate-180" : ""
+                  }`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -256,11 +252,11 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                       name="sortBy"
                       checked={filters.sortBy === option}
                       onChange={() => handleSortChange(option)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      className="h-4 w-4 text-sky-500 border-white/20 focus:ring-sky-500 bg-black/40"
                     />
                     <label
                       htmlFor={option}
-                      className="ml-2 text-sm text-gray-700"
+                      className="ml-2 text-sm text-gray-300"
                     >
                       {option}
                     </label>

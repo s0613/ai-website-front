@@ -10,7 +10,6 @@ export interface FilterOptions {
   search: string;
   categories: string[];
   duration: string;
-  sortBy: string;
 }
 
 // 사이드바 카테고리 데이터
@@ -20,14 +19,12 @@ const categories = [
 ];
 
 const durations = ["모든 길이", "짧은 영상", "중간 길이", "긴 영상"];
-const sortOptions = ["최신순", "인기순", "오래된순"];
 
 export default function Sidebar({ onFilterChange }: SidebarProps) {
   const [filters, setFilters] = useState<FilterOptions>({
     search: "",
     categories: [],
     duration: "모든 길이",
-    sortBy: "최신순",
   });
 
   // 변경: 초기값을 true로 설정하여 사이드바가 기본적으로 닫힌 상태로 시작
@@ -56,28 +53,21 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
     onFilterChange(newFilters);
   };
 
-  const handleSortChange = (sortBy: string) => {
-    const newFilters = { ...filters, sortBy };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
-  };
-
   const toggleSection = (section: string) => {
     setActiveSection(activeSection === section ? null : section);
   };
 
   return (
     <div
-      className={`bg-white h-full ${
-        isCollapsed ? "w-16" : "w-64"
-      } flex flex-col border-r border-gray-200 transition-all duration-300`}
+      className={`bg-black/40 backdrop-blur-xl h-full ${isCollapsed ? "w-16" : "w-64"
+        } flex flex-col border-r border-white/20 transition-all duration-300`}
     >
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        {!isCollapsed && <h2 className="text-xl font-semibold">필터</h2>}
+      <div className="p-4 border-b border-white/20 flex items-center justify-between">
+        {!isCollapsed && <h2 className="text-xl font-semibold text-white">필터</h2>}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-full hover:bg-gray-100"
+          className="p-2 rounded-full hover:bg-white/10 text-white"
         >
           {isCollapsed ? (
             <svg
@@ -118,7 +108,7 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
               <input
                 type="text"
                 placeholder="비디오 검색..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 bg-black/40 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-gray-400"
                 value={filters.search}
                 onChange={handleSearchChange}
               />
@@ -140,14 +130,13 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
           {/* Categories Section */}
           <div className="mb-6">
             <button
-              className="flex items-center justify-between w-full text-left font-medium mb-2"
+              className="flex items-center justify-between w-full text-left font-medium mb-2 text-white"
               onClick={() => toggleSection("categories")}
             >
               <span>카테고리</span>
               <svg
-                className={`h-5 w-5 transition-transform ${
-                  activeSection === "categories" ? "rotate-180" : ""
-                }`}
+                className={`h-5 w-5 transition-transform ${activeSection === "categories" ? "rotate-180" : ""
+                  }`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -168,11 +157,11 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                       id={category}
                       checked={filters.categories.includes(category)}
                       onChange={() => handleCategoryChange(category)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="h-4 w-4 text-sky-500 border-white/20 rounded focus:ring-sky-500 bg-black/40"
                     />
                     <label
                       htmlFor={category}
-                      className="ml-2 text-sm text-gray-700"
+                      className="ml-2 text-sm text-gray-300"
                     >
                       {category}
                     </label>
@@ -185,14 +174,13 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
           {/* Duration Section */}
           <div className="mb-6">
             <button
-              className="flex items-center justify-between w-full text-left font-medium mb-2"
+              className="flex items-center justify-between w-full text-left font-medium mb-2 text-white"
               onClick={() => toggleSection("duration")}
             >
               <span>영상 길이</span>
               <svg
-                className={`h-5 w-5 transition-transform ${
-                  activeSection === "duration" ? "rotate-180" : ""
-                }`}
+                className={`h-5 w-5 transition-transform ${activeSection === "duration" ? "rotate-180" : ""
+                  }`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -214,59 +202,13 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                       name="duration"
                       checked={filters.duration === duration}
                       onChange={() => handleDurationChange(duration)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      className="h-4 w-4 text-sky-500 border-white/20 focus:ring-sky-500 bg-black/40"
                     />
                     <label
                       htmlFor={duration}
-                      className="ml-2 text-sm text-gray-700"
+                      className="ml-2 text-sm text-gray-300"
                     >
                       {duration}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Sort By Section */}
-          <div className="mb-6">
-            <button
-              className="flex items-center justify-between w-full text-left font-medium mb-2"
-              onClick={() => toggleSection("sortBy")}
-            >
-              <span>정렬 기준</span>
-              <svg
-                className={`h-5 w-5 transition-transform ${
-                  activeSection === "sortBy" ? "rotate-180" : ""
-                }`}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            {activeSection === "sortBy" && (
-              <div className="space-y-2 ml-2">
-                {sortOptions.map((option) => (
-                  <div key={option} className="flex items-center">
-                    <input
-                      type="radio"
-                      id={option}
-                      name="sortBy"
-                      checked={filters.sortBy === option}
-                      onChange={() => handleSortChange(option)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <label
-                      htmlFor={option}
-                      className="ml-2 text-sm text-gray-700"
-                    >
-                      {option}
                     </label>
                   </div>
                 ))}

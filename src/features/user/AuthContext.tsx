@@ -30,8 +30,8 @@ const defaultContextValue: AuthContextType = {
   token: null,
   userRole: "",
   nickname: "",
-  login: () => {},
-  logout: () => {},
+  login: () => { },
+  logout: () => { },
 };
 
 const AuthContext = createContext<AuthContextType>(defaultContextValue);
@@ -57,15 +57,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // 쿠키에서 userRole 확인 (auth-token은 httpOnly라 읽을 수 없음)
     const roleCookie = getCookie("userRole");
-    console.log("쿠키에서 확인한 userRole:", roleCookie);
 
     // 로컬 스토리지 확인
     const storedEmail = localStorage.getItem("email");
     const storedToken = localStorage.getItem("token");
-    console.log("로컬 스토리지 확인:", {
-      storedEmail,
-      hasToken: !!storedToken,
-    });
 
     // 백엔드 API를 통해 현재 인증 상태 확인 - UserService 사용
     const checkAuthStatus = async () => {
@@ -83,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem("email", authData.email || "");
           localStorage.setItem("userRole", authData.role || roleCookie || "");
         } else {
-          console.log("인증되지 않은 상태 (API 응답)");
+          console.error("인증되지 않은 상태 (API 응답)");
         }
       } catch (error) {
         console.error("인증 상태 확인 중 오류:", error);

@@ -15,6 +15,7 @@ import {
 import VideoDetail from "@/features/video/videoReference/videoDetail";
 import { getLikedVideos } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
+import { PageContainer } from "@/components/common/PageContainer";
 
 // VideoDetail 컴포넌트에서 필요한 기본 비디오 정보 인터페이스
 interface VideoBasicInfo {
@@ -22,6 +23,9 @@ interface VideoBasicInfo {
   name: string;
   thumbnailUrl: string;
   creator: string;
+  createdAt: string;
+  likeCount: number;
+  clickCount: number;
 }
 
 const MyLikedPage = () => {
@@ -69,6 +73,9 @@ const MyLikedPage = () => {
         name: "알 수 없는 비디오",
         thumbnailUrl: "",
         creator: "알 수 없음",
+        createdAt: new Date().toISOString(),
+        likeCount: 0,
+        clickCount: 0,
       };
     }
 
@@ -77,6 +84,9 @@ const MyLikedPage = () => {
       name: video.name,
       thumbnailUrl: video.thumbnailUrl || "",
       creator: "나", // 또는 video.creator가 있다면 그것을 사용
+      createdAt: video.createdAt || new Date().toISOString(),
+      likeCount: video.likeCount || 0,
+      clickCount: video.clickCount || 0,
     };
   };
 
@@ -91,124 +101,114 @@ const MyLikedPage = () => {
     });
   };
 
-  return (
-    <div className="flex flex-col h-full bg-gray-50">
-      <div className="flex-1 p-6 overflow-y-auto">
-        <Tabs defaultValue="like" className="w-full">
-          <TabsList className="bg-gray-100/80 p-0.5 rounded-lg">
-            <TabsTrigger
-              value="like"
-              className="flex items-center gap-1.5 py-2 data-[state=active]:bg-white data-[state=active]:text-sky-600 text-gray-600 shadow-none data-[state=active]:shadow-sm"
-            >
-              <Heart className="h-4 w-4" />
-              <span>좋아요</span>
-            </TabsTrigger>
-          </TabsList>
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 text-sky-500 animate-spin" />
+        </div>
+      </PageContainer>
+    );
+  }
 
-          {/* 탭 내용 */}
-          <div className="mt-6">
-            {isLoading ? (
-              // 로딩 상태
-              <div className="flex flex-col justify-center items-center h-64">
-                <Loader2 className="h-10 w-10 text-sky-500 animate-spin mb-4" />
-                <p className="text-gray-600 font-medium">
-                  좋아요한 작업물을 불러오는 중...
-                </p>
-              </div>
-            ) : error ? (
-              // 에러 상태
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-100 p-8">
-                <div className="bg-red-50 text-red-500 rounded-full p-4 mx-auto w-16 h-16 flex items-center justify-center mb-4">
-                  <AlertTriangle className="h-8 w-8" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  오류가 발생했습니다
-                </h3>
-                <p className="text-red-500 mb-4">{error}</p>
-                <Button
-                  className="bg-sky-500 hover:bg-sky-600 text-white"
-                  onClick={() => window.location.reload()}
-                >
-                  다시 시도
-                </Button>
-              </div>
-            ) : likedVideos.length === 0 ? (
-              // 비디오가 없는 경우
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-100 p-8">
-                <div className="bg-sky-50 text-sky-500 rounded-full p-4 mx-auto w-16 h-16 flex items-center justify-center mb-4">
-                  <Heart className="h-8 w-8" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  좋아요한 비디오가 없습니다
-                </h3>
-                <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                  비디오를 좋아요하면 여기에 표시됩니다
-                </p>
-              </div>
-            ) : (
-              // 비디오 그리드
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                {likedVideos.map((video) => (
-                  <div
-                    key={video.id}
-                    onClick={() => handleVideoClick(video.id!)}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200/80 hover:shadow-md hover:border-sky-200 transition-all duration-300 cursor-pointer overflow-hidden group"
-                  >
-                    <div className="aspect-video bg-gray-100 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-10">
-                        <div className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                          <Film className="w-6 h-6 text-sky-500" />
-                        </div>
-                      </div>
-
-                      {video.thumbnailUrl ? (
-                        <img
-                          src={video.thumbnailUrl}
-                          alt={video.name}
-                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full bg-gray-200">
-                          <Film className="w-12 h-12 text-gray-400" />
-                        </div>
-                      )}
-
-                      {/* 그라데이션 오버레이 */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
-
-                      {/* 좋아요 뱃지 */}
-                      <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center text-xs font-medium shadow-sm">
-                        <Heart className="w-3.5 h-3.5 text-sky-500 mr-1 fill-current" />
-                        <span>{video.likeCount || 0}</span>
-                      </div>
-                    </div>
-
-                    <div className="p-3">
-                      <h3 className="font-medium text-sm line-clamp-1 text-gray-900 mb-1">
-                        {video.name}
-                      </h3>
-                      <p className="text-xs text-gray-500 mb-2 line-clamp-1">
-                        {/* creator 필드가 없는 경우 대비 */}
-                        {video.creator || ""}
-                      </p>
-
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <div className="flex items-center">
-                          <Eye className="w-3.5 h-3.5 mr-1 text-gray-400" />
-                          <span>{video.clickCount || 0}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="w-3.5 h-3.5 mr-1 text-gray-400" />
-                          <span>{formatDate(video.createdAt)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+  if (error) {
+    return (
+      <PageContainer>
+        <div className="text-center py-12">
+          <div className="bg-red-500/20 text-red-400 rounded-full p-4 mx-auto w-16 h-16 flex items-center justify-center mb-4">
+            <AlertTriangle className="h-8 w-8" />
           </div>
-        </Tabs>
+          <h3 className="text-xl font-semibold text-white mb-2">
+            오류가 발생했습니다
+          </h3>
+          <p className="text-red-400 mb-4">{error}</p>
+          <Button
+            className="bg-sky-500 hover:bg-sky-600 text-white"
+            onClick={() => window.location.reload()}
+          >
+            다시 시도
+          </Button>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (likedVideos.length === 0) {
+    return (
+      <PageContainer
+        title="좋아요한 작업물"
+        description="마음에 드는 작업물을 저장하고 관리하세요"
+      >
+        <div className="text-center py-12">
+          <div className="bg-sky-500/20 text-sky-400 rounded-full p-4 mx-auto w-16 h-16 flex items-center justify-center mb-4">
+            <Heart className="h-8 w-8" />
+          </div>
+          <h3 className="text-xl font-semibold text-white mb-2">
+            좋아요한 작업물이 없습니다
+          </h3>
+          <p className="text-gray-400 mb-4 max-w-md mx-auto">
+            작업물을 좋아요하면 여기에 표시됩니다
+          </p>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  return (
+    <PageContainer
+      title="좋아요한 작업물"
+      description="마음에 드는 작업물을 저장하고 관리하세요"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {likedVideos.map((video) => (
+          <div
+            key={video.id}
+            onClick={() => handleVideoClick(video.id!)}
+            className="bg-black/20 backdrop-blur-sm rounded-lg border border-white/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-[1.02] hover:bg-black/40 hover:border-white/20 transition-all duration-300 cursor-pointer overflow-hidden group"
+          >
+            <div className="aspect-video bg-black/60 relative overflow-hidden">
+              {video.thumbnailUrl ? (
+                <img
+                  src={video.thumbnailUrl}
+                  alt={video.name}
+                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full bg-black/60">
+                  <Film className="w-12 h-12 text-gray-400" />
+                </div>
+              )}
+
+              {/* 그라데이션 오버레이 */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+
+              {/* 좋아요 뱃지 */}
+              <div className="absolute bottom-2 right-2 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center text-xs font-medium shadow-sm border border-white/20">
+                <Heart className="w-3.5 h-3.5 text-sky-400 mr-1 fill-current" />
+                <span className="text-white">{video.likeCount || 0}</span>
+              </div>
+            </div>
+
+            <div className="p-3">
+              <h3 className="font-medium text-sm line-clamp-1 text-white mb-1">
+                {video.name}
+              </h3>
+              <p className="text-xs text-gray-400 mb-2 line-clamp-1">
+                {/* creator 필드가 없는 경우 대비 */}
+                {video.creator || ""}
+              </p>
+
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <div className="flex items-center">
+                  <span>{video.clickCount || 0} 조회</span>
+                </div>
+                <div className="flex items-center">
+                  <span>{formatDate(video.createdAt)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* 비디오 상세 정보 모달 */}
@@ -218,12 +218,12 @@ const MyLikedPage = () => {
           onClick={handleBackToList}
         >
           <div
-            className="relative bg-white rounded-xl shadow-xl overflow-hidden w-full max-w-4xl mx-auto border border-gray-200 animate-in zoom-in-95 duration-300"
+            className="relative bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden w-full max-w-4xl mx-auto animate-in zoom-in-95 duration-300"
             style={{ maxHeight: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-gray-700 shadow-md hover:bg-gray-50 transition-colors border border-gray-200"
+              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white shadow-md hover:bg-black/60 transition-colors border border-white/20"
               onClick={handleBackToList}
               aria-label="닫기"
             >
@@ -233,12 +233,18 @@ const MyLikedPage = () => {
               <VideoDetail
                 videoId={selectedVideoId}
                 onBack={handleBackToList}
+                videoBasicInfo={{
+                  id: selectedVideoId,
+                  name: likedVideos.find(video => video.id === selectedVideoId)?.name || '',
+                  thumbnailUrl: likedVideos.find(video => video.id === selectedVideoId)?.thumbnailUrl || '',
+                  creator: likedVideos.find(video => video.id === selectedVideoId)?.creator || ''
+                }}
               />
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

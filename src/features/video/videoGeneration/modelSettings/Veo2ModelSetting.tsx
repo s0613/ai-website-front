@@ -8,18 +8,17 @@ export class Veo2ModelSetting extends ModelSettingBase {
     return (
       <>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-white mb-1">
             비율
           </label>
           <div className="grid grid-cols-3 gap-2">
             {["16:9", "9:16"].map((ratio) => (
               <label
                 key={ratio}
-                className={`flex items-center justify-between w-full py-2 px-3 rounded-lg border cursor-pointer text-xs transition-transform duration-200 transform hover:scale-105 ${
-                  currentSettings.aspectRatio === ratio
-                    ? "border-blue-600 shadow-md"
-                    : "border-gray-300"
-                }`}
+                className={`flex items-center justify-between w-full py-2 px-3 rounded-lg border cursor-pointer text-xs transition-transform duration-200 transform hover:scale-105 ${currentSettings.aspectRatio === ratio
+                    ? "border-sky-500 bg-sky-500/20 text-sky-500"
+                    : "border-white/10 text-gray-300 hover:bg-white/5"
+                  }`}
               >
                 <input
                   type="radio"
@@ -33,20 +32,18 @@ export class Veo2ModelSetting extends ModelSettingBase {
                 />
                 {ratio === "16:9" && (
                   <div
-                    className={`w-3 h-2 border bg-transparent ${
-                      currentSettings.aspectRatio === "16:9"
-                        ? "border-blue-600"
-                        : "border-gray-400"
-                    }`}
+                    className={`w-3 h-2 border bg-transparent ${currentSettings.aspectRatio === "16:9"
+                        ? "border-sky-500"
+                        : "border-white/30"
+                      }`}
                   ></div>
                 )}
                 {ratio === "9:16" && (
                   <div
-                    className={`w-2 h-3 border bg-transparent ${
-                      currentSettings.aspectRatio === "9:16"
-                        ? "border-blue-600"
-                        : "border-gray-400"
-                    }`}
+                    className={`w-2 h-3 border bg-transparent ${currentSettings.aspectRatio === "9:16"
+                        ? "border-sky-500"
+                        : "border-white/30"
+                      }`}
                   ></div>
                 )}
                 <span>{ratio}</span>
@@ -55,18 +52,17 @@ export class Veo2ModelSetting extends ModelSettingBase {
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-white mb-1">
             길이
           </label>
           <div className="grid grid-cols-4 gap-1">
             {["5s", "6s", "7s", "8s"].map((dur) => (
               <label
                 key={dur}
-                className={`flex items-center justify-center py-1 rounded border cursor-pointer text-xs ${
-                  currentSettings.duration === dur
-                    ? "bg-blue-100 border-blue-400 text-blue-700"
-                    : "border-gray-300 text-gray-700"
-                }`}
+                className={`flex items-center justify-center py-1 rounded border cursor-pointer text-xs ${currentSettings.duration === dur
+                    ? "bg-sky-500/20 border-sky-500 text-sky-500"
+                    : "border-white/10 text-gray-300 hover:bg-white/5"
+                  }`}
               >
                 <input
                   type="radio"

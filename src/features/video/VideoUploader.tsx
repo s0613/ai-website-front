@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from "react";
+import { saveVideo } from './services/MyVideoService';
+import { VideoCreateRequest } from './types/Video';
 
 const VideoUploader = () => {
   const [aiVideo, setAiVideo] = useState<File | null>(null);
@@ -47,49 +49,25 @@ const VideoUploader = () => {
 
     setIsLoading(true);
     try {
-      // FormData 객체 생성
-      const formData = new FormData();
-
-      // 비디오 파일 추가
-      formData.append("videoFile", aiVideo);
-
-      // 추가 파일이 있는 경우 추가
-      if (modeFile) {
-        formData.append("modeFile", modeFile);
-      }
-
-      // JSON 데이터 구성
-      const jsonData = {
-        prompt: prompt,
-        endpoint: model,
+      const videoRequest: VideoCreateRequest = {
         videoName: aiVideoName,
+        prompt: prompt,
+        endpoint: model
       };
 
-      // JSON 데이터를 FormData에 추가
-      formData.append("data", JSON.stringify(jsonData));
-
-      console.log("영상 저장 요청 보내기");
-
-      // FormData로 요청 전송
-      const res = await fetch("/api/my/creation/video/save", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const result = await res.json();
-        alert("영상 업로드 성공");
-        setAiVideo(null);
-        setAiVideoName("");
-        setPrompt("");
-        setModeFile(null);
-        console.log("저장된 영상 정보:", result);
-      } else {
-        const errorData = await res.json();
-        alert(`업로드 실패: ${errorData.message || "알 수 없는 오류"}`);
-      }
+      const result = await saveVideo(videoRequest, aiVideo, modeFile || undefined);
+      alert("영상 업로드 성공");
+      setAiVideo(null);
+      setAiVideoName("");
+      setPrompt("");
+      setModeFile(null);
+      console.log("저장된 영상 정보:", result);
     } catch (error) {
-      alert("에러 발생");
+      if (error instanceof Error) {
+        alert(`업로드 실패: ${error.message}`);
+      } else {
+        alert("알 수 없는 에러가 발생했습니다.");
+      }
       console.error("업로드 중 에러 발생:", error);
     } finally {
       setIsLoading(false);

@@ -22,17 +22,17 @@ interface SidebarItem {
 const sidebarItems: SidebarItem[] = [
   {
     icon: Home,
-    label: "홈",
+    label: "마이홈",
     href: "/my",
   },
   {
     icon: Image,
-    label: "내 작업물",
+    label: "작업물",
     href: "/my/creation",
   },
   {
     icon: Folder,
-    label: "내 폴더",
+    label: "폴더",
     href: "/my/folder/my",
   },
   {
@@ -50,20 +50,11 @@ const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] bg-gradient-to-b from-gray-50 via-gray-100 to-gray-200">
+    <div className="flex min-h-[calc(100vh-64px)] bg-black">
       {/* 사이드바 */}
-      <div className="w-64 border-r border-gray-200 bg-white shadow-sm flex-shrink-0 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center space-x-3">
-            <div>
-              <h2 className="font-semibold text-gray-900">마이페이지</h2>
-              <p className="text-xs text-gray-500">계정 및 콘텐츠 관리</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto py-4 px-3">
-          <nav className="space-y-1">
+      <div className="w-64 border-r border-white/20 bg-black/40 backdrop-blur-xl flex-shrink-0 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto py-6 px-4">
+          <nav className="space-y-2">
             {sidebarItems.map((item, idx) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -72,45 +63,35 @@ const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
                   key={idx}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:translate-x-1",
+                    "flex items-center w-full px-4 py-3 rounded-lg transition-all hover:translate-x-1",
                     isActive
-                      ? "bg-sky-50 text-sky-600"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-sky-500/20 text-sky-400"
+                      : "text-gray-400 hover:bg-white/5"
                   )}
                 >
-                  <div className={isActive ? "text-sky-500" : "text-gray-500"}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span
-                    className={cn(
-                      "font-medium",
-                      isActive ? "text-sky-600" : ""
-                    )}
-                  >
+                  <Icon className={cn("h-5 w-5 mr-3", isActive ? "text-sky-400" : "text-gray-400")} />
+                  <span className={cn("font-medium", isActive ? "text-sky-400" : "")}>
                     {item.label}
                   </span>
                   {isActive && (
-                    <ChevronRight className="w-4 h-4 ml-auto text-sky-500" />
+                    <ChevronRight className="w-4 h-4 ml-auto text-sky-400" />
                   )}
                 </Link>
               );
             })}
           </nav>
         </div>
-
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="h-2 w-2 rounded-full bg-green-500"></span>
-            계정 활성화됨
-          </div>
-        </div>
       </div>
 
       {/* 메인 콘텐츠 영역 */}
       <div className="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-auto">
         <main className="flex-1 p-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/80 p-6 h-full">
-            {children}
+          <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/5 h-full">
+            <div className="px-8 py-6 h-full">
+              <div className="max-w-6xl mx-auto">
+                {children}
+              </div>
+            </div>
           </div>
         </main>
       </div>

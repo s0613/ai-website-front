@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import VideoUpload from "@/features/admin/VideoUploader";
+import VideoUpload from "@/features/video/VideoUploader";
 
 const VideoUploadPage = () => {
   return <VideoUpload />;

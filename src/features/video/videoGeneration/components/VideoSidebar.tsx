@@ -82,44 +82,42 @@ export default function VideoSidebar(props: VideoSidebarProps) {
   });
 
   return (
-    <div className="w-[360px] h-full bg-white border-r border-gray-200 flex flex-col overflow-hidden shadow-sm">
-      <ScrollArea className="flex-1">
-        <div className="p-5 pb-6">
+    <div className="w-[400px] h-full bg-black/90 backdrop-blur-xl border-r border-white/20 flex flex-col overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.4)] z-10">
+      <ScrollArea className="flex-1 [&_.simplebar-scrollbar]:bg-white/10 [&_.simplebar-scrollbar]:hover:bg-white/20 [&_.simplebar-scrollbar]:before:bg-white/10 [&_.simplebar-scrollbar]:before:hover:bg-white/20 [&_.simplebar-scrollbar]:w-1.5 [&_.simplebar-scrollbar]:rounded-full">
+        <div className="p-6">
           {/* 탭 선택 영역 */}
           <div className="mb-6">
             <Tabs
-              defaultValue={activeTab}
-              onValueChange={(val) => handleTabSelection(val as any)}
+              value={activeTab}
+              onValueChange={(val) => handleTabSelection(val as "image" | "text" | "video")}
+              className="w-full"
             >
-              <TabsList className="grid grid-cols-3 w-full bg-gray-100/80 p-0.5 rounded-lg">
+              <TabsList className="grid w-full grid-cols-3 bg-transparent">
                 <TabsTrigger
                   value="image"
-                  className="flex items-center gap-1.5 py-2 data-[state=active]:bg-white data-[state=active]:text-sky-600 shadow-none data-[state=active]:shadow-sm"
+                  className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
                 >
-                  <ImageIcon className="w-4 h-4" />
-                  <span>이미지</span>
+                  IMAGE
                 </TabsTrigger>
                 <TabsTrigger
                   value="video"
-                  className="flex items-center gap-1.5 py-2 data-[state=active]:bg-white data-[state=active]:text-sky-600 shadow-none data-[state=active]:shadow-sm"
+                  className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
                 >
-                  <Film className="w-4 h-4" />
-                  <span>비디오</span>
+                  VIDEO
                 </TabsTrigger>
                 <TabsTrigger
                   value="text"
-                  className="flex items-center gap-1.5 py-2 data-[state=active]:bg-white data-[state=active]:text-sky-600 shadow-none data-[state=active]:shadow-sm"
+                  className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>텍스트</span>
+                  TEXT
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" id="video-form">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 block">
+              <label className="text-sm font-medium text-white block">
                 프롬프트
               </label>
               <textarea
@@ -128,29 +126,21 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="예: 바닷가에서 춤추는 로봇"
                 rows={6}
-                className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:ring-2 focus:ring-sky-300 focus:border-sky-500 focus:outline-none resize-y transition-colors placeholder:text-gray-400"
+                className="w-full rounded-lg border border-white/20 bg-black/30 backdrop-blur-md p-3 text-sm focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none resize-y transition-colors placeholder:text-gray-400 text-white"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-400">
                 자세한 설명일수록 더 좋은 결과가 나옵니다
               </p>
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-
             {activeTab === "image" && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-white">
                     참조 이미지
                   </label>
                   {imageChanged && (
-                    <span className="text-emerald-600 text-xs flex items-center animate-pulse">
+                    <span className="text-sky-500 text-xs flex items-center animate-pulse">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       변경됨
                     </span>
@@ -161,11 +151,10 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                   <ContextMenu>
                     <ContextMenuTrigger>
                       <div
-                        className={`relative w-full h-48 border rounded-lg overflow-hidden cursor-pointer transition-all duration-300 group ${
-                          imageChanged
-                            ? "ring-2 ring-sky-500 shadow-lg border-sky-300"
-                            : "border-gray-200 hover:border-sky-300"
-                        }`}
+                        className={`relative w-full h-48 border rounded-lg overflow-hidden cursor-pointer transition-all duration-300 group ${imageChanged
+                          ? "ring-2 ring-sky-500 shadow-lg border-sky-500/50"
+                          : "border-white/20 hover:border-sky-500/50"
+                          }`}
                       >
                         <Image
                           src={previewUrl}
@@ -185,14 +174,14 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                         )}
                       </div>
                     </ContextMenuTrigger>
-                    <ContextMenuContent className="w-40">
-                      <ContextMenuItem onClick={selectImage} className="gap-2">
+                    <ContextMenuContent className="w-40 bg-black/80 backdrop-blur-md border border-white/10">
+                      <ContextMenuItem onClick={selectImage} className="gap-2 text-white hover:bg-white/10">
                         <ImageIcon className="h-4 w-4" />
                         이미지 변경
                       </ContextMenuItem>
                       <ContextMenuItem
                         onClick={removeImage}
-                        className="gap-2 text-red-600"
+                        className="gap-2 text-red-400 hover:bg-white/10"
                       >
                         <svg
                           className="h-4 w-4"
@@ -214,31 +203,85 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                   </ContextMenu>
                 ) : (
                   <div
-                    className="w-full h-48 border border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors border-gray-300 hover:border-sky-300 group"
+                    className="w-full h-48 border border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors border-white/20 hover:border-sky-500/50 group"
                     onClick={selectImage}
                   >
-                    <div className="w-16 h-16 rounded-full bg-sky-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <div className="w-16 h-16 rounded-full bg-sky-500/20 backdrop-blur-md flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                       <Upload className="h-7 w-7 text-sky-500" />
                     </div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">
+                    <p className="text-sm font-medium text-white mb-1">
                       이미지 추가하기
                     </p>
-                    <p className="text-xs text-gray-500 px-6 text-center">
+                    <p className="text-xs text-gray-400 px-6 text-center">
                       참조 이미지를 추가하면 더 정확한 결과를 얻을 수 있습니다
                     </p>
                   </div>
                 )}
+
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const newPrompt = `이 이미지와 유사한 스타일로 ${prompt}`;
+                    setPrompt(newPrompt);
+                  }}
+                  disabled={!previewUrl}
+                  className={`w-full mt-2 py-2 transition-all duration-300 border flex items-center justify-center gap-2 ${previewUrl
+                    ? "bg-sky-500/20 hover:bg-sky-500/30 text-white border-white/10 hover:border-sky-500/50"
+                    : "bg-black/30 text-gray-400 border-white/10 cursor-not-allowed"
+                    }`}
+                >
+                  <span>이미지에 맞게 프롬프트 변경</span>
+                </Button>
+              </div>
+            )}
+
+            {activeTab === "video" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-white">
+                    참조 비디오
+                  </label>
+                  {imageChanged && (
+                    <span className="text-sky-500 text-xs flex items-center animate-pulse">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      변경됨
+                    </span>
+                  )}
+                </div>
+
+                <div
+                  className="w-full h-48 border border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors border-white/20 hover:border-sky-500/50 group"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="w-16 h-16 rounded-full bg-sky-500/20 backdrop-blur-md flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <Film className="h-7 w-7 text-sky-500" />
+                  </div>
+                  <p className="text-sm font-medium text-white mb-1">
+                    비디오 추가하기
+                  </p>
+                  <p className="text-xs text-gray-400 px-6 text-center">
+                    참조 비디오를 추가하면 더 정확한 결과를 얻을 수 있습니다
+                  </p>
+                </div>
+
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  ref={fileInputRef}
+                />
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 block">
+              <label className="text-sm font-medium text-white block">
                 AI 모델 선택
               </label>
               <select
                 value={endpoint}
                 onChange={(e) => updateSettings({ endpoint: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-sky-300 focus:border-sky-500 focus:outline-none bg-white"
+                className="w-full rounded-lg border border-white/20 bg-black/30 backdrop-blur-md p-2.5 text-sm focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none text-white"
               >
                 {activeTab === "image" ? (
                   <>
@@ -261,8 +304,8 @@ export default function VideoSidebar(props: VideoSidebarProps) {
             </div>
 
             {/* 모델 설정 컴포넌트 */}
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/70">
-              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+            <div className="border border-white/10 rounded-lg p-4 bg-black/30 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+              <h3 className="text-sm font-medium text-white mb-3 flex items-center">
                 <svg
                   className="h-4 w-4 mr-1.5 text-sky-500"
                   fill="none"
@@ -299,83 +342,30 @@ export default function VideoSidebar(props: VideoSidebarProps) {
               />
             </div>
 
-            <div className="pt-4 space-y-3.5">
-              <Button
-                type="submit"
-                className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 text-white transition-colors shadow-sm"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>영상 생성 중...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center">
-                    <Film className="mr-2 h-4 w-4" />
-                    <span>영상 생성하기</span>
-                  </div>
-                )}
-              </Button>
-
-              <Button
-                type="button"
-                onClick={onUpscale}
-                disabled={!videoGenerated || isUpscaling || hasUpscaled}
-                className={`w-full py-2.5 transition-colors shadow-sm flex items-center justify-center ${
-                  hasUpscaled
-                    ? "bg-emerald-500 hover:bg-emerald-600 text-white"
-                    : !videoGenerated
-                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white"
-                }`}
-              >
-                {isUpscaling ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    <span>업스케일링 중...</span>
-                  </>
-                ) : hasUpscaled ? (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    <span>업스케일링 완료</span>
-                  </>
-                ) : (
-                  <>
-                    <ArrowUpToLine className="mr-2 h-4 w-4" />
-                    <span>고화질 업스케일링</span>
-                  </>
-                )}
-              </Button>
-
-              {!videoGenerated && (
-                <p className="text-xs text-gray-500 text-center">
-                  영상을 먼저 생성해주세요
-                </p>
-              )}
-            </div>
           </form>
         </div>
       </ScrollArea>
 
-      <div className="p-3 border-t border-gray-100 bg-gray-50/50">
-        <div className="flex items-center text-xs text-gray-500 justify-center">
-          <svg
-            className="h-3 w-3 mr-1 text-sky-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          모든 생성된 콘텐츠는 저작권이 사용자에게 있습니다
-        </div>
+      <div className="p-3 border-t border-white/10 bg-black/30 backdrop-blur-md">
+        <Button
+          type="submit"
+          form="video-form"
+          className="w-full py-3 bg-sky-500/30 backdrop-blur-md hover:bg-sky-500/40 text-white transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.3)] border border-white/20 hover:border-sky-500/50 hover:scale-[1.02] font-medium text-base relative"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span>영상 생성 중...</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center">
+              <Film className="mr-2 h-5 w-5" />
+              <span>영상 생성하기</span>
+              <span className="absolute right-3 text-sm text-red-400">-10 크레딧</span>
+            </div>
+          )}
+        </Button>
       </div>
     </div>
   );

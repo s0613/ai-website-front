@@ -8,18 +8,17 @@ export class LunaModelSetting extends ModelSettingBase {
     return (
       <>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-white mb-1">
             비율
           </label>
           <div className="grid grid-cols-3 gap-2">
             {["16:9", "9:16"].map((ratio) => (
               <label
                 key={ratio}
-                className={`flex items-center justify-center py-1.5 rounded border cursor-pointer text-xs ${
-                  currentSettings.aspectRatio === ratio
-                    ? "bg-blue-100 border-blue-400 text-blue-700"
-                    : "border-gray-300 text-gray-700"
-                }`}
+                className={`flex items-center justify-center py-1.5 rounded border cursor-pointer text-xs ${currentSettings.aspectRatio === ratio
+                    ? "bg-sky-500/20 border-sky-500 text-sky-500"
+                    : "border-white/10 text-gray-300 hover:bg-white/5"
+                  }`}
               >
                 <input
                   type="radio"
@@ -37,18 +36,17 @@ export class LunaModelSetting extends ModelSettingBase {
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-white mb-1">
             길이
           </label>
           <div className="grid grid-cols-4 gap-1">
             {["5s", "6s", "7s", "8s"].map((dur) => (
               <label
                 key={dur}
-                className={`flex items-center justify-center py-1 rounded border cursor-pointer text-xs ${
-                  currentSettings.duration === dur
-                    ? "bg-blue-100 border-blue-400 text-blue-700"
-                    : "border-gray-300 text-gray-700"
-                }`}
+                className={`flex items-center justify-center py-1 rounded border cursor-pointer text-xs ${currentSettings.duration === dur
+                    ? "bg-sky-500/20 border-sky-500 text-sky-500"
+                    : "border-white/10 text-gray-300 hover:bg-white/5"
+                  }`}
               >
                 <input
                   type="radio"

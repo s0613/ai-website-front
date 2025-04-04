@@ -124,47 +124,28 @@ export const saveVideo = async (
 ): Promise<VideoDto> => {
   try {
     const formData = new FormData();
-    
+
     // 비디오 파일 추가
     formData.append('videoFile', videoFile);
-    
+
     // 참조 파일이 있는 경우 추가
     if (referenceFile) {
       formData.append('referenceFile', referenceFile);
     }
-    
-    // 모드 결정
-    let mode = 'TEXT';
-    if (referenceFile) {
-      const fileType = referenceFile.type || '';
-      if (fileType.startsWith('image/')) {
-        mode = 'IMAGE';
-      } else if (fileType.startsWith('video/')) {
-        mode = 'VIDEO';
-      }
-    }
-    
-    // DTO 생성
-    const requestData = {
-      videoName: data.videoName,
-      prompt: data.prompt,
-      model: data.endpoint,
-      mode: mode,
-    };
-    
+
     // DTO를 FormData에 추가
     formData.append(
       'data',
-      new Blob([JSON.stringify(requestData)], { type: 'application/json' })
+      new Blob([JSON.stringify(data)], { type: 'application/json' })
     );
-    
+
     // API 요청
     const response = await apiClient.post<VideoDto>('/my/videos', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     return response.data;
   } catch (error) {
     console.error('비디오 저장에 실패했습니다:', error);

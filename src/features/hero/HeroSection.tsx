@@ -33,71 +33,68 @@ const CategoryBox = ({
   const imageItems = items.filter((item) => item.value.includes("image"));
 
   return (
-    <motion.div
-      {...fadeIn}
-      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 w-full mt-4"
-    >
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 w-full mt-4">
       {videoGeneration && (
-        <motion.div
-          {...fadeIn}
-          className="col-span-1 sm:col-span-2 md:col-span-2"
-        >
+        <div className="col-span-1 sm:col-span-2 md:col-span-2">
           <Card
-            className="cursor-pointer transition-all duration-500 hover:shadow-xl overflow-hidden group relative border-sky-400 bg-gradient-to-br from-white to-sky-50 h-full"
+            className="cursor-pointer transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden group relative border-white/20 bg-black/40 backdrop-blur-xl h-full hover:scale-[1.02] hover:bg-black/80 hover:border-white/30 shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
             onClick={() => onSelect(videoGeneration)}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-sky-50 to-sky-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent opacity-100 group-hover:opacity-0 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:250%_250%] opacity-100 group-hover:opacity-0 transition-opacity duration-300" />
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out" />
             <CardHeader className="p-5 relative z-10 pb-4 text-center flex flex-col items-center justify-center h-full">
-              <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-sky-700 transition-colors duration-300">
+              <CardTitle className="text-xl font-bold text-white group-hover:text-sky-500 transition-colors duration-300">
                 {videoGeneration.title}
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-sm text-gray-400 mt-2">
                 {videoGeneration.subtitle}
               </p>
             </CardHeader>
           </Card>
-        </motion.div>
+        </div>
       )}
 
       {videoReference && (
-        <motion.div {...fadeIn} className="col-span-1">
+        <div className="col-span-1">
           <Card
-            className="cursor-pointer transition-all h-full duration-500 hover:shadow-xl overflow-hidden group relative border-gray-200 bg-white"
+            className="cursor-pointer transition-all h-full duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden group relative border-white/20 bg-black/40 backdrop-blur-xl hover:scale-[1.02] hover:bg-black/80 hover:border-white/30 shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
             onClick={() => onSelect(videoReference)}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-sky-50 to-sky-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent opacity-100 group-hover:opacity-0 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:250%_250%] opacity-100 group-hover:opacity-0 transition-opacity duration-300" />
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out" />
             <CardHeader className="p-5 relative z-10 pb-5 text-center flex flex-col items-center justify-center h-full">
-              <CardTitle className="text-lg font-bold text-gray-900 group-hover:text-sky-700 transition-colors duration-300">
+              <CardTitle className="text-lg font-bold text-white group-hover:text-sky-500 transition-colors duration-300">
                 {videoReference.title}
               </CardTitle>
-              <p className="text-xs text-gray-600 mt-2">
+              <p className="text-xs text-gray-400 mt-2">
                 {videoReference.subtitle}
               </p>
             </CardHeader>
           </Card>
-        </motion.div>
+        </div>
       )}
 
       {imageItems.map((item, index) => (
-        <motion.div key={index} {...fadeIn} className="col-span-1">
+        <div key={index} className="col-span-1">
           <Card
-            className="cursor-pointer transition-all duration-500 hover:shadow-xl overflow-hidden group relative border border-gray-200 bg-white h-full"
+            className="cursor-pointer transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden group relative border-white/20 bg-black/40 backdrop-blur-xl h-full hover:scale-[1.02] hover:bg-black/80 hover:border-white/30 shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
             onClick={() => onSelect(item)}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-sky-50 to-sky-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-in-out" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent opacity-100 group-hover:opacity-0 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:250%_250%] opacity-100 group-hover:opacity-0 transition-opacity duration-300" />
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out" />
             <CardHeader className="p-5 relative z-10 pb-5 text-center flex flex-col items-center justify-center h-full">
-              <CardTitle className="text-lg font-bold text-gray-900 group-hover:text-sky-700 transition-colors duration-300">
+              <CardTitle className="text-lg font-bold text-white group-hover:text-sky-500 transition-colors duration-300">
                 {item.title}
               </CardTitle>
-              <p className="text-xs text-gray-600 mt-2">{item.subtitle}</p>
+              <p className="text-xs text-gray-400 mt-2">{item.subtitle}</p>
             </CardHeader>
           </Card>
-        </motion.div>
+        </div>
       ))}
-    </motion.div>
+    </div>
   );
 };
 
@@ -136,26 +133,20 @@ const HeroSection = () => {
   };
 
   return (
-    <motion.div
-      {...fadeIn}
-      className="py-10 md:py-16 px-4 bg-gradient-to-b from-gray-50 via-gray-100 to-gray-200"
-    >
+    <div className="py-10 md:py-16 px-4 bg-black">
       <div className="max-w-6xl mx-auto">
         <div className="text-left mb-3">
-          <motion.h1
-            {...fadeIn}
-            className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3"
-          >
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3">
             상상을 현실로,{" "}
-            <motion.span {...fadeIn} className="text-sky-500">
+            <span className="text-sky-500">
               독창적인 AI 영상 제작
-            </motion.span>
-          </motion.h1>
+            </span>
+          </h1>
         </div>
 
         <CategoryBox items={categories} onSelect={handleCategorySelect} />
       </div>
-    </motion.div>
+    </div>
   );
 };
 

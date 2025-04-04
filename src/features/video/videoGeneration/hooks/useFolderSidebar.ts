@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { FileItem } from "../../types/fileTypes";
 import { toast } from "react-hot-toast";
-import { getFolders, getFolderItems } from "@/features/folder/services/FolderService";
+import { FolderService } from "@/features/folder/services/FolderService";
 import { Folder, FolderItem } from "@/features/folder/types/Folder";
 
 export function useFolderSidebar() {
@@ -21,8 +21,8 @@ export function useFolderSidebar() {
 
     try {
       // FolderService의 getFolders 함수 사용
-      const folders = await getFolders();
-      
+      const folders = await FolderService.getFolders();
+
       // FolderService에서 반환하는 Folder[] 타입을 FileItem[] 타입으로 변환
       const formattedData: FileItem[] = folders.map((folder: Folder) => ({
         id: folder.id.toString(),
@@ -42,35 +42,35 @@ export function useFolderSidebar() {
     }
   };
 
-  // 특정 폴더의 파일 목록 조회 - FolderService의 getFolderItems 함수 사용
+  // 특정 폴더의 파일 목록 조회 - FolderService의 getFilesByFolder 함수 사용
   const fetchFolderFiles = async (folderId: string) => {
     const folder = files.find((f) => f.id === folderId);
     if (folder && folder.children && folder.children.length > 0) {
       return; // 이미 로드된 폴더는 다시 로드하지 않음
     }
-    
+
     setLoadingFolders((prev) => new Set(prev).add(folderId));
 
     try {
-      // FolderService의 getFolderItems 함수 사용 (문자열 ID를 숫자로 변환)
-      const folderItems = await getFolderItems(parseInt(folderId, 10));
+      // FolderService의 getFilesByFolder 함수 사용 (문자열 ID를 숫자로 변환)
+      const folderItems = await FolderService.getFilesByFolder(parseInt(folderId, 10));
 
-      // FolderService에서 반환하는 FolderItem[] 타입을 FileItem[] 타입으로 변환
-      const fileItems = folderItems.map((file: FolderItem) => {
+      // FolderService에서 반환하는 FileResponse[] 타입을 FileItem[] 타입으로 변환
+      const fileItems = folderItems.map((file) => {
         const fileName = file.name || "이름 없는 파일";
         const fileExt = fileName.split(".").pop()?.toLowerCase() || "";
         const fileType = ["mp4", "mov", "avi", "wmv", "webm"].includes(fileExt)
           ? "video"
           : ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(fileExt)
-          ? "image"
-          : "video";
+            ? "image"
+            : "video";
 
         return {
           id: file.id.toString(),
           name: fileName,
           type: fileType as "video" | "image",
           fileUrl: file.url,
-          created: new Date(file.createdAt || Date.now()),
+          created: new Date(), // createdAt 필드가 없으므로 현재 시간으로 설정
         };
       });
 
