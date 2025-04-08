@@ -1,56 +1,56 @@
-name: Deploy to S3
+# name: Deploy to S3
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-env:
-  S3_BUCKET_NAME: songseungjubucket
-  CODE_DEPLOY_APPLICATION_NAME: resume-songseungju
-  CODE_DEPLOY_DEPLOYMENT_GROUP_NAME: sample-group
-  AWS_REGION: ap-northeast-2
+# env:
+#   S3_BUCKET_NAME: songseungjubucket
+#   CODE_DEPLOY_APPLICATION_NAME: resume-songseungju
+#   CODE_DEPLOY_DEPLOYMENT_GROUP_NAME: sample-group
+#   AWS_REGION: ap-northeast-2
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x]
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         node-version: [18.x]
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: ${{ matrix.node-version }}
+#           cache: "npm"
 
-      # 의존성 설치는 서버에서 진행하므로 여기서는 소스 코드만 준비합니다.
-      # - name: Install Dependencies
-      #   run: npm ci
+#       # 의존성 설치는 서버에서 진행하므로 여기서는 소스 코드만 준비합니다.
+#       # - name: Install Dependencies
+#       #   run: npm ci
 
-      - name: Prepare Deployment Package
-        run: |
-          mkdir deploy
-          rsync -av --exclude='deploy' ./ deploy/
-          cd deploy && zip -r ../resume_songseungju.zip . && cd ..
+#       - name: Prepare Deployment Package
+#         run: |
+#           mkdir deploy
+#           rsync -av --exclude='deploy' ./ deploy/
+#           cd deploy && zip -r ../resume_songseungju.zip . && cd ..
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+#       - name: Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v2
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Upload to S3
-        run: aws s3 cp resume_songseungju.zip s3://${{ env.S3_BUCKET_NAME }}/resume_songseungju.zip
+#       - name: Upload to S3
+#         run: aws s3 cp resume_songseungju.zip s3://${{ env.S3_BUCKET_NAME }}/resume_songseungju.zip
 
-      - name: Trigger CodeDeploy
-        run: |
-          aws deploy create-deployment \
-            --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
-            --deployment-config-name CodeDeployDefault.AllAtOnce \
-            --deployment-group-name ${{ env.CODE_DEPLOY_DEPLOYMENT_GROUP_NAME }} \
-            --s3-location bucket=${{ env.S3_BUCKET_NAME }},bundleType=zip,key=resume_songseungju.zip
+#       - name: Trigger CodeDeploy
+#         run: |
+#           aws deploy create-deployment \
+#             --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
+#             --deployment-config-name CodeDeployDefault.AllAtOnce \
+#             --deployment-group-name ${{ env.CODE_DEPLOY_DEPLOYMENT_GROUP_NAME }} \
+#             --s3-location bucket=${{ env.S3_BUCKET_NAME }},bundleType=zip,key=resume_songseungju.zip
