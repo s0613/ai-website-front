@@ -98,7 +98,7 @@ export default function ImageReferencePage() {
       !filters.categories.includes("모든 이미지")
     ) {
       filtered = filtered.filter((image) =>
-        filters.categories.includes(image.category)
+        image.category ? filters.categories.includes(image.category) : false
       );
     }
 
@@ -189,14 +189,14 @@ export default function ImageReferencePage() {
                       loading="lazy"
                     />
                     {/* 호버 시 표시되는 그라데이션 효과 */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent opacity-100 group-hover:opacity-0 transition-opacity duration-300"></div>
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:250%_250%] opacity-100 group-hover:opacity-0 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:250%_250%] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out"></div>
 
                     {/* 왼쪽 하단 파일명과 다운로드 버튼 */}
-                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent text-white flex justify-between items-center">
+                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent text-white flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <span className="text-sm font-medium truncate group-hover:text-sky-500 transition-colors duration-300">
-                        {image.fileName}
+                        {image.fileName.split('.').slice(0, -1).join('.')}
                       </span>
                       <button
                         onClick={(e) => handleDownload(e, image)}

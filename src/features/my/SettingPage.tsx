@@ -111,14 +111,25 @@ const SettingPage = () => {
           setSaveSuccess(true);
           toast({
             title: "닉네임 변경 성공",
-            description: "닉네임이 성공적으로 변경되었습니다.",
+            description: "닉네임이 성공적으로 변경되었습니다. 다음 변경은 30일 후에 가능합니다.",
           });
+
+          // 페이지 새로고침하여 업데이트된 정보 표시
+          window.location.reload();
         } else {
-          toast({
-            title: "닉네임 변경 실패",
-            description: response.message || "닉네임 변경에 실패했습니다.",
-            variant: "destructive",
-          });
+          if (response.message?.includes("30일")) {
+            toast({
+              title: "닉네임 변경 제한",
+              description: "닉네임은 변경 후 30일이 지나야 다시 변경할 수 있습니다.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "닉네임 변경 실패",
+              description: response.message || "닉네임 변경에 실패했습니다.",
+              variant: "destructive",
+            });
+          }
         }
       }
     } catch (error) {

@@ -136,8 +136,7 @@ const MyLikedPage = () => {
   if (likedVideos.length === 0) {
     return (
       <PageContainer
-        title="좋아요한 작업물"
-        description="마음에 드는 작업물을 저장하고 관리하세요"
+        title="좋아요"
       >
         <div className="text-center py-12">
           <div className="bg-sky-500/20 text-sky-400 rounded-full p-4 mx-auto w-16 h-16 flex items-center justify-center mb-4">
@@ -156,8 +155,8 @@ const MyLikedPage = () => {
 
   return (
     <PageContainer
-      title="좋아요한 작업물"
-      description="마음에 드는 작업물을 저장하고 관리하세요"
+      title="좋아요"
+
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {likedVideos.map((video) => (

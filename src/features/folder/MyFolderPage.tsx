@@ -200,7 +200,7 @@ const MyFolderPage = () => {
                 <Folder className="h-6 w-6 text-sky-400" />
                 <div>
                   <h3 className="font-medium text-white">{folder.name}</h3>
-                  <p className="text-sm text-gray-400">폴더</p>
+
                 </div>
               </div>
               <DropdownMenu>
