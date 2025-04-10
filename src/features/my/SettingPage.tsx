@@ -35,6 +35,7 @@ import {
   Lock,
   CreditCard,
   HelpCircle,
+  ChevronRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../user/AuthContext";
@@ -42,6 +43,7 @@ import { settingService } from "./services/SettingService";
 import { useToast } from "@/hooks/use-toast";
 import { validateNickname } from "./util/VaildateNickname"; // 닉네임 유효성 검사 유틸리티 import
 import { PageContainer } from "@/components/common/PageContainer";
+import Link from "next/link";
 
 const SettingPage = () => {
   const router = useRouter();
@@ -315,6 +317,58 @@ const SettingPage = () => {
                 <Button variant="outline" className="bg-black/40 backdrop-blur-xl border-white/20 text-white hover:bg-black/60 hover:border-white/30">
                   보기
                 </Button>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="help" className="space-y-6">
+          <Card className="p-6 border border-white/20 bg-black/40 backdrop-blur-xl">
+            <h2 className="text-xl font-semibold mb-4 text-white">도움말 및 지원</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-white">자주 묻는 질문</h3>
+                  <p className="text-sm text-gray-400">서비스 이용에 대한 자주 묻는 질문들을 확인합니다</p>
+                </div>
+                <Button variant="outline" className="bg-black/40 backdrop-blur-xl border-white/20 text-white hover:bg-black/60 hover:border-white/30">
+                  보기
+                </Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-white">고객 지원</h3>
+                  <p className="text-sm text-gray-400">문제 해결을 위한 고객 지원 센터입니다</p>
+                </div>
+                <Button variant="outline" className="bg-black/40 backdrop-blur-xl border-white/20 text-white hover:bg-black/60 hover:border-white/30">
+                  문의하기
+                </Button>
+              </div>
+              <Separator className="my-4 bg-white/10" />
+              <div>
+                <h3 className="font-medium text-white mb-3">법적 문서</h3>
+                <div className="space-y-3">
+                  <Link
+                    href="/terms"
+                    className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-black/20 hover:bg-black/40 transition-colors"
+                  >
+                    <div>
+                      <h4 className="font-medium text-white">이용약관</h4>
+                      <p className="text-sm text-gray-400">서비스 이용에 대한 약관을 확인합니다</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </Link>
+                  <Link
+                    href="/privacy"
+                    className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-black/20 hover:bg-black/40 transition-colors"
+                  >
+                    <div>
+                      <h4 className="font-medium text-white">개인정보처리방침</h4>
+                      <p className="text-sm text-gray-400">개인정보 수집 및 이용에 대한 안내를 확인합니다</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </Link>
+                </div>
               </div>
             </div>
           </Card>
