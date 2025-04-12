@@ -328,21 +328,14 @@ const SettingPage = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium text-white">자주 묻는 질문</h3>
-                  <p className="text-sm text-gray-400">서비스 이용에 대한 자주 묻는 질문들을 확인합니다</p>
-                </div>
-                <Button variant="outline" className="bg-black/40 backdrop-blur-xl border-white/20 text-white hover:bg-black/60 hover:border-white/30">
-                  보기
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
                   <h3 className="font-medium text-white">고객 지원</h3>
                   <p className="text-sm text-gray-400">문제 해결을 위한 고객 지원 센터입니다</p>
                 </div>
-                <Button variant="outline" className="bg-black/40 backdrop-blur-xl border-white/20 text-white hover:bg-black/60 hover:border-white/30">
-                  문의하기
-                </Button>
+                <Link href="/contact">
+                  <Button variant="outline" className="bg-black/40 backdrop-blur-xl border-white/20 text-white hover:bg-black/60 hover:border-white/30">
+                    문의하기
+                  </Button>
+                </Link>
               </div>
               <Separator className="my-4 bg-white/10" />
               <div>
