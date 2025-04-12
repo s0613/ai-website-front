@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiSearch, FiMenu, FiX } from "react-icons/fi";
+import { FiMenu, FiX } from "react-icons/fi";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "@/features/user/AuthContext";
 import { DesktopNav } from "./DesktopNav";
@@ -20,7 +20,6 @@ interface Notification {
 const Navbar = () => {
   const { isLoggedIn, email, logout, nickname } = useAuth();
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
   const [creditInfo, setCreditInfo] = useState<{ currentCredit: number } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -60,13 +59,6 @@ const Navbar = () => {
     if (isDropdownOpen) setIsDropdownOpen(false);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
-
   return (
     <header className="bg-black shadow-[0_8px_30px_rgb(0,0,0,0.12)] sticky top-0 z-50 h-16">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between relative">
@@ -80,29 +72,7 @@ const Navbar = () => {
           </span>
         </Link>
 
-        <div className="flex-1 mx-4 relative">
-          <form onSubmit={handleSearch} className="relative">
-            <label htmlFor="navbar-search" className="sr-only">
-              원하는 영상 콘셉트를 입력하세요
-            </label>
-            <input
-              id="navbar-search"
-              type="text"
-              placeholder="원하는 영상 콘셉트를 입력하세요 (예: 우주 여행 영상, 제품 광고)"
-              className="w-full h-10 border border-white/10 rounded-full pl-10 pr-4 bg-black/30 backdrop-blur-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all duration-300 focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            >
-              <FiSearch className="w-5 h-5" />
-            </button>
-          </form>
-        </div>
-
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-4 flex-1 justify-end">
           <div className="flex items-center gap-2">
             <Link
               href="/blog/blogList"
@@ -132,6 +102,7 @@ const Navbar = () => {
             notifications={notifications}
             isOpen={isNotificationOpen}
             toggle={toggleNotifications}
+            onMouseLeave={() => setIsNotificationOpen(false)}
             refObj={notificationRef}
           />
           <UserMenu

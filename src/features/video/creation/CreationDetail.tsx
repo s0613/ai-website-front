@@ -22,7 +22,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { getVideoById, toggleVideoShare } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
-import { upscaleVideo } from "../services/GenerateService";
 
 interface CreationDetailProps {
   videoId: number;
@@ -122,16 +121,30 @@ export default function CreationDetail({
     try {
       setIsUpscaling(true);
       setUpscaledVideoUrl("");
-      const result = await upscaleVideo(video.url);
-      if (result.data && result.data.video_upscaled) {
+
+      const response = await fetch('/api/video/upscaler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ videoUrl: video.url }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`업스케일링 요청 실패: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.data?.video_upscaled) {
         setUpscaledVideoUrl(result.data.video_upscaled);
         setHasUpscaled(true);
         toast.success("비디오 업스케일링이 완료되었습니다!");
       } else {
-        throw new Error("업스케일링된 비디오 URL을 찾을 수 없습니다");
+        throw new Error("업스케일링된 비디오 URL을 받지 못했습니다");
       }
     } catch (error: unknown) {
-      console.error("비디오 업스케일링 오류:", error);
+      console.error("업스케일링 오류:", error);
       toast.error(error instanceof Error ? error.message : "업스케일링 중 오류가 발생했습니다");
     } finally {
       setIsUpscaling(false);

@@ -36,6 +36,8 @@ export default function VideoGenerationFolder({ onSelectImage }: VideoGeneration
     const [newFolderName, setNewFolderName] = useState("");
     const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDeleteFolderOpen, setIsDeleteFolderOpen] = useState(false);
+    const [folderToDelete, setFolderToDelete] = useState<number | null>(null);
 
     // 1) 마운트 시 폴더 목록 불러오기
     useEffect(() => {
@@ -117,17 +119,39 @@ export default function VideoGenerationFolder({ onSelectImage }: VideoGeneration
     };
 
     // 8) 폴더 삭제
-    const deleteFolder = async (folderId: number) => {
+    const handleDeleteClick = (folderId: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setFolderToDelete(folderId);
+        setIsDeleteFolderOpen(true);
+    };
+
+    const deleteFolder = async () => {
+        if (!folderToDelete) return;
+
         try {
-            await FolderService.deleteFolder(folderId);
-            setFolders((prev) => prev.filter((folder) => folder.id !== folderId));
+            await FolderService.deleteFolder(folderToDelete);
+            setFolders((prev) => prev.filter((folder) => folder.id !== folderToDelete));
             toast.success("폴더가 삭제되었습니다");
-            if (currentFolder?.id === folderId) {
+            if (currentFolder?.id === folderToDelete) {
                 handleBack();
             }
         } catch (error) {
             console.error("폴더 삭제 오류:", error);
-            toast.error("폴더 삭제에 실패했습니다");
+            if (error && typeof error === 'object' && 'response' in error && error.response) {
+                const response = error.response as { data?: { message?: string }; status?: number };
+                if (response.status === 500) {
+                    toast.error("서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+                } else {
+                    toast.error("폴더 삭제에 실패했습니다: " + (response.data?.message || "알 수 없는 오류"));
+                }
+            } else if (error && typeof error === 'object' && 'request' in error) {
+                toast.error("서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.");
+            } else {
+                toast.error("폴더 삭제에 실패했습니다");
+            }
+        } finally {
+            setIsDeleteFolderOpen(false);
+            setFolderToDelete(null);
         }
     };
 
@@ -336,10 +360,7 @@ export default function VideoGenerationFolder({ onSelectImage }: VideoGeneration
                                             <DropdownMenuContent className="bg-black/40 backdrop-blur-xl border-white/20">
                                                 <DropdownMenuItem
                                                     className="text-red-400 hover:bg-black/60"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        deleteFolder(folder.id);
-                                                    }}
+                                                    onClick={(e) => handleDeleteClick(folder.id, e)}
                                                 >
                                                     삭제
                                                 </DropdownMenuItem>
@@ -376,6 +397,33 @@ export default function VideoGenerationFolder({ onSelectImage }: VideoGeneration
                     </div>
                 </div>
             </div>
+
+            {/* 폴더 삭제 확인 다이얼로그 */}
+            <Dialog open={isDeleteFolderOpen} onOpenChange={setIsDeleteFolderOpen}>
+                <DialogContent className="bg-black/40 backdrop-blur-xl border-white/20">
+                    <DialogHeader>
+                        <DialogTitle className="text-white">폴더 삭제 확인</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <p className="text-white">정말로 이 폴더를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                className="bg-black/40 backdrop-blur-xl border-white/20 text-white hover:bg-black/60 hover:border-white/30"
+                                onClick={() => setIsDeleteFolderOpen(false)}
+                            >
+                                취소
+                            </Button>
+                            <Button
+                                className="bg-red-500 hover:bg-red-600 text-white"
+                                onClick={deleteFolder}
+                            >
+                                삭제
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 } 

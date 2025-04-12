@@ -44,6 +44,11 @@ const menuItems = [
     label: "알림 보내기",
     icon: <Bell className="w-5 h-5" />,
   },
+  {
+    href: "/admin/coupon",
+    label: "쿠폰",
+    icon: <Bell className="w-5 h-5" />,
+  },
 ];
 
 export default function AdminLayout({
@@ -63,9 +68,8 @@ export default function AdminLayout({
       >
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <div
-            className={`font-bold text-xl text-sky-600 ${
-              collapsed ? "hidden" : "flex"
-            }`}
+            className={`font-bold text-xl text-sky-600 ${collapsed ? "hidden" : "flex"
+              }`}
           >
             관리자 콘솔
           </div>
@@ -86,11 +90,10 @@ export default function AdminLayout({
                 <li key={item.href}>
                   <Link href={item.href}>
                     <div
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:translate-x-1 ${
-                        isActive
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:translate-x-1 ${isActive
                           ? "bg-sky-50 text-sky-600"
                           : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       <div
                         className={isActive ? "text-sky-500" : "text-gray-500"}
@@ -99,9 +102,8 @@ export default function AdminLayout({
                       </div>
                       {!collapsed && (
                         <span
-                          className={`font-medium ${
-                            isActive ? "text-sky-600" : ""
-                          }`}
+                          className={`font-medium ${isActive ? "text-sky-600" : ""
+                            }`}
                         >
                           {item.label}
                         </span>

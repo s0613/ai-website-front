@@ -3,6 +3,7 @@ import "./styles/globals.css";
 import Navbar from "@/components/common/navbar/Navbar";
 import { AuthProvider } from "@/features/user/AuthContext";
 import type { Metadata } from "next";
+import { CreditProvider } from "@/features/payment/context/CreditContext";
 
 export const metadata: Metadata = {
   title: "CrazySpace",
@@ -17,10 +18,12 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <AuthProvider>
-          <Navbar />
-          <div>{children}</div>
-        </AuthProvider>
+        <CreditProvider>
+          <AuthProvider>
+            <Navbar />
+            <div>{children}</div>
+          </AuthProvider>
+        </CreditProvider>
       </body>
     </html>
   );

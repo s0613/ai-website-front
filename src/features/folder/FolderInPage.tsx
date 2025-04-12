@@ -35,6 +35,7 @@ const FolderInPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     if (folderId) {
@@ -71,6 +72,10 @@ const FolderInPage = () => {
     router.push("/my/folder/my");
   };
 
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
   const handleDeleteFolder = async () => {
     if (!folderId) return;
 
@@ -81,11 +86,19 @@ const FolderInPage = () => {
     } catch (error) {
       console.error("폴더 삭제 오류:", error);
       if (error && typeof error === 'object' && 'response' in error && error.response) {
-        const response = error.response as { data?: { message?: string }; message?: string };
-        toast.error("폴더 삭제에 실패했습니다: " + (response.data?.message || response.message || "알 수 없는 오류"));
+        const response = error.response as { data?: { message?: string }; status?: number };
+        if (response.status === 500) {
+          toast.error("서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        } else {
+          toast.error("폴더 삭제에 실패했습니다: " + (response.data?.message || "알 수 없는 오류"));
+        }
+      } else if (error && typeof error === 'object' && 'request' in error) {
+        toast.error("서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.");
       } else {
         toast.error("폴더 삭제에 실패했습니다");
       }
+    } finally {
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -214,9 +227,9 @@ const FolderInPage = () => {
             <DropdownMenuContent className="bg-black/40 backdrop-blur-xl border-white/20">
               <DropdownMenuItem
                 className="text-red-400 hover:bg-black/60"
-                onClick={handleDeleteFolder}
+                onClick={handleDeleteClick}
               >
-                Delete
+                삭제
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -350,6 +363,34 @@ const FolderInPage = () => {
                 onClick={handleConfirmUpload}
               >
                 업로드
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+            <h3 className="text-xl font-bold text-white mb-4">폴더 삭제 확인</h3>
+            <p className="text-gray-300 mb-4">
+              정말로 이 폴더를 삭제하시겠습니까?<br />
+              이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                onClick={() => setIsDeleteModalOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                className="bg-red-500 hover:bg-red-600 text-white"
+                onClick={handleDeleteFolder}
+              >
+                삭제
               </Button>
             </div>
           </div>

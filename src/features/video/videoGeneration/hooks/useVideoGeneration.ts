@@ -4,13 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import {
-  generateVideo,
   saveVideo,
-  upscaleVideo,
   readFileAsBase64,
   getVideoEndpointUrl
 } from "../../services/GenerateService";
 import { BillingService } from "@/features/payment/services/BillingService";
+import { useCredit } from "@/features/payment/context/CreditContext";
+import { useRouter } from "next/navigation";
 
 // 타입 정의 추가
 interface VideoGenerationData {
@@ -34,8 +34,28 @@ interface FileItem {
   name: string;
 }
 
+interface VideoGenerationRequest {
+  prompt: string;
+  aspectRatio: string;
+  duration: string;
+  quality?: string;
+  style?: string;
+  imageUrl?: string;
+  cameraControl?: string;
+  seed?: number;
+  resolution?: string;
+  numFrames?: number;
+}
+
+interface VideoGenerationResponse {
+  videoUrl: string;
+  requestId?: string;
+}
+
 export default function useVideoGeneration() {
   const searchParams = useSearchParams();
+  const { updateCredits } = useCredit();
+  const router = useRouter();
 
   // 영상 생성 및 저장 관련 상태
   const [videoUrl, setVideoUrl] = useState("");
@@ -54,9 +74,7 @@ export default function useVideoGeneration() {
   const [style, setStyle] = useState<"realistic" | "creative">("realistic");
 
   // 참조 이미지 및 프롬프트 관련 상태
-  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(
-    null
-  );
+  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
   const [referencePrompt, setReferencePrompt] = useState("");
   const [referenceModel, setReferenceModel] = useState("");
@@ -81,21 +99,28 @@ export default function useVideoGeneration() {
   const handleSidebarSubmit = async (data: VideoGenerationData) => {
     setErrorMessage("");
     setVideoUrl("");
-    setUpscaledVideoUrl(""); // 업스케일링 결과 초기화
+    setUpscaledVideoUrl("");
     setIsLoading(true);
     setSaveSuccess(false);
     setSaveError("");
 
     try {
-      // 크레딧 소비 요청
-      try {
-        await BillingService.consumeCredit({
-          amount: -10,
-          reason: "비디오 생성"
-        });
-      } catch (error) {
-        throw new Error("크레딧이 부족합니다. 크레딧을 충전해주세요.");
+      // 현재 크레딧 확인
+      const creditResponse = await BillingService.getCurrentCredit();
+      if (creditResponse.currentCredit < 10) {
+        // 크레딧이 부족할 경우 모달 표시
+        toast.error("크레딧이 부족합니다. 크레딧을 충전해주세요.");
+        router.push("/payment");
+        return;
       }
+
+      // 크레딧 소비 요청
+      await BillingService.consumeCredit({
+        amount: 10,
+        reason: "비디오 생성"
+      });
+      // 크레딧 차감 후 상태 업데이트
+      updateCredits(-10);
 
       // getVideoEndpointUrl 함수를 사용하여 엔드포인트 URL 가져오기
       const endpointUrl = getVideoEndpointUrl(data.endpoint, data.imageFile || data.fileUrl ? true : false);
@@ -105,7 +130,7 @@ export default function useVideoGeneration() {
         imageBase64 = await readFileAsBase64(data.imageFile);
       }
 
-      const payload: Record<string, any> = {
+      const payload: VideoGenerationRequest = {
         prompt: data.prompt,
         aspectRatio: data.aspectRatio,
         duration: data.duration,
@@ -126,16 +151,29 @@ export default function useVideoGeneration() {
       if (data.resolution) payload.resolution = data.resolution;
       if (data.numFrames) payload.numFrames = data.numFrames;
 
-      // 업스케일링 옵션 추가
-      if (data.upscaling) {
-        payload.upscaling = true;
+      // Next.js API 라우트로 직접 요청
+      const response = await fetch(endpointUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API 요청 실패: ${response.status}`);
       }
 
-      const result = await generateVideo(payload, endpointUrl);
+      const result: VideoGenerationResponse = await response.json();
+
       if (result.videoUrl) {
         setVideoUrl(result.videoUrl);
         // 영상 생성 후 서버에 저장
         await saveVideoToServer(result.videoUrl, data);
+        // 생성 완료 알림
+        toast.success("영상이 성공적으로 생성되었습니다. 내 보관함에서 확인하실 수 있습니다.", {
+          duration: 5000,
+        });
       } else {
         setErrorMessage(
           "videoUrl이 아직 생성되지 않았습니다. Job ID: " +
@@ -145,6 +183,7 @@ export default function useVideoGeneration() {
     } catch (error: unknown) {
       console.error("영상 생성 오류:", error);
       setErrorMessage(error instanceof Error ? error.message : "오류 발생");
+      toast.error("영상 생성 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +193,12 @@ export default function useVideoGeneration() {
   const saveVideoToServer = async (videoUrl: string, data: VideoGenerationData) => {
     try {
       setIsSaving(true);
-      await saveVideo(videoUrl, data);
+      await saveVideo(videoUrl, {
+        prompt: data.prompt,
+        endpoint: data.endpoint,
+        imageFile: data.imageFile,
+        videoName: `AI 생성 영상 - ${new Date().toLocaleString()}`
+      });
       toast.success("비디오가 내 보관함에 저장되었습니다");
       setSaveSuccess(true);
     } catch (error: unknown) {
@@ -173,68 +217,55 @@ export default function useVideoGeneration() {
 
     try {
       setIsUpscaling(true);
-      setUpscaledVideoUrl("");
-      const result = await upscaleVideo(videoUrl);
-      if (result.data && result.data.video_upscaled) {
-        setUpscaledVideoUrl(result.data.video_upscaled);
-        toast.success("비디오 업스케일링이 완료되었습니다!");
-      } else {
-        throw new Error("업스케일링된 비디오 URL을 찾을 수 없습니다");
+
+      const response = await fetch('/api/video/upscaler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ videoUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`업스케일링 요청 실패: ${response.status}`);
       }
-    } catch (error: unknown) {
-      console.error("비디오 업스케일링 오류:", error);
+
+      const result = await response.json();
+
+      if (result.data?.video_upscaled) {
+        setUpscaledVideoUrl(result.data.video_upscaled);
+        toast.success("비디오 업스케일링이 완료되었습니다");
+      } else {
+        throw new Error("업스케일링된 비디오 URL을 받지 못했습니다");
+      }
+    } catch (error) {
+      console.error("업스케일링 오류:", error);
       toast.error(error instanceof Error ? error.message : "업스케일링 중 오류가 발생했습니다");
     } finally {
       setIsUpscaling(false);
     }
   };
 
-  // 탭 변경 시 처리
   const handleTabChange = (tab: "image" | "text") => {
     setActiveTab(tab);
-    if (tab === "image") {
-      setSelectedEndpoint("luna");
-    } else {
-      setSelectedEndpoint("veo2");
-    }
   };
 
-  // 참조 이미지로 선택할 때 (FolderSidebar의 + 버튼)
   const handleAddReferenceImage = async (fileItem: FileItem) => {
-    try {
-      if (!fileItem.fileUrl) {
-        throw new Error("fileUrl이 존재하지 않는 파일");
-      }
-      // 참조 이미지 URL을 그대로 상태에 저장
-      setReferenceImageUrl(fileItem.fileUrl);
-      setReferenceImageFile(null);
-      console.log("참조 이미지로 추가되었습니다:", fileItem.name);
-      toast.success("참조 이미지로 설정되었습니다");
-    } catch (error: unknown) {
-      console.error("참조 이미지 추가 오류:", error);
-      setReferenceImageFile(null);
-      setReferenceImageUrl("");
-    }
+    setReferenceImageUrl(fileItem.fileUrl);
   };
 
-  // 파일 input 변경 시 처리 (참조 이미지 직접 선택)
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setReferenceImageFile(file);
-    const preview = URL.createObjectURL(file);
-    setReferenceImageUrl(preview);
+    if (file) {
+      setReferenceImageFile(file);
+      setReferenceImageUrl(URL.createObjectURL(file));
+    }
   };
 
-  // 파일 input 엘리먼트 참조
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 이미지 선택 버튼 클릭 시 file input 클릭
   const selectImage = () => {
-    fileInputRef.current?.click();
+    document.getElementById("imageInput")?.click();
   };
 
-  // 선택한 이미지 제거
   const removeImage = () => {
     setReferenceImageFile(null);
     setReferenceImageUrl("");
@@ -250,13 +281,9 @@ export default function useVideoGeneration() {
     isUpscaling,
     upscaledVideoUrl,
     activeTab,
-    setActiveTab,
     selectedEndpoint,
-    setSelectedEndpoint,
     quality,
-    setQuality,
     style,
-    setStyle,
     referenceImageFile,
     referenceImageUrl,
     referencePrompt,
@@ -266,8 +293,11 @@ export default function useVideoGeneration() {
     handleTabChange,
     handleAddReferenceImage,
     handleImageChange,
-    fileInputRef,
     selectImage,
     removeImage,
+    setSelectedEndpoint,
+    setQuality,
+    setStyle,
+    setReferencePrompt
   };
 }

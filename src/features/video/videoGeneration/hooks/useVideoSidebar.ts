@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { uploadImageAPI } from "../../services/fileService";
 
 export type SidebarFormData = {
   prompt: string;
@@ -62,6 +63,7 @@ export function useVideoSidebar({
   const [numInferenceSteps, setNumInferenceSteps] = useState<number>(30);
   const [enableSafetyChecker, setEnableSafetyChecker] = useState<boolean>(true);
   const [enablePromptExpansion, setEnablePromptExpansion] = useState<boolean>(true);
+  const [isPromptLoading, setIsPromptLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -182,14 +184,91 @@ export function useVideoSidebar({
     }
   };
 
-  const selectImage = () => {
-    fileInputRef.current?.click();
+  const selectImage = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        try {
+          // 이미지 업로드 API 호출
+          const response = await uploadImageAPI(file);
+
+          // 업로드 성공 시 상태 업데이트
+          setImageFile(file);
+          const preview = URL.createObjectURL(file);
+          setPreviewUrl(preview);
+          setFileUrl(response.url);
+          setImageChanged(true);
+
+          toast({
+            title: "이미지 업로드 성공",
+            description: "이미지가 성공적으로 업로드되었습니다.",
+            duration: 3000,
+          });
+
+          // 3초 후 이미지 변경 표시 제거
+          setTimeout(() => setImageChanged(false), 3000);
+        } catch (error) {
+          toast({
+            title: "이미지 업로드 실패",
+            description: error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+      }
+    };
+    input.click();
   };
 
   const removeImage = () => {
     setImageFile(null);
     setPreviewUrl("");
     setFileUrl("");
+  };
+
+  const updatePromptWithGemini = async () => {
+    if (!previewUrl) return;
+
+    setIsPromptLoading(true);
+    try {
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: previewUrl,
+          existingPrompt: prompt,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Gemini API Error Response:', errorData);
+        throw new Error(errorData.error || '프롬프트 수정 중 오류가 발생했습니다.');
+      }
+
+      const data = await response.json();
+      setPrompt(data.response);
+      toast({
+        title: "프롬프트 수정 완료",
+        description: "이미지를 기반으로 프롬프트가 수정되었습니다.",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Gemini API Error:', error);
+      toast({
+        title: "오류 발생",
+        description: error instanceof Error ? error.message : "프롬프트 수정 중 오류가 발생했습니다.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsPromptLoading(false);
+    }
   };
 
   return {
@@ -222,5 +301,7 @@ export function useVideoSidebar({
     fileInputRef,
     setQuality,
     setStyle,
+    isPromptLoading,
+    updatePromptWithGemini,
   };
 }

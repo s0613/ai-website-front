@@ -9,6 +9,16 @@ export type FileItem = {
   isLoading?: boolean;
 };
 
+export interface FileResponse {
+  id: string;
+  name: string;
+  size: number;
+  contentType: string;
+  url: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type FolderSidebarProps = {
   files?: FileItem[];
   onFileSelect?: (file: FileItem) => void;

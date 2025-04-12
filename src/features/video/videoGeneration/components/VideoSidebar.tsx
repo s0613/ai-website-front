@@ -19,9 +19,11 @@ import {
   MessageSquare,
   Image as ImageIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import ModelSetting from "./ModelSetting";
 import { SidebarFormData, useVideoSidebar } from "../hooks/useVideoSidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { uploadImageAPI } from "../../services/fileService";
 
 export type VideoSidebarProps = {
   onSubmit: (data: SidebarFormData) => void;
@@ -30,9 +32,6 @@ export type VideoSidebarProps = {
   referenceImageUrl?: string;
   referencePrompt?: string;
   referenceModel?: string;
-  onUpscale?: () => Promise<void>;
-  isUpscaling?: boolean;
-  hasUpscaled?: boolean;
   videoGenerated?: boolean;
   isLoading?: boolean;
 };
@@ -45,9 +44,6 @@ export default function VideoSidebar(props: VideoSidebarProps) {
     referenceImageUrl,
     referencePrompt,
     referenceModel,
-    onUpscale,
-    isUpscaling,
-    hasUpscaled,
     videoGenerated,
     isLoading,
   } = props;
@@ -72,6 +68,8 @@ export default function VideoSidebar(props: VideoSidebarProps) {
     selectImage,
     removeImage,
     fileInputRef,
+    isPromptLoading,
+    updatePromptWithGemini,
   } = useVideoSidebar({
     onSubmit,
     onTabChange,
@@ -212,26 +210,33 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                     <p className="text-sm font-medium text-white mb-1">
                       이미지 추가하기
                     </p>
-                    <p className="text-xs text-gray-400 px-6 text-center">
-                      참조 이미지를 추가하면 더 정확한 결과를 얻을 수 있습니다
+                    <p className="text-xs text-gray-400">
+                      클릭하여 이미지 선택
                     </p>
                   </div>
                 )}
 
                 <Button
                   type="button"
-                  onClick={() => {
-                    const newPrompt = `이 이미지와 유사한 스타일로 ${prompt}`;
-                    setPrompt(newPrompt);
-                  }}
-                  disabled={!previewUrl}
+                  onClick={updatePromptWithGemini}
+                  disabled={!previewUrl || isPromptLoading}
                   className={`w-full mt-2 py-2 transition-all duration-300 border flex items-center justify-center gap-2 ${previewUrl
                     ? "bg-sky-500/20 hover:bg-sky-500/30 text-white border-white/10 hover:border-sky-500/50"
                     : "bg-black/30 text-gray-400 border-white/10 cursor-not-allowed"
                     }`}
                 >
-                  <span>이미지에 맞게 프롬프트 변경</span>
+                  {isPromptLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>프롬프트 수정 중...</span>
+                    </>
+                  ) : (
+                    <span>이미지에 맞게 프롬프트 변경</span>
+                  )}
                 </Button>
+                <p className="text-xs text-amber-500/80 mt-1.5">
+                  이미지와 프롬프트가 어울리지 않을 경우, 전체 문장이 이미지 중심으로 조정될 수 있습니다.
+                </p>
               </div>
             )}
 
@@ -258,9 +263,6 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                   </div>
                   <p className="text-sm font-medium text-white mb-1">
                     비디오 추가하기
-                  </p>
-                  <p className="text-xs text-gray-400 px-6 text-center">
-                    참조 비디오를 추가하면 더 정확한 결과를 얻을 수 있습니다
                   </p>
                 </div>
 
@@ -292,7 +294,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                       WAN - 정적 이미지에 생동감 있는 움직임 추가.
                     </option>
                     <option value="hunyuan">
-                      HUNYUAN - 세밀한 디테일과 복잡한 장면 표현 가능.
+                      HUNYUAN - 화웨이 모델 (이미지 → 비디오)
                     </option>
                   </>
                 ) : (

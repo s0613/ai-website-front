@@ -16,7 +16,7 @@ export class ModelSettingFactory {
       case "veo2":
         return new Veo2ModelSetting();
       default:
-        return new KlingModelSetting();
+        return new Veo2ModelSetting(); // 기본값을 Veo2로 변경
     }
   }
 }

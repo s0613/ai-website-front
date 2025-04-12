@@ -2,7 +2,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
 import { getBlogList } from "./services/BlogService";
 import { Blog } from "./types/Blog";
 
@@ -109,11 +108,7 @@ const BlogList = () => {
                     )}
                   </div>
                   <div className="p-6 relative">
-                    <div className="flex items-center mb-3">
-                      <div className="w-10 h-10 flex items-center justify-center rounded-full bg-sky-500/20 text-sky-400 transition-transform duration-300 hover:rotate-5 hover:scale-110">
-                        <BookOpen className="w-5 h-5" />
-                      </div>
-                    </div>
+
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-sky-400 transition-colors duration-300">
                       {post.title}
                     </h3>
