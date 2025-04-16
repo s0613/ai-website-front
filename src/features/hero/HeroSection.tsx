@@ -120,6 +120,18 @@ const HeroSection = () => {
       value: "image-reference",
       icon: <Sparkles className="w-5 h-5" />,
     },
+    {
+      title: "옷 수정",
+      subtitle: "이미지 속 옷을 수정해보세요",
+      value: "image-edit",
+      icon: <Camera className="w-6 h-6" />,
+    },
+    {
+      title: "이미지 업스케일링",
+      subtitle: "이미지 해상도를 개선해보세요",
+      value: "image-upscaler",
+      icon: <Sparkles className="w-5 h-5" />,
+    },
   ];
 
   const handleCategorySelect = (item: CategoryItem) => {
@@ -128,6 +140,8 @@ const HeroSection = () => {
       "video-generation": "/generation/video",
       "image-reference": "/reference/image",
       "video-reference": "/reference/video/main",
+      "image-edit": "/image/edit",
+      "image-upscaler": "/image/upscaler",
     };
     router.push(routes[item.value]);
   };

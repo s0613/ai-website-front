@@ -39,21 +39,21 @@ export const getImagesByCategory = async (category: string): Promise<ImageItem[]
  */
 export const uploadImages = async (files: File[], category: string): Promise<ApiResponse<ImageItem[]>> => {
   const formData = new FormData();
-  
+
   // 파일 추가
   files.forEach(file => {
     formData.append('images', file);
   });
-  
+
   // 카테고리 추가
   formData.append('category', category);
-  
+
   const response = await apiClient.post<ApiResponse<ImageItem[]>>('/images/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
   });
-  
+
   return response.data;
 };
 
@@ -71,3 +71,24 @@ export const deleteImage = async (imageId: number): Promise<ApiResponse<void>> =
     throw error;
   }
 };
+
+export async function downloadImage(imageUrl: string, fileName: string) {
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error('이미지 다운로드에 실패했습니다.');
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error downloading image:', error);
+    throw error;
+  }
+}

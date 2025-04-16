@@ -2,25 +2,30 @@
 // 기존 ImageItem 타입 정의를 확장하세요
 export interface ImageItem {
   id: number;
-  name: string;
-  fileName: string; // 기존 속성
-  prompt: string;
-  category?: string; // 기존 속성
+  fileName: string;
   url: string;
   thumbnailUrl: string;
+  category?: string;
+  fileSize: number;
   format: string;
-  fileSize?: number; // 기존 속성
-  sizeInBytes: number;
-  width?: number; // 기존 속성
-  height?: number; // 기존 속성
+  lastModified: string;
+  prompt?: string;
   status: string;
-  lastModified?: string; // 기존 속성
-  createdAt: string; // 새로 추가
-  creator: string; // 새로 추가
-  model?: string;
-  liked: boolean; // 새로 추가
-  likeCount: number; // 새로 추가
-  aspectRatio: number; // 새로 추가
+  createdAt: string;
+  creator: string;
+}
+
+export interface FilterOptions {
+  search: string;
+  categories: string[];
+  size: string;
+  sortBy: '최신순' | '오래된순';
+}
+
+export interface ImageUploadResponse {
+  success: boolean;
+  imageUrl: string;
+  error?: string;
 }
 
 // 응답 타입 정의
