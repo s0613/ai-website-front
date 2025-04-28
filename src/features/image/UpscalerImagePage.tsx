@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FolderService, type FolderResponse, type FileResponse } from "../../pages/folder/services/FolderService";
+import { FolderService } from '../../features/folder/services/FolderService';
+import type { FolderResponse, FileResponse } from '../../features/folder/services/FolderService';
 import UpscalerImageSidebar, { type UpscalerImageSettings } from "./UpscalerImageSidebar";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";

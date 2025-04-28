@@ -118,10 +118,10 @@ const BlogSection: React.FC = () => {
   // 날짜 포맷팅
   const formattedDate = blog.date
     ? new Date(blog.date).toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "날짜 정보 없음";
 
   return (
