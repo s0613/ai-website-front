@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FiMenu, FiX } from "react-icons/fi";
 import { Sparkles } from "lucide-react";
-import { useAuth } from "@/pages/user/AuthContext";
+import { useAuth } from "@/features/user/AuthContext";
 import { DesktopNav } from "./DesktopNav";
 import { MobileMenu } from "./MobileMenu";
-import { BillingService } from "@/pages/payment/services/BillingService";
+import { BillingService } from "@/features/payment/services/BillingService";
 import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 

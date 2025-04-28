@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import CouponManagement from "@/pages/admin/Coupon"
+import CouponManagement from "@/features/admin/Coupon"
 
 export const metadata: Metadata = {
     title: "쿠폰 관리 | 관리자",

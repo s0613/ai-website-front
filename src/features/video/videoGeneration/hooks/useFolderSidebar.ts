@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { FileItem } from "../../types/fileTypes";
 import { toast } from "react-hot-toast";
-import { FolderService } from "@/pages/folder/services/FolderService";
-import { Folder, FolderItem } from "@/pages/folder/types/Folder";
+import { FolderService } from "@/features/folder/services/FolderService";
+import { Folder, FolderItem } from "@/features/folder/types/Folder";
 
 export function useFolderSidebar() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());

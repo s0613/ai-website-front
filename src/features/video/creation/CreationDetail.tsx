@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { formatFileSize, formatDate } from "@/pages/video/types/formatUtils";
+import { formatFileSize, formatDate } from "@/features/video/types/formatUtils";
 import { toast } from "react-hot-toast";
 import {
   X,

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Eye, FileVideo, Info, Layers } from "lucide-react";
 import { getVideoById, updateVideoLike } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
-import { useAuth } from "@/pages/user/AuthContext"; // AuthContext에서 useAuth 가져오기
+import { useAuth } from "@/features/user/AuthContext"; // AuthContext에서 useAuth 가져오기
 
 // 기본 비디오 정보 인터페이스
 interface VideoBasicInfo {

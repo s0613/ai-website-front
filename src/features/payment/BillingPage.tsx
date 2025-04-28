@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Info, CreditCard, Trash2, AlertCircle } from "lucide-react";
 import { BillingService, CreditResponse, CreditTransactionResponse } from "./services/BillingService";
-import { CouponService } from "@/pages/admin/services/CouponService";
+import { CouponService } from "@/features/admin/services/CouponService";
 import { toast } from "sonner";
 
 export default function BillingPage() {

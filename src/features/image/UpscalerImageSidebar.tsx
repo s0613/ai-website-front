@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
-import { BillingService } from "@/pages/payment/services/BillingService";
+import { BillingService } from "@/features/payment/services/BillingService";
 
 export interface UpscalerImageSettings {
     upscaling_factor: number;

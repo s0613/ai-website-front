@@ -1,4 +1,4 @@
-import UpscalerImagePage from "@/pages/image/UpscalerImagePage";
+import UpscalerImagePage from "@/features/image/UpscalerImagePage";
 
 export default function ImageUpscalerPage() {
     return <UpscalerImagePage />;

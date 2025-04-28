@@ -1,5 +1,5 @@
 import React from "react";
-import Contact from "@/pages/contact/Contact";
+import Contact from "@/features/contact/Contact";
 
 const ContactPage = () => {
   return (

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import ImageUpload from "@/pages/image/components/upload/ImageUploader";
+import ImageUpload from "@/features/image/components/upload/ImageUploader";
 
 const ImageUploadPage = () => {
   return <ImageUpload />;

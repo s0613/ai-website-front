@@ -1,4 +1,4 @@
-import MyFolderPage from "@/pages/folder/MyFolderPage";
+import MyFolderPage from "@/features/folder/MyFolderPage";
 
 export default function Page() {
   return <MyFolderPage />;

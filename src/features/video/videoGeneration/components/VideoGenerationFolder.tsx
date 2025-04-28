@@ -5,7 +5,7 @@ import { RefreshCw, Search, Folder, ArrowLeft, Plus, Upload, MoreHorizontal, Loa
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { FolderService, FolderResponse, FileResponse } from "@/pages/folder/services/FolderService";
+import { FolderService, FolderResponse, FileResponse } from "@/features/folder/services/FolderService";
 import { toast } from "react-hot-toast";
 import {
     Dialog,

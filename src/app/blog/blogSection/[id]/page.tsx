@@ -1,5 +1,5 @@
 // app/blog/blogSection/[id]/page.tsx
-import BlogSection from "@/pages/blog/BlogSection";
+import BlogSection from "@/features/blog/BlogSection";
 
 interface PageProps {
   params: {

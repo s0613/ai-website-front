@@ -1,5 +1,5 @@
 import React from "react";
-import Home from "@/pages/admin/Home";
+import Home from "@/features/admin/Home";
 
 export default function AdminHomePage() {
   return <Home />;

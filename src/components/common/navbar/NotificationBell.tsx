@@ -3,7 +3,7 @@
 import React, { RefObject, useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NotificationService, NotificationResponse } from "@/pages/admin/services/NotificationService";
+import { NotificationService, NotificationResponse } from "@/features/admin/services/NotificationService";
 
 interface Props {
   isOpen: boolean;

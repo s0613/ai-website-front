@@ -1,5 +1,5 @@
 import apiClient from '@/lib/api/apiClient';
-import { ProfileResponse } from '@/pages/my/types/Filter';
+import { ProfileResponse } from '@/features/my/types/Filter';
 
 // 프로필 설정 관련 API 서비스
 export const settingService = {

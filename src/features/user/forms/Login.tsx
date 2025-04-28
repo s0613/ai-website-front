@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-import { useAuth } from "@/pages/user/AuthContext";
+import { useAuth } from "@/features/user/AuthContext";
 import { login as loginApi, getGoogleLoginUrl } from "../services/UserService";
 import { LoginRequest } from "../types/User";
 

@@ -8,8 +8,8 @@ import {
   readFileAsBase64,
   getVideoEndpointUrl
 } from "../../services/GenerateService";
-import { BillingService } from "@/pages/payment/services/BillingService";
-import { useCredit } from "@/pages/payment/context/CreditContext";
+import { BillingService } from "@/features/payment/services/BillingService";
+import { useCredit } from "@/features/payment/context/CreditContext";
 import { useRouter } from "next/navigation";
 
 // 타입 정의 추가

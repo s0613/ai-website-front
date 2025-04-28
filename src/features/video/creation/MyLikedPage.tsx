@@ -12,7 +12,7 @@ import {
   AlertTriangle,
   X,
 } from "lucide-react";
-import VideoDetail from "@/pages/video/videoReference/videoDetail";
+import VideoDetail from "@/features/video/videoReference/videoDetail";
 import { getLikedVideos } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
 import { PageContainer } from "@/components/common/PageContainer";

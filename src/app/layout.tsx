@@ -1,9 +1,9 @@
 // app/layout.tsx
 import "./styles/globals.css";
 import Navbar from "@/components/common/navbar/Navbar";
-import { AuthProvider } from "@/pages/user/AuthContext";
+import { AuthProvider } from "@/features/user/AuthContext";
 import type { Metadata } from "next";
-import { CreditProvider } from "@/pages/payment/context/CreditContext";
+import { CreditProvider } from "@/features/payment/context/CreditContext";
 
 export const metadata: Metadata = {
   title: "Trynic",

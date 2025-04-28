@@ -1,4 +1,4 @@
-import BlogList from "@/pages/blog/BlogList";
+import BlogList from "@/features/blog/BlogList";
 
 const BlogPage = () => {
   return (
