@@ -13,7 +13,7 @@ export default function TermsPage() {
             <section>
                 <h2>제 1 조 (목적)</h2>
                 <p>
-                    본 약관은 Crazy Space (이하 "회사"라 함)이 제공하는 서비스의 이용조건 및 절차,
+                    본 약관은 Trynic (이하 "회사"라 함)이 제공하는 서비스의 이용조건 및 절차,
                     회사와 회원 간의 권리, 의무 및 책임사항 등을 규정함을 목적으로 합니다.
                 </p>
             </section>

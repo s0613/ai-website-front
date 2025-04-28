@@ -1,4 +1,4 @@
-import CreationPage from "@/features/video/creation/CreationPage";
+import CreationPage from "@/pages/video/creation/CreationPage";
 
 export default function Page() {
   return <CreationPage />;

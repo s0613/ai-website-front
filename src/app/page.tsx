@@ -1,5 +1,5 @@
-import Gallery from "@/features/hero/Gallery";
-import HeroSection from "../features/hero/HeroSection";
+import Gallery from "@/pages/hero/Gallery";
+import HeroSection from "@/pages/hero/HeroSection";
 
 export default function HomePage() {
   return (

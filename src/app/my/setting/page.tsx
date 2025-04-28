@@ -1,4 +1,4 @@
-import SettingPage from "@/features/my/SettingPage";
+import SettingPage from "@/pages/my/SettingPage";
 
 export default function Page() {
   return <SettingPage />;

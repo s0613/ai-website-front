@@ -1,4 +1,4 @@
-import EditImagePage from "@/features/image/EditImagePage";
+import EditImagePage from "@/pages/image/FashnImagePage";
 
 export default function EditPage() {
     return <EditImagePage />;

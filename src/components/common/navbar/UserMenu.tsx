@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "./UserAvatar";
-import { logout as userLogout } from "@/features/user/services/UserService";
+import { logout as userLogout } from "@/pages/user/services/UserService";
 
 interface Props {
   email: string;

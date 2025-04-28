@@ -1,4 +1,4 @@
-import NotificationSend from "@/features/admin/NotificationSend";
+import NotificationSend from "@/pages/admin/NotificationSend";
 
 export default function NotificationPage() {
   return <NotificationSend />;

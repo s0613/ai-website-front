@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "./UserAvatar";
-import { logout as userLogout } from "@/features/user/services/UserService";
+import { logout as userLogout } from "@/pages/user/services/UserService";
 
 interface Props {
   isLoggedIn: boolean;
@@ -31,6 +31,7 @@ export const MobileMenu = ({
       await userLogout();
       onLogout();
       router.push("/");
+      onClose();
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }
@@ -92,10 +93,7 @@ export const MobileMenu = ({
                   크레딧 충전
                 </Link>
                 <button
-                  onClick={() => {
-                    handleLogout();
-                    onClose();
-                  }}
+                  onClick={handleLogout}
                   className="w-full text-left block px-4 py-2 text-white hover:bg-white/5 rounded-lg"
                 >
                   로그아웃
@@ -106,17 +104,10 @@ export const MobileMenu = ({
             <div className="space-y-4">
               <Link
                 href="/login"
-                className="block w-full py-2 text-center text-white bg-sky-500 hover:bg-sky-600 rounded-lg"
+                className="block w-full py-2 text-center text-white bg-sky-500/20 hover:bg-sky-500/30 rounded-lg"
                 onClick={onClose}
               >
                 로그인
-              </Link>
-              <Link
-                href="/register"
-                className="block w-full py-2 text-center text-white bg-white/10 hover:bg-white/20 rounded-lg"
-                onClick={onClose}
-              >
-                회원가입
               </Link>
             </div>
           )}
