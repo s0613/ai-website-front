@@ -16,13 +16,11 @@ const BlogSection: React.FC<BlogSectionProps> = ({ initialBlog }) => {
   const [error, setError] = useState("");
 
   // 날짜 포맷팅
-  const formattedDate = blog.date
-    ? new Date(blog.date).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
-    : "날짜 정보 없음";
+  const formattedDate = new Date(blog.date).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   if (loading) {
     return (
