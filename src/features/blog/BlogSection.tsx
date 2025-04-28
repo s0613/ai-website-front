@@ -1,42 +1,28 @@
 "use client";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { Calendar, User, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { getBlogById } from "./services/BlogService";
 import { Blog } from "./types/Blog";
 
-const BlogSection: React.FC = () => {
-  const { id } = useParams();
-  const [blog, setBlog] = useState<Blog | null>(null);
-  const [loading, setLoading] = useState(true);
+interface BlogSectionProps {
+  initialBlog: Blog;
+}
+
+const BlogSection: React.FC<BlogSectionProps> = ({ initialBlog }) => {
+  const [blog, setBlog] = useState<Blog>(initialBlog);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!id) {
-      setError("블로그 id가 제공되지 않았습니다.");
-      setLoading(false);
-      return;
-    }
-
-    const fetchData = async () => {
-      try {
-        // id가 배열인 경우 첫 번째 요소를 사용하도록 변환
-        const blogId = Array.isArray(id) ? id[0] : id;
-        const data = await getBlogById(blogId);
-        setBlog(data);
-      } catch (error) {
-        setError("블로그 데이터를 가져오는 데 실패했습니다.");
-        console.error("블로그 조회 오류:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [id]);
+  // 날짜 포맷팅
+  const formattedDate = blog.date
+    ? new Date(blog.date).toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+    : "날짜 정보 없음";
 
   if (loading) {
     return (
@@ -74,55 +60,12 @@ const BlogSection: React.FC = () => {
             className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors duration-200"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
+            블로그 목록으로 돌아가기
           </Link>
         </div>
       </div>
     );
   }
-
-  if (!blog) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] py-16 px-4">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md w-full text-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-12 w-12 text-gray-400 mx-auto mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            콘텐츠를 찾을 수 없습니다
-          </h3>
-          <p className="text-gray-600 mb-4">
-            요청하신 블로그 게시물이 존재하지 않거나 삭제되었습니다.
-          </p>
-          <Link
-            href="/blog/blogList"
-            className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors duration-200"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // 날짜 포맷팅
-  const formattedDate = blog.date
-    ? new Date(blog.date).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
-    : "날짜 정보 없음";
 
   return (
     <section className="py-12 px-4 bg-white">
@@ -132,6 +75,7 @@ const BlogSection: React.FC = () => {
           className="inline-flex items-center text-gray-600 hover:text-sky-600 mb-8 transition-colors duration-200"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
+          블로그 목록으로 돌아가기
         </Link>
 
         <article>
