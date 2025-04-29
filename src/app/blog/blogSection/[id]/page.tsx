@@ -4,14 +4,15 @@ import { getBlogById } from '@/features/blog/services/BlogService';
 import BlogSection from '@/features/blog/BlogSection';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const blog = await getBlogById(params.id);
+  const resolvedParams = await params;
+  const blog = await getBlogById(resolvedParams.id);
   return {
     title: blog.title,
     description: blog.subtitle,
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BlogPage({ params, searchParams }: PageProps) {
-  const blog = await getBlogById(params.id);
+  const resolvedParams = await params;
+  const blog = await getBlogById(resolvedParams.id);
   return <BlogSection initialBlog={blog} />;
 }

@@ -80,9 +80,7 @@ export function useImageSidebar({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        toast({
-            title: "이미지 생성 시작",
-            description: "이미지 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.",
+        toast.success("이미지 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.", {
             duration: 5000,
         });
 

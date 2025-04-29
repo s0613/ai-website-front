@@ -1,7 +1,7 @@
 // modelSettings/image/ImageWanModelSetting.tsx
 import React from "react";
 import { ModelSettingBase } from "../ModelSettingBase";
-import { ModelSettingProps, ImageWanModelSettings } from "../../types/modelSettingTypes";
+import { ModelSettingProps, ImageWanModelSettings } from "../../../videoGeneration/types/modelSettingTypes";
 
 export class ImageWanModelSetting extends ModelSettingBase {
   renderSettings({ updateSettings, currentSettings }: ModelSettingProps): React.ReactNode {
@@ -33,7 +33,7 @@ export class ImageWanModelSetting extends ModelSettingBase {
                   value={ratio}
                   checked={settings.aspectRatio === ratio}
                   onChange={(e) =>
-                    updateSettings({ aspectRatio: e.target.value })
+                    updateSettings({ aspectRatio: e.target.value as "16:9" | "9:16" })
                   }
                   className="sr-only"
                 />
@@ -87,7 +87,7 @@ export class ImageWanModelSetting extends ModelSettingBase {
           <select
             value={settings.framesPerSecond || 16}
             onChange={(e) =>
-              updateSettings({ framesPerSecond: Number(e.target.value) })
+              updateSettings({ framesPerSecond: Number(e.target.value) as 8 | 16 | 24 })
             }
             className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
           >
@@ -104,7 +104,7 @@ export class ImageWanModelSetting extends ModelSettingBase {
           </label>
           <select
             value={settings.resolution || "720p"}
-            onChange={(e) => updateSettings({ resolution: e.target.value })}
+            onChange={(e) => updateSettings({ resolution: e.target.value as "480p" | "720p" })}
             className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
           >
             <option value="480p">480p (더 빠른 생성)</option>
@@ -120,7 +120,7 @@ export class ImageWanModelSetting extends ModelSettingBase {
           <select
             value={settings.numInferenceSteps || 30}
             onChange={(e) =>
-              updateSettings({ numInferenceSteps: Number(e.target.value) })
+              updateSettings({ numInferenceSteps: Number(e.target.value) as 20 | 30 | 40 })
             }
             className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
           >

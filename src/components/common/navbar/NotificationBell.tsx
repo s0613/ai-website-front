@@ -8,14 +8,14 @@ import { NotificationService, NotificationResponse } from "@/features/admin/serv
 interface Props {
   isOpen: boolean;
   toggle: (e: React.MouseEvent) => void;
-  onMouseLeave: () => void;
+  onMouseLeave?: () => void;
   refObj: RefObject<HTMLDivElement | null>;
 }
 
 export const NotificationBell = ({
   isOpen,
   toggle,
-  onMouseLeave,
+  onMouseLeave = () => { },
   refObj,
 }: Props) => {
   const [notifications, setNotifications] = useState<NotificationResponse[]>([]);

@@ -1,12 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import VideoSidebar from "./VideoSidebar";
 import VideoGenerationFolder from "./VideoGenerationFolder";
 import useVideoGeneration from "../hooks/useVideoGeneration";
 import { toast } from "react-hot-toast";
+import { useSearchParams } from "next/navigation";
 
-export default function VideoGenerationPage() {
+// 로딩 컴포넌트
+function LoadingComponent() {
+  return <div className="p-4 text-white">로딩 중...</div>;
+}
+
+// 실제 비디오 생성 페이지 내용을 담당하는 컴포넌트
+function VideoGenerationContent() {
+  const searchParams = useSearchParams();
+
   const {
     videoUrl,
     isLoading,
@@ -21,7 +30,7 @@ export default function VideoGenerationPage() {
     handleUpscaleVideo,
     handleTabChange,
     handleAddReferenceImage,
-  } = useVideoGeneration();
+  } = useVideoGeneration({ searchParams });
 
   // handleSidebarSubmit 함수 호출을 위한 래퍼 함수
   const handleVideoSidebarSubmit = (data: any) => {
@@ -56,5 +65,14 @@ export default function VideoGenerationPage() {
         <VideoGenerationFolder onSelectImage={handleSelectImage} />
       </div>
     </div>
+  );
+}
+
+// 메인 비디오 생성 페이지 컴포넌트
+export default function VideoGenerationPage() {
+  return (
+    <Suspense fallback={<LoadingComponent />}>
+      <VideoGenerationContent />
+    </Suspense>
   );
 }

@@ -5,6 +5,8 @@ export interface ImageGenerationSettings {
     height: number;
     guidanceScale: number;
     numInferenceSteps: number;
+    numOutputs: number;
+    modelId: string;
     negativePrompt?: string;
     imageFile?: File;
 }
@@ -17,6 +19,7 @@ export interface GeneratedImage {
     height: number;
     guidanceScale: number;
     numInferenceSteps: number;
+    modelId: string;
     negativePrompt?: string;
     referenceImage?: string;
 }

@@ -1,10 +1,11 @@
 import React from "react";
 import { Info } from "lucide-react";
 import { ModelSettingBase } from "../ModelSettingBase";
-import { ModelSettingProps } from "../../../types/modelSettingTypes";
+import { ModelSettingProps, ImageKlingModelSettings } from "../../../videoGeneration/types/modelSettingTypes";
 
 export class ImageKlingModelSetting extends ModelSettingBase {
   renderSettings({ updateSettings, currentSettings }: ModelSettingProps) {
+    const settings = currentSettings as ImageKlingModelSettings;
     const cameraControlDescriptions: Record<string, string> = {
       down_back: "아래에서 뒤로 움직이는 시점",
       forward_up: "앞에서 위로 움직이는 시점",
@@ -22,7 +23,7 @@ export class ImageKlingModelSetting extends ModelSettingBase {
             {["16:9", "9:16", "1:1"].map((ratio) => (
               <label
                 key={ratio}
-                className={`flex items-center justify-between w-full py-2 px-3 rounded-lg border cursor-pointer text-xs transition-transform duration-200 transform hover:scale-105 ${currentSettings.aspectRatio === ratio
+                className={`flex items-center justify-between w-full py-2 px-3 rounded-lg border cursor-pointer text-xs transition-transform duration-200 transform hover:scale-105 ${settings.aspectRatio === ratio
                   ? "border-sky-500 bg-sky-500/20 text-sky-500"
                   : "border-white/10 text-gray-300 hover:bg-white/5"
                   }`}
@@ -31,13 +32,13 @@ export class ImageKlingModelSetting extends ModelSettingBase {
                   type="radio"
                   name="aspectRatio"
                   value={ratio}
-                  checked={currentSettings.aspectRatio === ratio}
-                  onChange={() => updateSettings({ aspectRatio: ratio })}
+                  checked={settings.aspectRatio === ratio}
+                  onChange={() => updateSettings({ aspectRatio: ratio as "16:9" | "9:16" | "1:1" })}
                   className="sr-only"
                 />
                 {ratio === "16:9" && (
                   <div
-                    className={`w-3 h-2 border bg-transparent ${currentSettings.aspectRatio === "16:9"
+                    className={`w-3 h-2 border bg-transparent ${settings.aspectRatio === "16:9"
                       ? "border-sky-500"
                       : "border-white/30"
                       }`}
@@ -45,7 +46,7 @@ export class ImageKlingModelSetting extends ModelSettingBase {
                 )}
                 {ratio === "9:16" && (
                   <div
-                    className={`w-2 h-3 border bg-transparent ${currentSettings.aspectRatio === "9:16"
+                    className={`w-2 h-3 border bg-transparent ${settings.aspectRatio === "9:16"
                       ? "border-sky-500"
                       : "border-white/30"
                       }`}
@@ -53,7 +54,7 @@ export class ImageKlingModelSetting extends ModelSettingBase {
                 )}
                 {ratio === "1:1" && (
                   <div
-                    className={`w-3 h-3 border bg-transparent ${currentSettings.aspectRatio === "1:1"
+                    className={`w-3 h-3 border bg-transparent ${settings.aspectRatio === "1:1"
                       ? "border-sky-500"
                       : "border-white/30"
                       }`}
@@ -72,7 +73,7 @@ export class ImageKlingModelSetting extends ModelSettingBase {
             {["5s", "10s"].map((dur) => (
               <label
                 key={dur}
-                className={`flex items-center justify-center py-1 rounded border cursor-pointer text-xs ${currentSettings.duration === dur
+                className={`flex items-center justify-center py-1 rounded border cursor-pointer text-xs ${settings.duration === dur
                   ? "bg-sky-500/20 border-sky-500 text-sky-500"
                   : "border-white/10 text-gray-300 hover:bg-white/5"
                   }`}
@@ -81,8 +82,8 @@ export class ImageKlingModelSetting extends ModelSettingBase {
                   type="radio"
                   name="duration"
                   value={dur}
-                  checked={currentSettings.duration === dur}
-                  onChange={(e) => updateSettings({ duration: e.target.value })}
+                  checked={settings.duration === dur}
+                  onChange={(e) => updateSettings({ duration: e.target.value as "5s" | "10s" })}
                   className="sr-only"
                 />
                 {dur}
@@ -95,8 +96,8 @@ export class ImageKlingModelSetting extends ModelSettingBase {
             카메라 움직임
           </label>
           <select
-            value={currentSettings.cameraControl || "down_back"}
-            onChange={(e) => updateSettings({ cameraControl: e.target.value })}
+            value={settings.cameraControl || "down_back"}
+            onChange={(e) => updateSettings({ cameraControl: e.target.value as "down_back" | "forward_up" | "right_turn_forward" | "left_turn_forward" })}
             className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
           >
             <option value="down_back">아래에서 뒤로</option>
@@ -109,7 +110,7 @@ export class ImageKlingModelSetting extends ModelSettingBase {
             <p className="text-xs text-gray-300">
               {
                 cameraControlDescriptions[
-                currentSettings.cameraControl || "down_back"
+                settings.cameraControl || "down_back"
                 ]
               }
             </p>

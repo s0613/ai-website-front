@@ -11,7 +11,6 @@ interface Props {
   email: string;
   nickname: string;
   credits: number | null;
-  notifications: { id: number; message: string; date: string }[];
   isDropdownOpen: boolean;
   setIsDropdownOpen: (value: boolean) => void;
   isNotificationOpen: boolean;
@@ -28,7 +27,6 @@ export const DesktopNav = ({
   email,
   nickname,
   credits,
-  notifications,
   isDropdownOpen,
   setIsDropdownOpen,
   isNotificationOpen,
@@ -67,7 +65,6 @@ export const DesktopNav = ({
           )}
 
           <NotificationBell
-            notifications={notifications}
             isOpen={isNotificationOpen}
             toggle={toggleNotifications}
             refObj={notificationRef}

@@ -1,7 +1,7 @@
 // modelSettings/image/ImageHunyuanModelSetting.tsx
 import React from "react";
 import { ModelSettingBase } from "../ModelSettingBase";
-import { ModelSettingProps, ImageHunyuanModelSettings } from "../../types/modelSettingTypes";
+import { ModelSettingProps, ImageHunyuanModelSettings } from "../../../videoGeneration/types/modelSettingTypes";
 
 export class ImageHunyuanModelSetting extends ModelSettingBase {
   renderSettings({ updateSettings, currentSettings }: ModelSettingProps): React.ReactNode {
@@ -33,7 +33,7 @@ export class ImageHunyuanModelSetting extends ModelSettingBase {
                   value={ratio}
                   checked={settings.aspectRatio === ratio}
                   onChange={(e) =>
-                    updateSettings({ aspectRatio: e.target.value })
+                    updateSettings({ aspectRatio: e.target.value as "16:9" | "9:16" })
                   }
                   className="sr-only"
                 />
@@ -65,7 +65,7 @@ export class ImageHunyuanModelSetting extends ModelSettingBase {
           </label>
           <select
             value={settings.resolution || "720p"}
-            onChange={(e) => updateSettings({ resolution: e.target.value })}
+            onChange={(e) => updateSettings({ resolution: e.target.value as "720p" })}
             className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
           >
             <option value="720p">720p</option>

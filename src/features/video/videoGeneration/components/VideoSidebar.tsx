@@ -24,6 +24,7 @@ import ModelSetting from "./ModelSetting";
 import { SidebarFormData, useVideoSidebar } from "../hooks/useVideoSidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { uploadImageAPI } from "../../services/fileService";
+import { AspectRatioType, ResolutionType } from "../types/modelSettingTypes";
 
 export type VideoSidebarProps = {
   onSubmit: (data: SidebarFormData) => void;
@@ -361,14 +362,14 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                 mode={activeTab}
                 updateSettings={updateSettings}
                 currentSettings={{
-                  aspectRatio,
-                  resolution,
+                  aspectRatio: aspectRatio as AspectRatioType,
+                  resolution: resolution as ResolutionType,
                   numFrames,
-                  numInferenceSteps,
+                  numInferenceSteps: numInferenceSteps as 20 | 30 | 40 | undefined,
                   seed,
                   proMode: false,
                   enableSafetyChecker,
-                  framesPerSecond,
+                  framesPerSecond: framesPerSecond as 8 | 16 | 24 | undefined,
                   enablePromptExpansion,
                 }}
               />

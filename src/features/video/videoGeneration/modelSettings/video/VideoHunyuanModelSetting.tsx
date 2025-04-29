@@ -19,11 +19,10 @@ export class VideoHunyuanModelSetting extends ModelSettingBase {
                     </label>
                     <select
                         value={settings.resolution || "720p"}
-                        onChange={(e) => updateSettings({ resolution: e.target.value })}
+                        onChange={(e) => updateSettings({ resolution: e.target.value as "480p" | "720p" })}
                         className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                     >
                         <option value="480p">480p (더 빠른 생성)</option>
-                        <option value="580p">580p (중간 품질)</option>
                         <option value="720p">720p (고품질)</option>
                     </select>
                 </div>
@@ -63,7 +62,7 @@ export class VideoHunyuanModelSetting extends ModelSettingBase {
                                     value={ratio}
                                     checked={settings.aspectRatio === ratio}
                                     onChange={(e) =>
-                                        updateSettings({ aspectRatio: e.target.value })
+                                        updateSettings({ aspectRatio: e.target.value as "16:9" | "9:16" })
                                     }
                                     className="sr-only"
                                 />
@@ -96,7 +95,7 @@ export class VideoHunyuanModelSetting extends ModelSettingBase {
                     <select
                         value={settings.numInferenceSteps || 30}
                         onChange={(e) =>
-                            updateSettings({ numInferenceSteps: Number(e.target.value) })
+                            updateSettings({ numInferenceSteps: Number(e.target.value) as 20 | 30 | 40 })
                         }
                         className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                     >

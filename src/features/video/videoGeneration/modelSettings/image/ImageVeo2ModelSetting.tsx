@@ -1,6 +1,6 @@
 import React from "react";
 import { ModelSettingBase } from "../ModelSettingBase";
-import { ModelSettingProps, ImageVeo2ModelSettings } from "../../types/modelSettingTypes";
+import { ModelSettingProps, ImageVeo2ModelSettings } from "../../../videoGeneration/types/modelSettingTypes";
 
 export class ImageVeo2ModelSetting extends ModelSettingBase {
     renderSettings({ updateSettings, currentSettings }: ModelSettingProps): React.ReactNode {
@@ -32,7 +32,7 @@ export class ImageVeo2ModelSetting extends ModelSettingBase {
                                     value={ratio}
                                     checked={settings.aspectRatio === ratio}
                                     onChange={(e) =>
-                                        updateSettings({ aspectRatio: e.target.value })
+                                        updateSettings({ aspectRatio: e.target.value as "auto" | "auto_prefer_portrait" | "16:9" | "9:16" })
                                     }
                                     className="sr-only"
                                 />
@@ -86,7 +86,7 @@ export class ImageVeo2ModelSetting extends ModelSettingBase {
                                     name="duration"
                                     value={dur}
                                     checked={settings.duration === dur}
-                                    onChange={(e) => updateSettings({ duration: e.target.value })}
+                                    onChange={(e) => updateSettings({ duration: e.target.value as "5s" | "6s" | "7s" | "8s" })}
                                     className="sr-only"
                                 />
                                 {dur}

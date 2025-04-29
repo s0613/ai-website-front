@@ -1,7 +1,6 @@
 // hooks/useVideoGeneration.ts
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import {
   saveVideo,
@@ -11,6 +10,7 @@ import {
 import { BillingService } from "@/features/payment/services/BillingService";
 import { useCredit } from "@/features/payment/context/CreditContext";
 import { useRouter } from "next/navigation";
+import { ReadonlyURLSearchParams } from "next/navigation";
 
 // 타입 정의 추가
 interface VideoGenerationData {
@@ -52,8 +52,11 @@ interface VideoGenerationResponse {
   requestId?: string;
 }
 
-export default function useVideoGeneration() {
-  const searchParams = useSearchParams();
+interface UseVideoGenerationProps {
+  searchParams?: ReadonlyURLSearchParams | null;
+}
+
+export default function useVideoGeneration({ searchParams }: UseVideoGenerationProps = {}) {
   const { updateCredits } = useCredit();
   const router = useRouter();
 

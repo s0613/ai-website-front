@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, CreditCard, CheckCircle, AlertCircle, Lock } from "lucide-react";
 import Link from "next/link";
@@ -34,8 +34,13 @@ const slideUp = {
 // 결제 상태 타입
 type PaymentStatus = "idle" | "processing" | "success" | "error";
 
-// 결제 폼 컴포넌트
-export default function PaymentForm() {
+// 로딩 컴포넌트
+function LoadingComponent() {
+  return <div className="p-4 text-white">로딩 중...</div>;
+}
+
+// 실제 결제 폼 내용을 담당하는 컴포넌트
+function PaymentFormContent() {
   const searchParams = useSearchParams();
   const planTitle = searchParams.get("plan") || "";
   const planPrice = searchParams.get("price") || "";
@@ -362,5 +367,14 @@ export default function PaymentForm() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// 결제 폼 컴포넌트
+export default function PaymentForm() {
+  return (
+    <Suspense fallback={<LoadingComponent />}>
+      <PaymentFormContent />
+    </Suspense>
   );
 }
