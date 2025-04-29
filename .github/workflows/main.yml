@@ -10,6 +10,9 @@ env:
   CODE_DEPLOY_APPLICATION_NAME: trynic-front
   CODE_DEPLOY_DEPLOYMENT_GROUP_NAME: trynic-front-group
   AWS_REGION: ap-northeast-2
+  NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
+  FAL_KEY:              ${{ secrets.FAL_KEY }}
+  GOOGLE_API_KEY:       ${{ secrets.GOOGLE_API_KEY }}
 
 jobs:
   deploy:
@@ -27,21 +30,30 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
 
+      - name: Generate .env.local
+        run: |
+          echo "NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}" > .env.local
+          echo "FAL_KEY=${FAL_KEY}" >> .env.local
+          echo "GOOGLE_API_KEY=${GOOGLE_API_KEY}" >> .env.local
+
       - name: Prepare Deployment Package
         run: |
           mkdir deploy
           rsync -av \
             --exclude='deploy' \
             --exclude='node_modules' \
+            --exclude='.git' \
             ./ deploy/
-          cd deploy && zip -r ../trynic-front.zip . && cd ..
+          cp .env.local deploy/.env.production
+          cd deploy
+          zip -r ../trynic-front.zip . && cd ..
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region:            ${{ env.AWS_REGION }}
 
       - name: Upload to S3
         run: aws s3 cp trynic-front.zip s3://${{ env.S3_BUCKET_NAME }}/trynic-front.zip
