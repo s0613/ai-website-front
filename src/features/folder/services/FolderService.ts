@@ -30,8 +30,17 @@ export const FolderService = {
   },
 
   // 폴더 삭제
-  deleteFolder: async (folderId: number): Promise<void> => {
-    await apiClient.delete(`/folders/${folderId}`);
+  deleteFolder: async (folderId: number): Promise<{ success: boolean; message?: string }> => {
+    try {
+      await apiClient.delete(`/folders/${folderId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('폴더 삭제 에러:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '폴더 삭제에 실패했습니다'
+      };
+    }
   },
 
   // 폴더 내 파일 목록 조회

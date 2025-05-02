@@ -111,6 +111,7 @@ export default function UpscalerImageSidebar({
                             src={image.url}
                             alt={image.name}
                             fill
+                            sizes="(max-width: 400px) 100vw"
                             className="object-contain"
                         />
                     </div>

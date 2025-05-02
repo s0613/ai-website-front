@@ -18,26 +18,22 @@ export const getImages = async (): Promise<ImageItem[]> => {
 
 /**
  * Fashn 폴더에 이미지를 업로드하는 함수
- * @param image 업로드할 이미지 파일
+ * @param imageUrl 업로드할 이미지 URL
  * @returns 업로드된 파일 정보
  */
-export const uploadFashnImage = async (image: File): Promise<ApiResponse<ImageItem>> => {
+export const uploadFashnImage = async (imageUrl: string): Promise<ApiResponse<ImageItem>> => {
   try {
-    const formData = new FormData();
-    formData.append('image', image);
-
-    const response = await apiClient.post<ApiResponse<ImageItem>>('/files/upload/fashn', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-
-    return response.data;
+    const uploadResponse = await apiClient.post<ApiResponse<ImageItem>>(
+      '/files/upload/fashn',
+      { imageUrl } // 🔑 문자열이 아닌, 이렇게 객체 형태로 요청 바디에 넣어야 합니다.
+    );
+    return uploadResponse.data;
   } catch (error) {
     console.error('Fashn 이미지 업로드에 실패했습니다:', error);
     throw error;
   }
 };
+
 
 /**
  * 카테고리별 이미지 목록을 가져오는 함수

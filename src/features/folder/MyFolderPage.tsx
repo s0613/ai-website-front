@@ -94,9 +94,13 @@ const MyFolderPage = () => {
   // 4) 폴더 삭제 - FolderService 사용
   const deleteFolder = async (folderId: number) => {
     try {
-      await FolderService.deleteFolder(folderId);
-      setFolders((prev) => prev.filter((folder) => folder.id !== folderId));
-      toast.success("폴더가 삭제되었습니다");
+      const result = await FolderService.deleteFolder(folderId);
+      if (result.success) {
+        setFolders((prev) => prev.filter((folder) => folder.id !== folderId));
+        toast.success("폴더가 삭제되었습니다");
+      } else {
+        toast.error(result.message || "폴더 삭제에 실패했습니다");
+      }
     } catch (error) {
       console.error("폴더 삭제 오류:", error);
       toast.error("폴더 삭제에 실패했습니다");

@@ -132,11 +132,19 @@ export default function VideoGenerationFolder({ onSelectImage }: VideoGeneration
         if (!folderToDelete) return;
 
         try {
-            await FolderService.deleteFolder(folderToDelete);
-            setFolders((prev) => prev.filter((folder) => folder.id !== folderToDelete));
-            toast.success("폴더가 삭제되었습니다");
-            if (currentFolder?.id === folderToDelete) {
-                handleBack();
+            const result = await FolderService.deleteFolder(folderToDelete);
+            if (result.success) {
+                setFolders((prev) => prev.filter((folder) => folder.id !== folderToDelete));
+                toast.success("폴더가 삭제되었습니다");
+
+                // 현재 선택된 폴더가 삭제된 경우 관련 상태 초기화
+                if (currentFolder?.id === folderToDelete) {
+                    setCurrentFolder(null);
+                    setFiles([]);
+                    handleBack();
+                }
+            } else {
+                toast.error(result.message || "폴더 삭제에 실패했습니다");
             }
         } catch (error) {
             console.error("폴더 삭제 오류:", error);

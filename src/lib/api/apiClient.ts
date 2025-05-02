@@ -7,7 +7,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8080/api'
 const apiClient = axios.create({
   baseURL: BASE_URL,
   withCredentials: true, // 모든 요청에 쿠키 포함
-  timeout: 30000, // 30초 타임아웃 설정
+  timeout: 90000, // 타임아웃 설정
 });
 
 // 요청 인터셉터

@@ -455,6 +455,7 @@ export default function UpscalerImagePage() {
                                                 src={file.url}
                                                 alt={file.name}
                                                 fill
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                                 className="object-cover"
                                             />
                                             <div className="absolute bottom-2 left-2 right-2 text-sm text-white truncate">
