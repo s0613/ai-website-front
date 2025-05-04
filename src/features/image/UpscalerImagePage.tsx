@@ -5,13 +5,11 @@ import { FolderService } from '../../features/folder/services/FolderService';
 import type { FolderResponse, FileResponse } from '../../features/folder/services/FolderService';
 import UpscalerImageSidebar, { type UpscalerImageSettings } from "./UpscalerImageSidebar";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
     Folder,
     Upload,
-    Search,
     Loader2,
     AlertTriangle,
     MoreHorizontal,
@@ -43,7 +41,7 @@ export default function UpscalerImagePage() {
     const [selectedFolder, setSelectedFolder] = useState<FolderResponse | null>(null);
     const [files, setFiles] = useState<FileResponse[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
@@ -212,7 +210,7 @@ export default function UpscalerImagePage() {
                 throw new Error("업스케일링 실패");
             }
 
-            const result = await response.json();
+            await response.json();
             toast.success("이미지 업스케일링이 완료되었습니다!");
             // TODO: 결과 이미지 처리 로직 추가
         } catch (error) {
@@ -263,16 +261,7 @@ export default function UpscalerImagePage() {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <Input
-                                    type="text"
-                                    placeholder={selectedFolder ? "이미지 검색..." : "폴더 검색..."}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 bg-black/40 backdrop-blur-xl border-white/20 text-white w-64"
-                                />
-                            </div>
+
                             {!selectedFolder ? (
                                 <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
                                     <DialogTrigger asChild>

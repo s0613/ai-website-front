@@ -1,13 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Eye, FileVideo, Info, Layers } from "lucide-react";
+import { Heart, Link as LinkIcon, Calendar, Eye, Info, Layers, ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { toast } from "react-hot-toast";
 import { getVideoById, updateVideoLike } from "../services/MyVideoService";
-import { VideoDto } from "../types/Video";
-import { useAuth } from "@/features/user/AuthContext"; // AuthContext에서 useAuth 가져오기
+import type { VideoDto } from "../types/Video";
 
 // 기본 비디오 정보 인터페이스
 interface VideoBasicInfo {
@@ -17,303 +16,194 @@ interface VideoBasicInfo {
   creator: string;
 }
 
-// 상세 비디오 정보 인터페이스 - VideoDto와 호환
-interface VideoDetailInfo {
-  title?: string;
-  creator?: string;
-  thumbnailUrl?: string;
-  prompt?: string;
-  url?: string;
-  status?: string;
-  createdAt?: string;
-  model?: string;
-  clickCount?: number;
-  likeCount?: number;
-  liked?: boolean;
-}
-
 interface VideoDetailProps {
   videoId: number;
   videoBasicInfo: VideoBasicInfo;
-  onBack: () => void;
 }
 
-// 간단한 내부 유틸리티 함수
-const getSimpleCategory = (prompt: string): string => {
-  const promptLower = prompt?.toLowerCase() || "";
-  if (promptLower.includes("nature") || promptLower.includes("자연"))
-    return "자연";
-  if (promptLower.includes("city") || promptLower.includes("도시"))
-    return "도시";
-  return "기타";
-};
-
-export default function VideoDetail({
-  videoId,
-  videoBasicInfo,
-  onBack,
-}: VideoDetailProps) {
+export default function VideoDetail({ videoId, videoBasicInfo }: VideoDetailProps) {
   const router = useRouter();
-  const { isLoggedIn } = useAuth(); // 로그인 상태 가져오기
-  const [videoDetail, setVideoDetail] = useState<VideoDetailInfo | null>(null);
+  const [videoDetail, setVideoDetail] = useState<VideoDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(videoDetail?.liked || false);
+  const [likeCount, setLikeCount] = useState(videoDetail?.likeCount || 0);
 
-  // 비디오 상세 정보를 API를 통해 가져오기
   useEffect(() => {
-    const fetchVideoDetail = async () => {
+    const fetchVideo = async () => {
+      if (!videoId) return;
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-
-        // MyVideoService의 getVideoById 함수 사용
-        const videoData = await getVideoById(videoId);
-        console.log("비디오 상세 정보:", videoData);
-
-        if (videoData) {
-          // VideoDto에서 VideoDetailInfo로 데이터 매핑
-          setVideoDetail({
-            title: videoData.name || videoBasicInfo.name,
-            creator: videoData.creator || videoBasicInfo.creator,
-            thumbnailUrl: videoData.thumbnailUrl || videoBasicInfo.thumbnailUrl,
-            prompt: videoData.prompt || "",
-            url: videoData.url || "",
-            status: "완료", // 기본값 설정
-            createdAt: videoData.createdAt || "",
-            model: videoData.model || "",
-            clickCount: videoData.clickCount || 0,
-            likeCount: videoData.likeCount || 0,
-            liked: videoData.liked || false,
-          });
-
-          setLikeCount(videoData.likeCount || 0);
-          setIsLiked(videoData.liked || false);
-        } else {
-          // 데이터가 없으면 기본 정보만 사용
-          setVideoDetail({
-            title: videoBasicInfo.name,
-            creator: videoBasicInfo.creator,
-            thumbnailUrl: videoBasicInfo.thumbnailUrl,
-            clickCount: 0,
-            likeCount: 0,
-          });
-          setLikeCount(0);
-          setIsLiked(false);
-        }
-      } catch (err) {
-        console.error("비디오 상세 정보 조회 오류:", err);
-        setError((err as Error).message);
-        // 오류 발생 시 기본 정보 사용
-        setVideoDetail({
-          title: videoBasicInfo.name,
-          creator: videoBasicInfo.creator,
-          thumbnailUrl: videoBasicInfo.thumbnailUrl,
-          clickCount: 0,
-          likeCount: 0,
-        });
-        setLikeCount(0);
-        setIsLiked(false);
+        const data = await getVideoById(videoId);
+        setVideoDetail(data);
+        setIsLiked(data.liked || false);
+        setLikeCount(data.likeCount || 0);
+      } catch {
+        toast.error("비디오 정보를 불러오는데 실패했습니다.");
       } finally {
         setIsLoading(false);
       }
     };
+    fetchVideo();
+  }, [videoId]);
 
-    fetchVideoDetail();
-  }, [videoId, videoBasicInfo]);
+  const handleLikeToggle = async () => {
+    if (!videoDetail) return;
 
-  // 비디오 재사용 핸들러
-  const handleReuseVideo = () => {
-    // 로그인 상태 확인
-    if (!isLoggedIn) {
-      // 로그인되지 않은 경우, 로그인 페이지로 이동하고 현재 페이지를 콜백 URL로 설정
-      const currentUrl = window.location.href;
-      router.push(`/login?callbackUrl=${encodeURIComponent(currentUrl)}`);
-      return;
+    const newLikedStatus = !isLiked;
+    setIsLiked(newLikedStatus);
+    setLikeCount((prev: number) => newLikedStatus ? prev + 1 : prev - 1);
+
+    try {
+      const updatedVideo = await updateVideoLike(videoDetail.id!, newLikedStatus);
+      setIsLiked(updatedVideo.liked || false);
+      setLikeCount(updatedVideo.likeCount || 0);
+    } catch {
+      toast.error("좋아요 상태 변경에 실패했습니다.");
+      setIsLiked(!newLikedStatus);
+      setLikeCount((prev: number) => !newLikedStatus ? prev + 1 : prev - 1);
     }
+  };
 
-    // 로그인된 경우만 아래 코드 실행
-    // 프롬프트가 있으면 사용, 없으면 제목 사용
-    const prompt = videoDetail?.prompt || videoBasicInfo.name;
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("링크가 클립보드에 복사되었습니다.");
+    } catch {
+      toast.error("링크 복사에 실패했습니다.");
+    }
+  };
 
-    // 필요한 정보를 쿼리 파라미터로 인코딩
+  const handleReuseVideo = () => {
+    if (!videoDetail) return;
     const params = new URLSearchParams({
-      prompt: prompt,
-      imageUrl: videoBasicInfo.thumbnailUrl || "",
-      model: videoDetail?.model || "luna",
+      prompt: videoDetail.prompt || "",
+      imageUrl: videoDetail.thumbnailUrl || "",
+      model: videoDetail.model || "luna",
     });
-
-    // 영상 생성 페이지로 이동
     router.push(`/generation/video?${params.toString()}`);
   };
 
-  // 좋아요 버튼 핸들러
-  const handleLikeClick = async () => {
-    // 좋아요 상태 토글
-    const newLikedState = !isLiked;
-    setIsLiked(newLikedState);
-
-    // 좋아요 수 업데이트 (UI 즉시 반영)
-    setLikeCount((prev) => (newLikedState ? prev + 1 : Math.max(0, prev - 1)));
-
-    try {
-      // MyVideoService의 updateVideoLike 함수 사용
-      const updatedVideo = await updateVideoLike(videoId, newLikedState);
-
-      // API 응답에서 받은 좋아요 수로 업데이트
-      if (updatedVideo.likeCount !== undefined) {
-        setLikeCount(updatedVideo.likeCount);
-      }
-
-      console.log(`좋아요 ${newLikedState ? "추가" : "취소"} 성공`);
-    } catch (err) {
-      console.error("좋아요 처리 중 오류:", err);
-      // 오류 발생 시 상태 복원
-      setIsLiked(!newLikedState);
-      setLikeCount((prev) =>
-        !newLikedState ? prev + 1 : Math.max(0, prev - 1)
-      );
-    }
-  };
-
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-400"></div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
+  if (!videoDetail) {
+    return <div>비디오 정보를 불러올 수 없습니다.</div>;
+  }
+
+  const videoUrl = videoDetail?.url || "";
+  const shareUrl = videoDetail?.share ? `${window.location.origin}/shared/${videoDetail?.id}` : '';
+
   return (
-    <div className="flex flex-col md:flex-row h-full bg-black">
-      {/* 비디오 플레이어 섹션 */}
-      <div className="md:w-3/5 bg-black/40 backdrop-blur-xl flex items-center justify-center p-0">
-        <div className="w-full h-full relative">
-          {videoDetail?.url ? (
-            <video
-              src={videoDetail.url}
-              poster={videoDetail.thumbnailUrl || videoBasicInfo.thumbnailUrl}
-              controls
-              autoPlay
-              className="w-full h-full object-contain max-h-[80vh]"
-            >
-              브라우저가 비디오 태그를 지원하지 않습니다.
-            </video>
-          ) : (
-            <img
-              src={videoDetail?.thumbnailUrl || videoBasicInfo.thumbnailUrl}
-              alt={videoDetail?.title || videoBasicInfo.name}
-              className="w-full h-full object-contain max-h-[80vh]"
+    <div className="flex flex-col md:flex-row h-full max-h-[inherit] bg-black/40 backdrop-blur-xl rounded-lg overflow-hidden">
+      {/* Video Player Section */}
+      <div className="md:w-3/5 lg:w-2/3 bg-black flex items-center justify-center p-4">
+        {videoUrl ? (
+          <video controls src={videoUrl} className="max-w-full max-h-[80vh] object-contain" poster={videoDetail?.thumbnailUrl || videoBasicInfo.thumbnailUrl}></video>
+        ) : (
+          <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black/50 flex items-center justify-center">
+            <Image
+              src={videoBasicInfo.thumbnailUrl}
+              alt={videoBasicInfo.name}
+              width={640}
+              height={360}
+              className="object-contain max-w-full max-h-[80vh]"
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* 비디오 정보 섹션 - 독립적으로 스크롤 가능하도록 설정 */}
-      <div
-        className="md:w-2/5 overflow-y-auto bg-black/40 backdrop-blur-xl border-l border-white/20"
-        style={{ maxHeight: "80vh" }}
-      >
-        <div className="p-6">
-          {/* 헤더 섹션 */}
-          <div className="mb-6">
-            <h1 className="text-xl font-bold text-white mb-2 leading-tight">
-              {videoDetail?.title || videoBasicInfo.name}
-            </h1>
-
-            <div className="flex items-center text-gray-300 mb-3">
-              <span className="font-medium text-white">
-                {videoDetail?.creator || videoBasicInfo.creator || "알 수 없음"}
-              </span>
-
-              {videoDetail?.createdAt && (
-                <div className="flex items-center ml-4 text-sm">
-                  <Calendar className="w-4 h-4 mr-1 text-gray-400" />
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center text-sm text-gray-300">
-                <Eye className="w-4 h-4 mr-1 text-gray-400" />
-                <span>
-                  {videoDetail?.clickCount?.toLocaleString() || "0"} 조회
-                </span>
-              </div>
-
-              <div className="flex items-center text-sm text-gray-300">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className={`w-4 h-4 mr-1 ${isLiked ? "text-sky-500" : "text-gray-400"
-                    }`}
-                >
-                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-                </svg>
-                <span>{likeCount.toLocaleString()} 좋아요</span>
-              </div>
-            </div>
+      {/* Details Section */}
+      <div className="md:w-2/5 lg:w-1/3 p-4 md:p-6 overflow-y-auto border-l border-white/10 flex flex-col justify-between">
+        <div>
+          {/* Header */}
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-lg md:text-xl font-semibold text-white break-words">
+              {videoDetail?.name || videoBasicInfo.name}
+            </h2>
           </div>
 
-          {/* 액션 버튼 */}
-          <div className="flex space-x-3 mb-6">
-            <button
-              onClick={handleReuseVideo}
-              className="flex-1 bg-sky-500 hover:bg-sky-600 text-white py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-            >
-
-              이 영상으로 새로 만들기
-            </button>
-            <button
-              onClick={handleLikeClick}
-              className={`flex items-center justify-center p-2 rounded-full transition-colors duration-200 ${isLiked
-                ? "text-red-500 hover:bg-red-500/10"
-                : "text-gray-400 hover:bg-white/10"
-                }`}
-              aria-label={isLiked ? "좋아요 취소" : "좋아요"}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill={isLiked ? "currentColor" : "none"}
-                stroke="currentColor"
-                className="w-6 h-6"
-                strokeWidth={isLiked ? "0" : "2"}
-              >
-                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-              </svg>
-            </button>
+          {/* Creator Info */}
+          <div className="flex items-center space-x-3 mb-4">
+            <span className="text-sm text-gray-400">By {videoDetail?.creator || videoBasicInfo.creator}</span>
           </div>
 
-          {/* 상세 정보 */}
-          <div className="space-y-4">
-            {videoDetail?.prompt && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center">
-                  <Info className="w-4 h-4 mr-2 text-gray-400" />
-                  프롬프트
-                </h3>
-                <p className="text-sm text-gray-300 bg-black/40 p-3 rounded-lg border border-white/20">
-                  {videoDetail.prompt}
-                </p>
-              </div>
-            )}
+          {/* Stats and Info */}
+          <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+            <InfoItem icon={<Calendar className="w-4 h-4" />} label="생성일" value={new Date(videoDetail?.createdAt || Date.now()).toLocaleDateString()} />
+            <InfoItem icon={<Eye className="w-4 h-4" />} label="조회수" value={(videoDetail?.clickCount || 0).toLocaleString()} />
+            <InfoItem icon={<Layers className="w-4 h-4" />} label="모델" value={videoDetail?.model || 'N/A'} />
+            <InfoItem icon={<Info className="w-4 h-4" />} label="모드" value={videoDetail?.mode || 'N/A'} />
+          </div>
 
-            {videoDetail?.model && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center">
-                  <Layers className="w-4 h-4 mr-2 text-gray-400" />
-                  사용 모델
-                </h3>
-                <Badge variant="outline" className="bg-black/40 border-white/20 text-gray-300">
-                  {videoDetail.model}
-                </Badge>
-              </div>
-            )}
+          {/* Prompt Section */}
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-400 mb-1">프롬프트</h3>
+            <p className="text-xs text-white bg-black/20 p-2 rounded border border-white/10 max-h-20 overflow-y-auto">
+              {videoDetail?.prompt || "프롬프트 정보 없음"}
+            </p>
+          </div>
+
+          {/* Tags Section */}
+          {/*
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-400 mb-1">태그</h3>
+            <div className="flex flex-wrap gap-1">
+              {(videoDetail?.tags || []).map((tag: string, index: number) => (
+                <Badge key={index} variant="secondary">{tag}</Badge>
+              ))}
+              {(videoDetail?.tags?.length === 0) && <span className="text-xs text-gray-500">태그 없음</span>}
+            </div>
+          </div>
+          */}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-auto pt-4 border-t border-white/10 space-y-2">
+          <button
+            onClick={handleLikeToggle}
+            className={`w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors duration-200 ${isLiked ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+          >
+            <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+            {likeCount.toLocaleString()} 좋아요
+          </button>
+          <button
+            onClick={handleReuseVideo}
+            className="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+          >
+            이 영상으로 새로 만들기
+          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => videoDetail?.share && shareUrl && copyToClipboard(shareUrl)}
+              disabled={!videoDetail?.share || !shareUrl}
+              className="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={videoDetail?.share ? "공유 링크 복사" : "공유되지 않은 영상"}
+            >
+              <LinkIcon className="w-4 h-4 mr-2" /> 복사
+            </button>
+            <button
+              onClick={() => videoDetail?.share && shareUrl && window.open(shareUrl, '_blank')}
+              disabled={!videoDetail?.share || !shareUrl}
+              className="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={videoDetail?.share ? "공유 링크 열기" : "공유되지 않은 영상"}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" /> 열기
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+// Helper component for info items
+const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number }) => (
+  <div className="flex items-center space-x-2">
+    <div className="text-gray-400">{icon}</div>
+    <div>
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className="text-xs font-medium text-white">{value}</p>
+    </div>
+  </div>
+);

@@ -13,13 +13,11 @@ import EditImageSidebar, {
     type EditImageSettings,
 } from "./FashnImageSidebar";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
     Folder,
     Upload,
-    Search,
     Loader2,
     AlertTriangle,
     MoreHorizontal,
@@ -46,6 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { uploadFashnImage } from "./services/ImageService";
+import { GenerationNotificationService } from "@/features/admin/services/GenerationNotificationService";
 
 export default function EditImagePage() {
     /* ------------------------------------------------------------------
@@ -56,7 +55,7 @@ export default function EditImagePage() {
         useState<FolderResponse | null>(null);
     const [files, setFiles] = useState<FileResponse[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
@@ -174,7 +173,7 @@ export default function EditImagePage() {
                 setSlot1Image(null);
                 setSlot2Image(null);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("폴더 삭제 오류:", err);
             toast.error("폴더 삭제에 실패했습니다");
         } finally {
@@ -237,7 +236,7 @@ export default function EditImagePage() {
             });
             const data: {
                 success: boolean;
-                imageUrl: string | { url: string;[k: string]: any };
+                imageUrl: string | { url: string;[k: string]: unknown };
                 error?: string;
             } = await res.json();
 
@@ -259,9 +258,24 @@ export default function EditImagePage() {
             /* ---- 4. UI 갱신 --------------------------------------------- */
             if (selectedFolder) await loadFiles(selectedFolder.id);
             toast.success("가상 피팅이 완료되었습니다!");
-        } catch (err: any) {
+
+            // 1. 알림 생성 (가상 피팅 시작)
+            if (slot2Image?.url) {
+                try {
+                    await GenerationNotificationService.createNotification({
+                        title: "가상 피팅하기",
+                        thumbnailUrl: slot2Image.url,
+                    });
+                    // Bell 새로고침 이벤트
+                    window.dispatchEvent(new Event('open-notification-bell'));
+                } catch (e) {
+                    // 알림 생성 실패는 치명적이지 않으므로 무시
+                    console.error("알림 생성 실패:", e);
+                }
+            }
+        } catch (err: unknown) {
             console.error("가상 피팅 실패:", err);
-            toast.error(err?.message || "가상 피팅에 실패했습니다");
+            toast.error((err instanceof Error ? err.message : String(err)) || "가상 피팅에 실패했습니다");
         } finally {
             setIsFittingLoading(false);
         }
@@ -324,18 +338,7 @@ export default function EditImagePage() {
 
                         {/* --------------- 검색 & 새 폴더/업로드 --------------- */}
                         <div className="flex items-center gap-2">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <Input
-                                    type="text"
-                                    placeholder={
-                                        selectedFolder ? "이미지 검색..." : "폴더 검색..."
-                                    }
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 bg-black/40 backdrop-blur-xl border-white/20 text-white w-64"
-                                />
-                            </div>
+
 
                             {/* ---- 폴더 루트 뷰 : 새 폴더 버튼 ---- */}
                             {!selectedFolder ? (

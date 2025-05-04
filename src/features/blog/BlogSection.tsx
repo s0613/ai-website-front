@@ -1,9 +1,10 @@
 "use client";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Calendar, User, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Blog } from "./types/Blog";
 
 interface BlogSectionProps {
@@ -11,9 +12,9 @@ interface BlogSectionProps {
 }
 
 const BlogSection: React.FC<BlogSectionProps> = ({ initialBlog }) => {
-  const [blog, setBlog] = useState<Blog>(initialBlog);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [blog] = useState<Blog>(initialBlog);
+  const [loading] = useState(false);
+  const [error] = useState("");
 
   // 날짜 포맷팅
   const formattedDate = new Date(blog.date).toLocaleDateString("ko-KR", {
@@ -77,12 +78,15 @@ const BlogSection: React.FC<BlogSectionProps> = ({ initialBlog }) => {
         </Link>
 
         <article>
-          <div className="relative mb-8 rounded-xl overflow-hidden shadow-md">
+          <div className="relative mb-8 rounded-xl overflow-hidden shadow-md h-[400px]">
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
-            <img
+            <Image
               src={blog.image}
               alt={blog.title}
-              className="w-full h-[400px] object-cover"
+              className="w-full h-full object-cover"
+              width={1024}
+              height={400}
+              priority
             />
           </div>
 

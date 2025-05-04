@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ImageItem } from "../types/Image";
 import { getImages, downloadImage } from "../services/ImageService";
 import { useImageFilter } from "../hooks/useImageFilter";
-import Sidebar from "../components/sidebar/Sidebar";
+import Sidebar from "./Sidebar";
 import ImageGallery from "../components/gallery/ImageGallery";
 
 export default function ImageReferencePage() {

@@ -4,7 +4,6 @@ import { useState, useEffect, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
     Loader2,
@@ -85,7 +84,7 @@ export default function UpscalerImageSidebar({
 
             // 크레딧 소비 성공 시 업스케일링 실행
             onUpscale(settings);
-        } catch (error) {
+        } catch {
             // 크레딧 부족 등의 에러 처리
             toast.error("크레딧이 부족합니다. 크레딧을 충전해주세요.");
             return;

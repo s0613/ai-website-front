@@ -1,32 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Heart,
-  Eye,
-  Film,
-  Clock,
   Loader2,
   AlertTriangle,
   X,
 } from "lucide-react";
 import VideoDetail from "@/features/video/videoReference/videoDetail";
 import { getLikedVideos } from "../services/MyVideoService";
-import { VideoDto } from "../types/Video";
+import type { VideoDto } from "../types/Video";
 import { PageContainer } from "@/components/common/PageContainer";
-
-// VideoDetail 컴포넌트에서 필요한 기본 비디오 정보 인터페이스
-interface VideoBasicInfo {
-  id: number;
-  name: string;
-  thumbnailUrl: string;
-  creator: string;
-  createdAt: string;
-  likeCount: number;
-  clickCount: number;
-}
+import Image from "next/image";
 
 const MyLikedPage = () => {
   const [likedVideos, setLikedVideos] = useState<VideoDto[]>([]);
@@ -62,43 +48,6 @@ const MyLikedPage = () => {
   // 목록으로 돌아가기 핸들러
   const handleBackToList = () => {
     setSelectedVideoId(null);
-  };
-
-  // LikedVideo를 VideoBasicInfo로 변환하는 도우미 함수
-  const getVideoBasicInfo = (id: number): VideoBasicInfo => {
-    const video = likedVideos.find((v) => v.id === id);
-    if (!video) {
-      return {
-        id: id,
-        name: "알 수 없는 비디오",
-        thumbnailUrl: "",
-        creator: "알 수 없음",
-        createdAt: new Date().toISOString(),
-        likeCount: 0,
-        clickCount: 0,
-      };
-    }
-
-    return {
-      id: video.id!,
-      name: video.name,
-      thumbnailUrl: video.thumbnailUrl || "",
-      creator: "나", // 또는 video.creator가 있다면 그것을 사용
-      createdAt: video.createdAt || new Date().toISOString(),
-      likeCount: video.likeCount || 0,
-      clickCount: video.clickCount || 0,
-    };
-  };
-
-  // 날짜 포맷팅 함수
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
   };
 
   if (isLoading) {
@@ -156,7 +105,6 @@ const MyLikedPage = () => {
   return (
     <PageContainer
       title="좋아요"
-
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {likedVideos.map((video) => (
@@ -165,27 +113,14 @@ const MyLikedPage = () => {
             onClick={() => handleVideoClick(video.id!)}
             className="bg-black/20 backdrop-blur-sm rounded-lg border border-white/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-[1.02] hover:bg-black/40 hover:border-white/20 transition-all duration-300 cursor-pointer overflow-hidden group"
           >
-            <div className="aspect-video bg-black/60 relative overflow-hidden">
-              {video.thumbnailUrl ? (
-                <img
-                  src={video.thumbnailUrl}
-                  alt={video.name}
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full bg-black/60">
-                  <Film className="w-12 h-12 text-gray-400" />
-                </div>
-              )}
-
-              {/* 그라데이션 오버레이 */}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
-
-              {/* 좋아요 뱃지 */}
-              <div className="absolute bottom-2 right-2 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center text-xs font-medium shadow-sm border border-white/20">
-                <Heart className="w-3.5 h-3.5 text-sky-400 mr-1 fill-current" />
-                <span className="text-white">{video.likeCount || 0}</span>
-              </div>
+            <div className="relative aspect-video overflow-hidden rounded-t-lg">
+              <Image
+                src={video.thumbnailUrl || "/placeholder-video.svg"}
+                alt={video.name}
+                width={320}
+                height={180}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
             </div>
 
             <div className="p-3">
@@ -200,9 +135,6 @@ const MyLikedPage = () => {
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <div className="flex items-center">
                   <span>{video.clickCount || 0} 조회</span>
-                </div>
-                <div className="flex items-center">
-                  <span>{formatDate(video.createdAt)}</span>
                 </div>
               </div>
             </div>
@@ -231,7 +163,6 @@ const MyLikedPage = () => {
             <div className="h-full overflow-y-auto">
               <VideoDetail
                 videoId={selectedVideoId}
-                onBack={handleBackToList}
                 videoBasicInfo={{
                   id: selectedVideoId,
                   name: likedVideos.find(video => video.id === selectedVideoId)?.name || '',

@@ -1,4 +1,4 @@
-import ImageReferencePage from "@/features/image/pages/ImageReferencePage";
+import ImageReferencePage from "@/features/image/imageReference/ImageReferencePage";
 
 export default function Page() {
   return <ImageReferencePage />;

@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "./UserAvatar";
 import { logout as userLogout } from "@/features/user/services/UserService";
 

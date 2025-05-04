@@ -2,16 +2,16 @@
 
 import React from "react";
 import {
-  Home,
   Image,
   Settings,
   Folder,
-  User,
+  Heart,
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 interface SidebarItem {
   icon: React.ElementType;
@@ -21,14 +21,14 @@ interface SidebarItem {
 
 const sidebarItems: SidebarItem[] = [
   {
-    icon: Home,
-    label: "마이홈",
+    icon: Image,
+    label: "작업물",
     href: "/my",
   },
   {
-    icon: Image,
-    label: "작업물",
-    href: "/my/creation",
+    icon: Heart,
+    label: "좋아요",
+    href: "/my/liked",
   },
   {
     icon: Folder,
@@ -47,6 +47,7 @@ interface MyPageLayoutProps {
 }
 
 const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
+  useSession();
   const pathname = usePathname();
 
   return (

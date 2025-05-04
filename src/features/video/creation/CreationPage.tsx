@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Video, Plus, Loader2, Filter } from "lucide-react";
+import { Video, Plus, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import {
@@ -25,11 +25,7 @@ export default function CreationPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchVideos();
-  }, [selectedFilter]);
-
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async () => {
     try {
       setIsLoading(true);
 
@@ -48,7 +44,11 @@ export default function CreationPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedFilter]);
+
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
 
   const handleVideoClick = (videoId: number) => {
     setSelectedVideoId(videoId);
@@ -148,14 +148,13 @@ export default function CreationPage() {
                     <h3 className="font-medium text-sm line-clamp-1 text-white">
                       {video.name}
                     </h3>
-                    <span
-                      className={`text-xs px-1.5 py-0.5 rounded-full ${video.share
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "bg-gray-500/20 text-gray-400"
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full ${video.share
+                        ? "bg-emerald-500"
+                        : "bg-gray-500"
                         }`}
-                    >
-                      {video.share ? "공개" : "비공개"}
-                    </span>
+                      title={video.share ? "공개" : "비공개"}
+                    ></div>
                   </div>
                   <p className="text-xs text-gray-400 line-clamp-1">
                     {video.prompt}

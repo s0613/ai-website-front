@@ -1,32 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState } from 'react';
+import { FilterOptions } from '../types/filter';
 
 interface SidebarProps {
     onFilterChange: (filters: FilterOptions) => void;
 }
 
-export interface FilterOptions {
-    search: string;
-    categories: string[];
-    size: string;
-    sortBy: string;
-}
-
 // 사이드바 카테고리 데이터
-const categories = ["모든 이미지", "자연", "도시", "기타"];
+const categories = [
+    "모든 이미지",
+    "여자",
+    "남자"
+];
 
-const sizes = ["모든 크기", "작은 이미지", "중간 크기", "큰 이미지"];
-const sortOptions = ["최신순", "인기순", "오래된순"];
+const sizes = ["모든 크기", "작은 크기", "중간 크기", "큰 크기"];
+const sortOptions = ["최신순", "오래된순"];
 
 export default function Sidebar({ onFilterChange }: SidebarProps) {
     const [filters, setFilters] = useState<FilterOptions>({
-        search: "",
+        search: '',
         categories: [],
-        size: "모든 크기",
-        sortBy: "최신순",
+        size: '모든 크기',
+        sortBy: '최신순'
     });
 
+    // 변경: 초기값을 true로 설정하여 사이드바가 기본적으로 닫힌 상태로 시작
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [activeSection, setActiveSection] = useState<string | null>(null);
 
@@ -37,10 +36,17 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
     };
 
     const handleCategoryChange = (category: string) => {
-        const newCategories = filters.categories.includes(category)
-            ? filters.categories.filter((c) => c !== category)
-            : [...filters.categories, category];
-
+        let newCategories: string[];
+        if (category === '모든 이미지') {
+            newCategories = [category];
+        } else {
+            const currentCategories = filters.categories.filter(c => c !== '모든 이미지');
+            if (currentCategories.includes(category)) {
+                newCategories = currentCategories.filter(c => c !== category);
+            } else {
+                newCategories = [...currentCategories, category];
+            }
+        }
         const newFilters = { ...filters, categories: newCategories };
         setFilters(newFilters);
         onFilterChange(newFilters);
@@ -64,8 +70,7 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
 
     return (
         <div
-            className={`bg-black/40 backdrop-blur-xl h-full ${isCollapsed ? "w-16" : "w-64"
-                } flex flex-col border-r border-white/20 transition-all duration-300`}
+            className={`bg-black/40 backdrop-blur-xl h-full ${isCollapsed ? "w-16" : "w-64"} flex flex-col border-r border-white/20 transition-all duration-300`}
         >
             {/* Sidebar Header */}
             <div className="p-4 border-b border-white/20 flex items-center justify-between">
@@ -140,8 +145,7 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                         >
                             <span>카테고리</span>
                             <svg
-                                className={`h-5 w-5 transition-transform ${activeSection === "categories" ? "rotate-180" : ""
-                                    }`}
+                                className={`h-5 w-5 transition-transform ${activeSection === "categories" ? "rotate-180" : ""}`}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
@@ -184,8 +188,7 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                         >
                             <span>이미지 크기</span>
                             <svg
-                                className={`h-5 w-5 transition-transform ${activeSection === "size" ? "rotate-180" : ""
-                                    }`}
+                                className={`h-5 w-5 transition-transform ${activeSection === "size" ? "rotate-180" : ""}`}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
@@ -229,8 +232,7 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
                         >
                             <span>정렬 기준</span>
                             <svg
-                                className={`h-5 w-5 transition-transform ${activeSection === "sortBy" ? "rotate-180" : ""
-                                    }`}
+                                className={`h-5 w-5 transition-transform ${activeSection === "sortBy" ? "rotate-180" : ""}`}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
@@ -269,4 +271,4 @@ export default function Sidebar({ onFilterChange }: SidebarProps) {
             )}
         </div>
     );
-}
+} 

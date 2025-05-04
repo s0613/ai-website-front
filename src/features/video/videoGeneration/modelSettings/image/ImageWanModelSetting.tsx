@@ -10,10 +10,10 @@ export class ImageWanModelSetting extends ModelSettingBase {
     return (
       <div className="space-y-4">
         {this.renderDescription(
-          "정교한 이미지 투 비디오 변환. 세밀한 디테일과 다양한 시각적 효과를 지원"
+          "WAN Pro - 강력한 이미지 투 비디오 변환. 고품질 6초 영상을 생성합니다."
         )}
 
-        {/* 비율 설정 */}
+        {/* 비율 설정 - WAN Pro는 고정 비율 사용 */}
         <div>
           <label className="block text-xs font-medium text-white mb-1">
             비율
@@ -56,102 +56,33 @@ export class ImageWanModelSetting extends ModelSettingBase {
               </label>
             ))}
           </div>
-        </div>
-
-        {/* 프레임 수 설정 */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1">
-            프레임 수
-          </label>
-          <select
-            value={settings.numFrames || 81}
-            onChange={(e) =>
-              updateSettings({ numFrames: Number(e.target.value) })
-            }
-            className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-          >
-            <option value="81">81 프레임 (기본)</option>
-            <option value="90">90 프레임</option>
-            <option value="100">100 프레임</option>
-          </select>
           <p className="text-xs text-gray-400 mt-1">
-            프레임 수가 많을수록 영상이 길어집니다
+            WAN Pro는 1080p 해상도의 6초 영상을 생성합니다.
           </p>
         </div>
 
-        {/* 초당 프레임 수 (FPS) 설정 */}
+        {/* 시드 설정 - 필수 항목 */}
         <div>
           <label className="block text-xs font-medium text-white mb-1">
-            초당 프레임 수(FPS)
-          </label>
-          <select
-            value={settings.framesPerSecond || 16}
-            onChange={(e) =>
-              updateSettings({ framesPerSecond: Number(e.target.value) as 8 | 16 | 24 })
-            }
-            className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-          >
-            <option value="8">8 FPS (더 느린 영상)</option>
-            <option value="16">16 FPS (기본)</option>
-            <option value="24">24 FPS (더 부드러운 영상)</option>
-          </select>
-        </div>
-
-        {/* 해상도 설정 */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1">
-            해상도
-          </label>
-          <select
-            value={settings.resolution || "720p"}
-            onChange={(e) => updateSettings({ resolution: e.target.value as "480p" | "720p" })}
-            className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-          >
-            <option value="480p">480p (더 빠른 생성)</option>
-            <option value="720p">720p (더 높은 품질)</option>
-          </select>
-        </div>
-
-        {/* 추론 단계 설정 */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1">
-            품질 수준 (추론 단계)
-          </label>
-          <select
-            value={settings.numInferenceSteps || 30}
-            onChange={(e) =>
-              updateSettings({ numInferenceSteps: Number(e.target.value) as 20 | 30 | 40 })
-            }
-            className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-          >
-            <option value="20">빠른 생성 (20단계)</option>
-            <option value="30">균형 품질 (30단계, 기본)</option>
-            <option value="40">고품질 (40단계, 더 오래 걸림)</option>
-          </select>
-        </div>
-
-        {/* 시드 설정 */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1">
-            시드 값 (선택사항)
+            시드 값 (필수)
           </label>
           <input
             type="number"
             value={settings.seed || ""}
             onChange={(e) =>
               updateSettings({
-                seed: e.target.value ? parseInt(e.target.value) : undefined,
+                seed: e.target.value ? parseInt(e.target.value) : Math.floor(Math.random() * 1000000),
               })
             }
-            placeholder="랜덤 생성을 위한 시드 값"
+            placeholder="시드 값 입력 또는 자동 생성"
             className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 placeholder:text-gray-400"
           />
           <p className="text-xs text-gray-400 mt-1">
-            동일한 시드로 비슷한 결과를 재생성할 수 있습니다
+            동일한 시드로 비슷한 결과를 재생성할 수 있습니다. 값을 비워두면 자동 생성됩니다.
           </p>
         </div>
 
-        {/* 안전 검사기 설정 */}
+        {/* 안전 검사기 설정 - 유지 */}
         <div>
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
@@ -171,23 +102,14 @@ export class ImageWanModelSetting extends ModelSettingBase {
           </p>
         </div>
 
-        {/* 프롬프트 확장 설정 */}
-        <div>
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={settings.enablePromptExpansion !== false}
-              onChange={(e) =>
-                updateSettings({ enablePromptExpansion: e.target.checked })
-              }
-              className="rounded border-white/10 text-sky-500 focus:ring-sky-500 bg-black/30"
-            />
-            <span className="text-xs font-medium text-white">
-              프롬프트 확장 활성화
-            </span>
-          </label>
-          <p className="text-xs text-gray-400 mt-1 pl-6">
-            더 자연스러운 결과를 위해 프롬프트 개선
+        {/* 참고 정보 섹션 */}
+        <div className="rounded-lg bg-sky-500/10 p-3 border border-sky-500/20">
+          <h4 className="text-xs font-medium text-sky-400 mb-1">WAN Pro 모델 정보</h4>
+          <p className="text-xs text-gray-300">
+            • 6초 길이의 1080p 고화질 영상 생성<br />
+            • 30 FPS의 부드러운 움직임<br />
+            • 최적화된 화질과 안정적인 생성<br />
+            • 간결하고 명확한 프롬프트에서 최상의 결과
           </p>
         </div>
       </div>

@@ -1,15 +1,15 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FiMenu, FiX } from "react-icons/fi";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "@/features/user/AuthContext";
-import { DesktopNav } from "./DesktopNav";
+
 import { MobileMenu } from "./MobileMenu";
 import { BillingService } from "@/features/payment/services/BillingService";
-import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
+import { VideoGenerationNotificationBell } from "./VideoGenerationNotificationBell";
 
 const Navbar = () => {
   const { isLoggedIn, email, logout, nickname } = useAuth();
@@ -17,10 +17,7 @@ const Navbar = () => {
   const [creditInfo, setCreditInfo] = useState<{ currentCredit: number } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const notificationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -44,12 +41,6 @@ const Navbar = () => {
 
   const handleBadgeClick = () => {
     router.push('/payment');
-  };
-
-  const toggleNotifications = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsNotificationOpen(!isNotificationOpen);
-    if (isDropdownOpen) setIsDropdownOpen(false);
   };
 
   return (
@@ -93,12 +84,7 @@ const Navbar = () => {
                 </div>
                 <div className="absolute -inset-[1px] bg-gradient-to-r from-[#ff00ff] to-[#00ffff] opacity-20 group-hover:opacity-30 blur-sm transition-opacity duration-300"></div>
               </Link>
-              <NotificationBell
-                isOpen={isNotificationOpen}
-                toggle={toggleNotifications}
-                onMouseLeave={() => setIsNotificationOpen(false)}
-                refObj={notificationRef}
-              />
+              <VideoGenerationNotificationBell />
               <UserMenu
                 email={email}
                 nickname={nickname}

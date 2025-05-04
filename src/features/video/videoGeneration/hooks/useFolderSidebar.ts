@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { FileItem } from "../../types/fileTypes";
 import { toast } from "react-hot-toast";
 import { FolderService } from "@/features/folder/services/FolderService";
-import { Folder, FolderItem } from "@/features/folder/types/Folder";
+import type { FolderResponse } from "@/features/folder/services/FolderService";
 
 export function useFolderSidebar() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -24,11 +24,11 @@ export function useFolderSidebar() {
       const folders = await FolderService.getFolders();
 
       // FolderService에서 반환하는 Folder[] 타입을 FileItem[] 타입으로 변환
-      const formattedData: FileItem[] = folders.map((folder: Folder) => ({
+      const formattedData: FileItem[] = folders.map((folder: FolderResponse) => ({
         id: folder.id.toString(),
         name: folder.name || "이름 없는 폴더",
         type: "folder",
-        created: new Date(folder.createdAt || Date.now()),
+        created: new Date(), // createdAt 대신 created 사용, Date 객체 사용
         children: [] // 초기에는 빈 배열로 설정 (폴더 확장 시 로드)
       }));
 

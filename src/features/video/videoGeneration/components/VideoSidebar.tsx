@@ -88,6 +88,12 @@ export default function VideoSidebar(props: VideoSidebarProps) {
     referenceImageUrl,
     referencePrompt,
     referenceModel,
+    onNotifyProcessing: () => {
+      // 지연시간 추가 후 NotificationBell 오픈 신호 전송 (백엔드 처리 시간 확보)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('open-notification-bell'));
+      }, 500);
+    },
   });
 
   return (

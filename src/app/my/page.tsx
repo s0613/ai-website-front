@@ -1,6 +1,6 @@
-import MyLikedPage from "@/features/video/creation/MyLikedPage";
+import CreationPage from "@/features/video/creation/CreationPage";
 
 export default function Page() {
-  return <MyLikedPage />;
+  return <CreationPage />;
 }
 

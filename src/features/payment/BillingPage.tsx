@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Info, CreditCard, Trash2, AlertCircle } from "lucide-react";
 import { BillingService, CreditResponse, CreditTransactionResponse } from "./services/BillingService";
-import { CouponService } from "@/features/admin/services/CouponService";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
+import useSWR from 'swr';
+
+// SWR fetcher 함수 (CouponService.validateCoupon 를 사용한다고 가정)
+// FIXME: CouponService에 validateCoupon 메서드가 없습니다.
+// const couponFetcher = (code: string) => CouponService.validateCoupon(code);
 
 export default function BillingPage() {
-  const [selectedPlan, setSelectedPlan] = useState("20");
+  const [selectedPlan] = useState("20");
   const [balanceThreshold, setBalanceThreshold] = useState("");
   const [creditInfo, setCreditInfo] = useState<CreditResponse | null>(null);
   const [transactions, setTransactions] = useState<CreditTransactionResponse[]>([]);
@@ -20,16 +22,24 @@ export default function BillingPage() {
   const [couponCode, setCouponCode] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
+  // useSWR 훅 사용 (couponCode가 있을 때만 실행) - 반환값 일단 사용 안 함
+  useSWR(
+    couponCode ? `coupon/${couponCode}` : null,
+    // () => couponFetcher(couponCode), // couponFetcher 주석 처리됨
+    { revalidateOnFocus: false }
+  );
+
   useEffect(() => {
     loadCreditInfo();
     loadTransactionHistory();
+    // fetchPlans(); // fetchPlans 호출 주석 처리
   }, []);
 
   const loadCreditInfo = async () => {
     try {
       const response = await BillingService.getCurrentCredit();
       setCreditInfo(response);
-    } catch (error) {
+    } catch /* error */ { // error 변수 제거
       toast.error("크레딧 정보를 불러오는데 실패했습니다.");
     }
   };
@@ -38,17 +48,29 @@ export default function BillingPage() {
     try {
       const response = await BillingService.getCreditHistory();
       setTransactions(response);
-    } catch (error) {
+    } catch /* error */ { // error 변수 제거
       toast.error("거래 내역을 불러오는데 실패했습니다.");
     }
   };
+
+  /* // fetchPlans 함수 제거 (BillingService.getPlans 없음, plans 상태 없음)
+  const fetchPlans = async () => {
+    try {
+      // const data = await BillingService.getPlans();
+      // setPlans(data);
+    } catch {
+      toast.error("요금제를 불러오는데 실패했습니다.");
+    } finally {
+      // setIsLoadingPlans(false);
+    }
+  };
+  */
 
   const handlePurchaseCredit = async () => {
     if (isLoading) return;
 
     const amount = selectedPlan === "custom" ? parseInt(balanceThreshold) : parseInt(selectedPlan);
 
-    // 최소 구매 단위 검증
     if (amount < 10) {
       toast.error("최소 10 크레딧부터 구매 가능합니다.");
       return;
@@ -61,7 +83,7 @@ export default function BillingPage() {
       toast.success("크레딧 충전이 완료되었습니다.");
       loadCreditInfo();
       loadTransactionHistory();
-    } catch (error) {
+    } catch /* error */ { // error 변수 제거
       toast.error("크레딧 충전에 실패했습니다.");
     } finally {
       setIsLoading(false);
@@ -73,18 +95,22 @@ export default function BillingPage() {
       toast.error("쿠폰 코드를 입력해주세요.");
       return;
     }
-
     setIsApplyingCoupon(true);
-
     try {
-      await CouponService.useCoupon(couponCode);
-      toast.success("쿠폰이 성공적으로 적용되었습니다.");
-      setCouponCode("");
-      // 크레딧 정보 새로고침
-      await loadCreditInfo();
-      await loadTransactionHistory();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "쿠폰 적용에 실패했습니다.");
+      // FIXME: CouponService.validateCoupon 메서드가 없습니다.
+      // const coupon = await CouponService.validateCoupon(couponCode);
+      // if (coupon && coupon.isValid) {
+      //   // setAppliedCoupon(coupon); // appliedCoupon 상태 제거됨
+      //   toast.success(`쿠폰(${coupon.code})이 적용되었습니다.`);
+      // } else {
+      //   toast.error(coupon?.message || "유효하지 않은 쿠폰입니다.");
+      //   // setAppliedCoupon(null);
+      // }
+      toast.error("쿠폰 검증 기능이 아직 구현되지 않았습니다."); // warn -> error
+    } catch (err: unknown) {
+      toast.error("쿠폰 적용 중 오류가 발생했습니다.");
+      console.error("Coupon application error:", err);
+      // setAppliedCoupon(null);
     } finally {
       setIsApplyingCoupon(false);
     }

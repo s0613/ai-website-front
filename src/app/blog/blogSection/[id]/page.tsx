@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function BlogPage({ params, searchParams }: PageProps) {
+export default async function BlogPage({ params }: PageProps) {
   const resolvedParams = await params;
   const blog = await getBlogById(resolvedParams.id);
   return <BlogSection initialBlog={blog} />;

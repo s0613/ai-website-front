@@ -42,7 +42,7 @@ export class NotificationService {
         try {
             const response = await apiClient.post<NotificationSendResponse>(`${this.BASE_PATH}/send`, request);
             return response.data;
-        } catch (error) {
+        } catch {
             throw new Error('알림 전송에 실패했습니다.');
         }
     }
@@ -54,7 +54,7 @@ export class NotificationService {
                 params: { page, size }
             });
             return response.data;
-        } catch (error) {
+        } catch {
             throw new Error('알림 목록 조회에 실패했습니다.');
         }
     }
@@ -64,7 +64,7 @@ export class NotificationService {
         try {
             const response = await apiClient.get<number>(`${this.BASE_PATH}/count/today`);
             return response.data;
-        } catch (error) {
+        } catch {
             throw new Error('오늘의 알림 개수 조회에 실패했습니다.');
         }
     }
@@ -74,7 +74,7 @@ export class NotificationService {
         try {
             const response = await apiClient.put<NotificationResponse>(`${this.BASE_PATH}/${id}/read`);
             return response.data;
-        } catch (error) {
+        } catch {
             throw new Error('알림 읽음 처리에 실패했습니다.');
         }
     }
@@ -84,7 +84,7 @@ export class NotificationService {
         try {
             const response = await apiClient.put<NotificationSendResponse>(`${this.BASE_PATH}/read-all`);
             return response.data;
-        } catch (error) {
+        } catch {
             throw new Error('전체 알림 읽음 처리에 실패했습니다.');
         }
     }

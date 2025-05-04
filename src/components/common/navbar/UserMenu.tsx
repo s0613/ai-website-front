@@ -1,6 +1,6 @@
 // components/navbar/UserMenu.tsx
 "use client";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "./UserAvatar";
@@ -19,12 +19,31 @@ interface Props {
 export const UserMenu = ({
   email,
   nickname,
-  credits,
   onLogout,
   isOpen,
   setOpen,
 }: Props) => {
   const router = useRouter();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 바깥 클릭 또는 ESC로 닫기
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isOpen, setOpen]);
 
   const handleLogout = async () => {
     try {
@@ -37,12 +56,12 @@ export const UserMenu = ({
   };
 
   return (
-    <div className="relative" onMouseEnter={() => setOpen(true)}>
+    <div className="relative" onMouseEnter={() => setOpen(true)} ref={menuRef}>
       <UserAvatar email={email} />
 
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 w-56 bg-gray-900 border border-gray-800/50 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] py-1 z-50"
+          className="absolute right-0 top-full mt-2 w-56 bg-black/90 border border-gray-800/50 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] py-1 z-50"
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
         >
@@ -50,11 +69,6 @@ export const UserMenu = ({
             <p className="text-sm font-medium text-white">
               {nickname || email}
             </p>
-            {credits !== null && (
-              <p className="text-sm text-sky-500 mt-1">
-                {credits} 크레딧
-              </p>
-            )}
           </div>
           <Link
             href="/my"

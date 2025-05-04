@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Loader2, FileVideo, Heart } from "lucide-react";
+import { Download, Loader2, Heart } from "lucide-react";
 import {
   getSharedVideos,
   getSharedVideosNoLogin,
@@ -9,6 +9,7 @@ import {
 } from "../video/services/MyVideoService";
 import { VideoDto, VideoItem } from "../video/types/Video";
 import VideoDetail from "../video/videoReference/videoDetail";
+import Image from "next/image";
 
 const VideoGallery = () => {
   const [videos, setVideos] = useState<VideoItem[]>([]);
@@ -156,7 +157,7 @@ const VideoGallery = () => {
         <div>
           <h2 className="text-lg font-bold mb-2 flex items-center text-white">
             <span className="inline-block w-1.5 h-4 bg-sky-500 mr-3 rounded-full"></span>
-            트렌딩 비디오
+            레퍼런스 비디오
           </h2>
         </div>
       </div>
@@ -220,11 +221,12 @@ const VideoGallery = () => {
                   >
                     <div className="relative aspect-auto overflow-hidden rounded-xl">
                       {/* 썸네일 이미지 */}
-                      <img
+                      <Image
                         src={video.thumbnailUrl || "/placeholder.svg"}
                         alt={video.name}
-                        className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"
-                        loading="lazy"
+                        width={500}
+                        height={300}
+                        className="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
                       />
 
                       {/* 비디오 요소 */}
@@ -325,7 +327,6 @@ const VideoGallery = () => {
               <VideoDetail
                 videoId={selectedVideoId}
                 videoBasicInfo={videos.find((v) => v.id === selectedVideoId)!}
-                onBack={handleBackToList}
               />
             </div>
           </div>

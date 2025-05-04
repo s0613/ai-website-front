@@ -36,18 +36,14 @@ export async function POST(req) {
             );
         }
 
-        // API 호출 (Fal.ai API)
-        const result = await fal.subscribe("fal-ai/wan-i2v", {
+        // 최신 WAN Pro API 호출
+        const result = await fal.subscribe("fal-ai/wan-pro/image-to-video", {
             input: {
                 prompt: prompt,
                 image_url: imageUrl,
-                num_frames: Number(numFrames),
-                frames_per_second: Number(framesPerSecond),
                 seed: seed ? Number(seed) : undefined,
-                resolution: resolution,
-                num_inference_steps: Number(numInferenceSteps),
-                enable_safety_checker: enableSafetyChecker,
-                enable_prompt_expansion: enablePromptExpansion
+                enable_safety_checker: enableSafetyChecker
+                // WAN Pro API는 더 단순화된 파라미터만 필요
             },
             logs: true,
             onQueueUpdate: (update) => {

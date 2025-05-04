@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { uploadImageAPI } from "../../services/fileService";
+import { GenerationNotificationService } from '@/features/admin/services/GenerationNotificationService';
 
 export type SidebarFormData = {
   prompt: string;
@@ -24,6 +25,21 @@ export type SidebarFormData = {
   enablePromptExpansion?: boolean;
 };
 
+// updateSettings 함수의 파라미터 타입을 정의
+interface SettingsUpdate {
+  endpoint?: string;
+  aspectRatio?: string;
+  duration?: string;
+  cameraControl?: string;
+  seed?: number;
+  resolution?: string;
+  numFrames?: number;
+  framesPerSecond?: number;
+  numInferenceSteps?: number;
+  enableSafetyChecker?: boolean;
+  enablePromptExpansion?: boolean;
+}
+
 export interface UseVideoSidebarProps {
   onSubmit: (data: SidebarFormData) => void;
   onTabChange: (tab: "image" | "text" | "video") => void;
@@ -31,6 +47,7 @@ export interface UseVideoSidebarProps {
   referenceImageUrl?: string;
   referencePrompt?: string;
   referenceModel?: string;
+  onNotifyProcessing?: (notification: unknown) => void; // any -> unknown
 }
 
 export function useVideoSidebar({
@@ -40,6 +57,7 @@ export function useVideoSidebar({
   referenceImageUrl,
   referencePrompt,
   referenceModel,
+  onNotifyProcessing,
 }: UseVideoSidebarProps) {
   const { toast } = useToast();
   const [prompt, setPrompt] = useState("");
@@ -114,7 +132,7 @@ export function useVideoSidebar({
   };
 
   // 모델 설정 업데이트 함수 (endpoint 업데이트 로직 추가)
-  const updateSettings = (settings: any) => {
+  const updateSettings = (settings: SettingsUpdate) => {
     if (settings.endpoint !== undefined) setEndpoint(settings.endpoint);
     if (settings.aspectRatio !== undefined) setAspectRatio(settings.aspectRatio);
     if (settings.duration !== undefined) setDuration(settings.duration);
@@ -146,26 +164,50 @@ export function useVideoSidebar({
     enablePromptExpansion,
   };
 
+  // 최신 프롬프트/이미지 반영을 위해 useRef 사용
+  const promptRef = useRef(prompt);
+  const fileUrlRef = useRef(fileUrl);
+  const imageFileRef = useRef(imageFile);
+
+  useEffect(() => { promptRef.current = prompt; }, [prompt]);
+  useEffect(() => { fileUrlRef.current = fileUrl; }, [fileUrl]);
+  useEffect(() => { imageFileRef.current = imageFile; }, [imageFile]);
+
   // 폼 제출 핸들러 (업스케일링 옵션은 제거됨)
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 비디오 생성 요청 전 토스트 알림
     toast({
       title: "비디오 생성 시작",
       description: "비디오 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.",
       duration: 5000,
     });
 
+    try {
+      const notification = await GenerationNotificationService.createNotification({
+        title: promptRef.current || '비디오 생성 요청',
+        // 썸네일, mediaCount 등 필요시 추가
+      });
+      if (onNotifyProcessing) onNotifyProcessing(notification);
+    } catch (error: unknown) {
+      console.error('Gemini API Error:', error);
+      toast({
+        title: "오류 발생",
+        description: error instanceof Error ? error.message : "프롬프트 수정 중 오류가 발생했습니다.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+
     onSubmit({
-      prompt,
-      imageFile,
+      prompt: promptRef.current,
+      imageFile: imageFileRef.current,
       aspectRatio,
       duration,
       endpoint,
       quality,
       style,
-      fileUrl,
+      fileUrl: fileUrlRef.current,
       cameraControl,
       seed: endpoint === "hunyuan" || endpoint === "wan" ? seed : undefined,
       resolution:
@@ -224,7 +266,8 @@ export function useVideoSidebar({
 
           // 3초 후 이미지 변경 표시 제거
           setTimeout(() => setImageChanged(false), 3000);
-        } catch (error) {
+        } catch (error: unknown) {
+          console.error("Image upload error:", error);
           toast({
             title: "이미지 업로드 실패",
             description: error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.",
@@ -272,7 +315,7 @@ export function useVideoSidebar({
         description: "이미지를 기반으로 프롬프트가 수정되었습니다.",
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Gemini API Error:', error);
       toast({
         title: "오류 발생",

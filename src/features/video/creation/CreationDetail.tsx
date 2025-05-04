@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { formatFileSize, formatDate } from "@/features/video/types/formatUtils";
 import { toast } from "react-hot-toast";
 import {
   X,
@@ -22,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { getVideoById, toggleVideoShare } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
+import { formatDate } from "@/features/video/types/formatUtils";
 
 interface CreationDetailProps {
   videoId: number;
