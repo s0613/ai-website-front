@@ -20,5 +20,5 @@ hooks:
 
   AfterInstall:
     - location: scripts/after-install.sh
-      timeout: 300
+      timeout: 1800
       runas: ec2-user
