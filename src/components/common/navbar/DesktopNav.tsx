@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 
 interface Props {
@@ -13,13 +12,9 @@ interface Props {
   credits: number | null;
   isDropdownOpen: boolean;
   setIsDropdownOpen: (value: boolean) => void;
-  isNotificationOpen: boolean;
-  setIsNotificationOpen: (value: boolean) => void;
   dropdownRef: React.RefObject<HTMLDivElement>;
-  notificationRef: React.RefObject<HTMLDivElement>;
   handleLogout: () => void;
   handleBadgeClick: () => void;
-  toggleNotifications: (e: React.MouseEvent) => void;
 }
 
 export const DesktopNav = ({
@@ -29,13 +24,9 @@ export const DesktopNav = ({
   credits,
   isDropdownOpen,
   setIsDropdownOpen,
-  isNotificationOpen,
-  setIsNotificationOpen,
   dropdownRef,
-  notificationRef,
   handleLogout,
   handleBadgeClick,
-  toggleNotifications,
 }: Props) => {
   return (
     <nav className="hidden md:flex space-x-6 text-gray-300 items-center backdrop-blur-sm bg-white/5 px-6 py-2 rounded-full border border-white/10 shadow-lg">
@@ -63,12 +54,6 @@ export const DesktopNav = ({
               {credits.toLocaleString()}c
             </Badge>
           )}
-
-          <NotificationBell
-            isOpen={isNotificationOpen}
-            toggle={toggleNotifications}
-            refObj={notificationRef}
-          />
 
           <UserMenu
             email={email}

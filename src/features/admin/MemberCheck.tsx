@@ -18,7 +18,7 @@ import {
   TableHead,
   TableCell,
 } from "../../components/ui/table";
-import { UserManagementService, type UserManagementResponse, type User } from "./services/UserManagementService";
+import { UserManagementService, type UserManagementResponse } from "./services/UserManagementService";
 
 const MemberCheck = () => {
   const [email, setEmail] = useState("");

@@ -19,26 +19,13 @@ import {
   Pie,
   Label,
   ResponsiveContainer,
-  LineChart,
-  Line,
   AreaChart,
   Area,
-  Tooltip,
 } from "recharts";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  TrendingUp,
   Users,
   FileText,
   Video,
-  Clock,
   Image as ImageIcon,
   ArrowUpRight,
 } from "lucide-react";

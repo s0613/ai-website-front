@@ -44,8 +44,8 @@ export default function CouponManagement() {
             } else {
                 toast.error(response.message);
             }
-        } catch (error: any) {
-            toast.error(error.message || "쿠폰 등록에 실패했습니다.");
+        } catch (error: Error | unknown) {
+            toast.error(error instanceof Error ? error.message : "쿠폰 등록에 실패했습니다.");
         } finally {
             setIsLoading(false)
         }
@@ -65,8 +65,8 @@ export default function CouponManagement() {
             } else {
                 toast.error(response.message);
             }
-        } catch (error: any) {
-            toast.error(error.message || "쿠폰 상태 변경에 실패했습니다.");
+        } catch (error: Error | unknown) {
+            toast.error(error instanceof Error ? error.message : "쿠폰 상태 변경에 실패했습니다.");
         }
     }
 
@@ -92,7 +92,7 @@ export default function CouponManagement() {
             } else {
                 toast.error(response.message);
             }
-        } catch (error: any) {
+        } catch {
             toast.error("쿠폰 목록을 불러오는데 실패했습니다.");
         }
     }
