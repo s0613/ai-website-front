@@ -1,6 +1,6 @@
 import React from "react";
 import { ModelSettingBase } from "../ModelSettingBase";
-import { ModelSettingProps, ImageVeo2ModelSettings } from "../../../videoGeneration/types/modelSettingTypes";
+import { ModelSettingProps, ImageVeo2ModelSettings, AspectRatioType } from "../../../videoGeneration/types/modelSettingTypes";
 
 export class ImageVeo2ModelSetting extends ModelSettingBase {
     renderSettings({ updateSettings, currentSettings }: ModelSettingProps): React.ReactNode {
@@ -18,7 +18,7 @@ export class ImageVeo2ModelSetting extends ModelSettingBase {
                         비율
                     </label>
                     <div className="grid grid-cols-2 gap-2">
-                        {["auto", "auto_prefer_portrait", "16:9", "9:16"].map((ratio) => (
+                        {(["auto", "auto_prefer_portrait", "16:9", "9:16"] as AspectRatioType[]).map((ratio) => (
                             <label
                                 key={ratio}
                                 className={`flex items-center justify-between w-full py-2 px-3 rounded-lg border cursor-pointer text-xs transition-transform duration-200 transform hover:scale-105 ${settings.aspectRatio === ratio
@@ -32,7 +32,7 @@ export class ImageVeo2ModelSetting extends ModelSettingBase {
                                     value={ratio}
                                     checked={settings.aspectRatio === ratio}
                                     onChange={(e) =>
-                                        updateSettings({ aspectRatio: e.target.value as "auto" | "auto_prefer_portrait" | "16:9" | "9:16" })
+                                        updateSettings({ aspectRatio: e.target.value as AspectRatioType })
                                     }
                                     className="sr-only"
                                 />
@@ -93,26 +93,6 @@ export class ImageVeo2ModelSetting extends ModelSettingBase {
                             </label>
                         ))}
                     </div>
-                </div>
-
-                {/* 안전 검사기 설정 */}
-                <div>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={settings.enableSafetyChecker !== false}
-                            onChange={(e) =>
-                                updateSettings({ enableSafetyChecker: e.target.checked })
-                            }
-                            className="rounded border-white/10 text-sky-500 focus:ring-sky-500 bg-black/30"
-                        />
-                        <span className="text-xs font-medium text-white">
-                            안전 검사기 활성화
-                        </span>
-                    </label>
-                    <p className="text-xs text-gray-400 mt-1 pl-6">
-                        입력 이미지와 생성된 콘텐츠에 대한 안전 필터 적용
-                    </p>
                 </div>
             </div>
         );

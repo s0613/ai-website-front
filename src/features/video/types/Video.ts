@@ -32,8 +32,10 @@ export interface VideoCreateRequest {
   videoName: string;
   prompt: string;
   endpoint: string;
+  model: string;
   videoUrl: string;
   mode?: 'TEXT' | 'IMAGE';
+  referenceUrl?: string;
 }
 
 // 비디오 공유 상태 업데이트 요청

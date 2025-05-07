@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { uploadImageAPI } from "../../services/fileService";
 import { GenerationNotificationService } from '@/features/admin/services/GenerationNotificationService';
+import { AspectRatioType, DurationType } from "../types/modelSettingTypes";
+import { FileResponse } from "../../types/fileTypes";
 
 export type SidebarFormData = {
   prompt: string;
   imageFile: File | null;
-  aspectRatio: string;
-  duration: string;
+  aspectRatio: AspectRatioType;
+  duration: DurationType;
   endpoint: string;
   quality: "standard" | "high";
   style: "realistic" | "creative";
@@ -28,8 +30,8 @@ export type SidebarFormData = {
 // updateSettings 함수의 파라미터 타입을 정의
 interface SettingsUpdate {
   endpoint?: string;
-  aspectRatio?: string;
-  duration?: string;
+  aspectRatio?: AspectRatioType;
+  duration?: DurationType;
   cameraControl?: string;
   seed?: number;
   resolution?: string;
@@ -65,13 +67,13 @@ export function useVideoSidebar({
   const [previewUrl, setPreviewUrl] = useState("");
   const [fileUrl, setFileUrl] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"image" | "text" | "video">("image");
-  const [aspectRatio, setAspectRatio] = useState("16:9");
-  const [duration, setDuration] = useState("5s");
+  const [aspectRatio, setAspectRatio] = useState<AspectRatioType>("16:9");
+  const [duration, setDuration] = useState<DurationType>("5s");
   const [endpoint, setEndpoint] = useState(
     referenceModel || (activeTab === "image" ? "kling" : activeTab === "video" ? "hunyuan" : "veo2")
   );
-  const [quality, setQuality] = useState<"standard" | "high">("standard");
-  const [style, setStyle] = useState<"realistic" | "creative">("realistic");
+  const quality: "standard" | "high" = "standard";
+  const style: "realistic" | "creative" = "realistic";
   const [imageChanged, setImageChanged] = useState(false);
   const [cameraControl, setCameraControl] = useState<string>("down_back");
   const [seed, setSeed] = useState<number | undefined>(undefined);
@@ -105,6 +107,7 @@ export function useVideoSidebar({
 
   // 상위에서 referenceImageFile 또는 referenceImageUrl이 변경되면 상태에 반영
   useEffect(() => {
+    const timerId: NodeJS.Timeout = setTimeout(() => setImageChanged(false), 3000);
     if (referenceImageFile || referenceImageUrl) {
       if (referenceImageFile) {
         setImageFile(referenceImageFile);
@@ -117,10 +120,47 @@ export function useVideoSidebar({
         setFileUrl(referenceImageUrl);
       }
       setImageChanged(true);
-      const timer = setTimeout(() => setImageChanged(false), 3000);
-      return () => clearTimeout(timer);
+      return () => clearTimeout(timerId);
     }
   }, [referenceImageFile, referenceImageUrl]);
+
+  // endpoint 또는 activeTab이 변경될 때 aspectRatio 및 duration 기본값 조정
+  useEffect(() => {
+    let defaultAspectRatio: AspectRatioType = "16:9";
+    let defaultDuration: DurationType = "5s";
+
+    if (activeTab === "image") {
+      switch (endpoint) {
+        case "veo2":
+          defaultAspectRatio = "9:16"; // Veo2 이미지 모드 기본 비율
+          defaultDuration = "5s";    // Veo2 이미지 모드 기본 길이
+          break;
+        case "kling":
+          defaultAspectRatio = "16:9"; // Kling 이미지 모드 기본 비율 (예시)
+          defaultDuration = "5s";    // Kling 이미지 모드 기본 길이 (예시)
+          break;
+        // 다른 이미지 모델에 대한 기본값 추가
+      }
+    } else if (activeTab === "text") {
+      switch (endpoint) {
+        case "veo2":
+          defaultAspectRatio = "16:9"; // Veo2 텍스트 모드 기본 비율 (예시)
+          defaultDuration = "5s";    // Veo2 텍스트 모드 기본 길이 (예시)
+          break;
+        // 다른 텍스트 모델에 대한 기본값 추가
+      }
+    } else if (activeTab === "video") {
+      // 비디오 탭 모델에 대한 기본값 (예: hunyuan)
+      switch (endpoint) {
+        case "hunyuan":
+          defaultAspectRatio = "16:9";
+          defaultDuration = "5s"; // DurationType에 맞게 수정
+          break;
+      }
+    }
+    setAspectRatio(defaultAspectRatio);
+    setDuration(defaultDuration);
+  }, [endpoint, activeTab]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -129,42 +169,24 @@ export function useVideoSidebar({
     const preview = URL.createObjectURL(file);
     setPreviewUrl(preview);
     setFileUrl("");
+    setImageChanged(true);
+    setTimeout(() => setImageChanged(false), 3000);
   };
 
-  // 모델 설정 업데이트 함수 (endpoint 업데이트 로직 추가)
   const updateSettings = (settings: SettingsUpdate) => {
     if (settings.endpoint !== undefined) setEndpoint(settings.endpoint);
     if (settings.aspectRatio !== undefined) setAspectRatio(settings.aspectRatio);
     if (settings.duration !== undefined) setDuration(settings.duration);
-    if (settings.cameraControl !== undefined)
-      setCameraControl(settings.cameraControl);
+    if (settings.cameraControl !== undefined) setCameraControl(settings.cameraControl);
     if (settings.seed !== undefined) setSeed(settings.seed);
     if (settings.resolution !== undefined) setResolution(settings.resolution);
     if (settings.numFrames !== undefined) setNumFrames(settings.numFrames);
-    if (settings.framesPerSecond !== undefined)
-      setFramesPerSecond(settings.framesPerSecond);
-    if (settings.numInferenceSteps !== undefined)
-      setNumInferenceSteps(settings.numInferenceSteps);
-    if (settings.enableSafetyChecker !== undefined)
-      setEnableSafetyChecker(settings.enableSafetyChecker);
-    if (settings.enablePromptExpansion !== undefined)
-      setEnablePromptExpansion(settings.enablePromptExpansion);
+    if (settings.framesPerSecond !== undefined) setFramesPerSecond(settings.framesPerSecond);
+    if (settings.numInferenceSteps !== undefined) setNumInferenceSteps(settings.numInferenceSteps);
+    if (settings.enableSafetyChecker !== undefined) setEnableSafetyChecker(settings.enableSafetyChecker);
+    if (settings.enablePromptExpansion !== undefined) setEnablePromptExpansion(settings.enablePromptExpansion);
   };
 
-  // 현재 설정 상태를 계산
-  const currentSettings = {
-    aspectRatio,
-    resolution,
-    numFrames,
-    numInferenceSteps,
-    seed,
-    proMode: false,
-    enableSafetyChecker,
-    framesPerSecond,
-    enablePromptExpansion,
-  };
-
-  // 최신 프롬프트/이미지 반영을 위해 useRef 사용
   const promptRef = useRef(prompt);
   const fileUrlRef = useRef(fileUrl);
   const imageFileRef = useRef(imageFile);
@@ -185,7 +207,7 @@ export function useVideoSidebar({
 
     try {
       const notification = await GenerationNotificationService.createNotification({
-        title: promptRef.current || '비디오 생성 요청',
+        title: `영상 생성 요청 (${new Date().toLocaleTimeString()})`,
         // 썸네일, mediaCount 등 필요시 추가
       });
       if (onNotifyProcessing) onNotifyProcessing(notification);
@@ -230,14 +252,7 @@ export function useVideoSidebar({
   const handleTabSelection = (tab: "image" | "text" | "video") => {
     setActiveTab(tab);
     onTabChange(tab);
-    if (
-      !referenceModel ||
-      tab !== (referenceModel === "hunyuan" ? "video" : referenceModel === "veo2" ? "text" : "image")
-    ) {
-      if (tab === "image") setEndpoint("kling");
-      else if (tab === "video") setEndpoint("hunyuan");
-      else setEndpoint("veo2");
-    }
+    // endpoint 기본값 설정 로직은 endpoint, activeTab 의존 useEffect로 이동
   };
 
   const selectImage = async () => {
@@ -248,29 +263,22 @@ export function useVideoSidebar({
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
-          // 이미지 업로드 API 호출
-          const response = await uploadImageAPI(file);
-
-          // 업로드 성공 시 상태 업데이트
-          setImageFile(file);
-          const preview = URL.createObjectURL(file);
-          setPreviewUrl(preview);
+          const response: FileResponse = await uploadImageAPI(file);
           setFileUrl(response.url);
+          setImageFile(null);
+          setPreviewUrl(response.url);
           setImageChanged(true);
-
+          setTimeout(() => setImageChanged(false), 3000);
           toast({
             title: "이미지 업로드 성공",
             description: "이미지가 성공적으로 업로드되었습니다.",
             duration: 3000,
           });
-
-          // 3초 후 이미지 변경 표시 제거
-          setTimeout(() => setImageChanged(false), 3000);
-        } catch (error: unknown) {
-          console.error("Image upload error:", error);
+        } catch (error) {
+          console.error("Error uploading image:", error);
           toast({
             title: "이미지 업로드 실패",
-            description: error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.",
+            description: "이미지 업로드 중 오류가 발생했습니다.",
             variant: "destructive",
             duration: 3000,
           });
@@ -284,37 +292,62 @@ export function useVideoSidebar({
     setImageFile(null);
     setPreviewUrl("");
     setFileUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setImageChanged(false);
   };
 
   const updatePromptWithGemini = async () => {
-    if (!previewUrl) return;
+    if (!previewUrl && !imageFile) {
+      toast({
+        title: "이미지 필요",
+        description: "프롬프트 생성을 위해 이미지를 먼저 업로드해주세요.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
 
     setIsPromptLoading(true);
     try {
-      const response = await fetch('/api/gemini', {
+      let imageData = "";
+      if (imageFile) {
+        imageData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageFile);
+        });
+      } else if (fileUrl) {
+        // URL인 경우, 직접 URL을 사용하거나 필요시 fetch하여 base64 변환
+        // 여기서는 간단히 fileUrl을 이미지 식별자로 간주 (Gemini API가 URL을 직접 처리할 수 있는 경우)
+        // 만약 Gemini API가 base64만 받는다면, URL을 fetch해서 변환하는 로직 필요
+        imageData = fileUrl;
+      }
+
+      const response = await fetch('/api/gemini/generate-prompt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          imageUrl: previewUrl,
-          existingPrompt: prompt,
-        }),
+        body: JSON.stringify({ imageUrlOrBase64: imageData }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Gemini API Error Response:', errorData);
-        throw new Error(errorData.error || '프롬프트 수정 중 오류가 발생했습니다.');
+        throw new Error(errorData.error || 'Failed to generate prompt from Gemini API');
       }
 
       const data = await response.json();
-      setPrompt(data.response);
-      toast({
-        title: "프롬프트 수정 완료",
-        description: "이미지를 기반으로 프롬프트가 수정되었습니다.",
-        duration: 3000,
-      });
+      if (data.prompt) {
+        setPrompt(data.prompt);
+        toast({
+          title: "프롬프트 생성 완료",
+          description: "Gemini API로부터 프롬프트를 성공적으로 생성했습니다.",
+          duration: 3000,
+        });
+      }
     } catch (error: unknown) {
       console.error('Gemini API Error:', error);
       toast({
@@ -349,17 +382,14 @@ export function useVideoSidebar({
     numInferenceSteps,
     enableSafetyChecker,
     enablePromptExpansion,
+    isPromptLoading,
+    fileInputRef,
+    handleImageChange,
     updateSettings,
     handleSubmit,
-    handleImageChange,
     handleTabSelection,
     selectImage,
     removeImage,
-    fileInputRef,
-    setQuality,
-    setStyle,
-    isPromptLoading,
     updatePromptWithGemini,
-    currentSettings,
   };
 }

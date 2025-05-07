@@ -123,7 +123,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
   // 영상 생성 및 저장 관련 상태
   const [videoUrl, setVideoUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -131,7 +130,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
   const [upscaledVideoUrl, setUpscaledVideoUrl] = useState("");
 
   // 사이드바 및 폴더 관련 상태
-  const [activeTab, setActiveTab] = useState<"video" | "image" | "text">("video");
+  const [activeTab, setActiveTab] = useState<"video" | "image" | "text">("image");
   const [selectedEndpoint, setSelectedEndpoint] = useState("luna");
   const [quality, setQuality] = useState<"standard" | "high">("standard");
   const [style, setStyle] = useState<"realistic" | "creative">("realistic");
@@ -163,7 +162,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
     setErrorMessage("");
     setVideoUrl("");
     setUpscaledVideoUrl("");
-    setIsLoading(true);
     setSaveSuccess(false);
     setSaveError("");
 
@@ -171,7 +169,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
     try {
       // 1. 알림 REQUESTED 등록
       const notification = await GenerationNotificationService.createNotification({
-        title: data.prompt || new Date().toLocaleString(),
+        title: `영상 생성 (${new Date().toLocaleTimeString()})`,
         thumbnailUrl: data.fileUrl || referenceImageUrl || '',
       });
       notificationId = notification.id;
@@ -185,7 +183,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         if (notificationId !== null) {
           await GenerationNotificationService.updateNotification(notificationId, { status: 'FAILED' });
         }
-        setIsLoading(false);
         return;
       }
 
@@ -196,7 +193,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
       });
       updateCredits(-10);
 
-      const endpointUrl = getVideoEndpointUrl(data.endpoint);
+      const endpointUrl = getVideoEndpointUrl(data.endpoint, activeTab);
 
       // 이미지 처리 (기존과 동일)
       let imageBase64 = "";
@@ -210,7 +207,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
           if (notificationId !== null) {
             await GenerationNotificationService.updateNotification(notificationId, { status: 'FAILED' });
           }
-          setIsLoading(false);
           return;
         }
       }
@@ -222,7 +218,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         case "hunyuan":
           payload = {
             prompt: data.prompt,
-            image_url: imageBase64 ? imageBase64 : undefined,
+            image_url: imageBase64 || data.fileUrl || undefined,
             seed: data.seed,
             aspect_ratio: data.aspectRatio,
             resolution: data.resolution,
@@ -233,7 +229,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         case "wan":
           payload = {
             prompt: data.prompt,
-            imageUrl: imageBase64 ? imageBase64 : undefined,
+            imageUrl: imageBase64 || data.fileUrl || undefined,
             seed: data.seed || Math.floor(Math.random() * 1000000),
             // enable_safety_checker: data.enableSafetyChecker, // 라우트 및 Fal.ai 요청 키 확인 필요
           } as WanRequest;
@@ -241,7 +237,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         case "veo2":
           payload = {
             prompt: data.prompt,
-            image_url: imageBase64 ? imageBase64 : undefined,
+            image_url: imageBase64 || data.fileUrl || undefined,
             aspect_ratio: data.aspectRatio,
             duration: data.duration,
           } as Veo2Request;
@@ -249,7 +245,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         case "kling":
           payload = {
             prompt: data.prompt,
-            imageUrl: imageBase64 ? imageBase64 : undefined,
+            imageUrl: imageBase64 || data.fileUrl || undefined,
             duration: data.duration ? parseInt(data.duration.replace('s', '')) : 5,
             aspect_ratio: data.aspectRatio,
             camera_control: data.cameraControl,
@@ -259,7 +255,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
           // 기본 또는 오류 처리
           console.error("지원하지 않는 엔드포인트:", data.endpoint);
           toast.error("지원하지 않는 모델입니다.");
-          setIsLoading(false);
           return;
       }
 
@@ -278,7 +273,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         if (notificationId !== null) {
           await GenerationNotificationService.updateNotification(notificationId, { status: 'FAILED' });
         }
-        setIsLoading(false);
         return;
       }
 
@@ -297,6 +291,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
           body: JSON.stringify(payload),
         });
 
+        // --- API 응답 상태 확인 --- 
         if (!response.ok) {
           // 서버 오류 응답 처리 개선
           let errorBody = { error: `API 요청 실패: ${response.status}` };
@@ -306,8 +301,14 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
             console.error("Failed to parse error response body:", e);
           }
           console.error(`API 요청 실패: ${response.status}`, errorBody);
+          // 실패 시 즉시 알림 상태 업데이트
+          if (notificationId !== null) {
+            await GenerationNotificationService.updateNotification(notificationId, { status: 'FAILED' });
+          }
           throw new Error(errorBody.error || `API 요청 실패: ${response.status}`);
         }
+        // --- 응답 상태 확인 끝 ---
+
         result = await response.json();
       } catch (err) {
         // 생성 실패 (네트워크 오류, 타임아웃, 서버 오류 등)
@@ -319,7 +320,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
 
       // --- 3. 응답 처리 (모델별 분기) --- 
       try {
-        let generatedVideoUrl: string | undefined = undefined;
+        let generatedVideoUrl = "";
 
         if (result) {
           // WAN, Kling 모델 응답 처리 ({ videoUrl: ... })
@@ -346,10 +347,23 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
           await saveVideo({
             prompt: data.prompt,
             endpoint: data.endpoint,
+            model: data.endpoint,
             imageFile: data.imageFile,
             videoName: `AI 생성 영상 - ${new Date().toLocaleTimeString()}`,
             videoUrl: generatedVideoUrl,
+            referenceUrl: data.fileUrl || referenceImageUrl || undefined,
           });
+          setSaveSuccess(true);
+          toast.success("영상이 성공적으로 저장되었습니다.");
+
+          // 알림 상태 업데이트 (성공)
+          if (notificationId !== null) {
+            await GenerationNotificationService.updateNotification(notificationId, {
+              status: 'COMPLETED',
+              // resultUrl: generatedVideoUrl, // TODO: GenerationNotificationUpdateRequest 타입에 resultUrl 필드 추가 필요
+              thumbnailUrl: generatedVideoUrl // 임시로 비디오 URL 사용, 실제 썸네일 URL로 교체 필요 (타입 확인 필요)
+            });
+          }
         } else {
           console.error("API 응답에서 비디오 URL을 찾을 수 없습니다:", result);
           throw new Error('비디오 URL 없음');
@@ -366,8 +380,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
       if (notificationId !== null) {
         await GenerationNotificationService.updateNotification(notificationId, { status: 'COMPLETED' });
       }
-      setSaveSuccess(true);
-      toast.success("영상이 성공적으로 생성되어 내 보관함에 저장되었습니다.", { duration: 5000 });
     } catch (error: unknown) {
       console.error("비디오 생성 전체 플로우 오류:", error);
       const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류 발생";
@@ -380,8 +392,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
           console.error("Failed to update notification on final error:", notifError);
         }
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -450,7 +460,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
   return {
     videoUrl,
     errorMessage,
-    isLoading,
     isSaving,
     saveSuccess,
     saveError,

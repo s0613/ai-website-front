@@ -1,9 +1,8 @@
-// app/layout.tsx
+// src/app/layout.tsx
 import "./styles/globals.css";
 import Navbar from "@/components/common/navbar/Navbar";
-import { AuthProvider } from "@/features/user/AuthContext";
 import type { Metadata } from "next";
-import { CreditProvider } from "@/features/payment/context/CreditContext";
+import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: "Trynic",
@@ -18,12 +17,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <CreditProvider>
-          <AuthProvider>
-            <Navbar />
-            <div>{children}</div>
-          </AuthProvider>
-        </CreditProvider>
+        <Providers>
+          <Navbar />
+          <div>{children}</div>
+        </Providers>
       </body>
     </html>
   );

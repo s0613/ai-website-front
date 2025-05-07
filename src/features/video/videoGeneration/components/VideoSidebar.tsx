@@ -369,12 +369,11 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                 updateSettings={updateSettings}
                 currentSettings={{
                   aspectRatio: aspectRatio as AspectRatioType,
+                  duration,
                   resolution: resolution as ResolutionType,
                   numFrames,
                   numInferenceSteps: numInferenceSteps as 20 | 30 | 40 | undefined,
                   seed,
-                  proMode: false,
-                  enableSafetyChecker,
                   framesPerSecond: framesPerSecond as 8 | 16 | 24 | undefined,
                   enablePromptExpansion,
                 }}
