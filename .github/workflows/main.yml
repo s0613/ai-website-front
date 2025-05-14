@@ -1,4 +1,4 @@
-name: Deploy Front (Next.js → CodeDeploy)
+name: Deploy Front (zip with node_modules)
 
 on:
   push:
@@ -13,18 +13,18 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # 1) clone
+      # 1) 소스 checkout & Node 준비
       - uses: actions/checkout@v4
 
-      # 2) Node
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: npm
+          cache: 'npm'
 
-      # 3) secret → .env.production
-      - name: Create .env.production
+      # 2) .env.production 생성
+      - name: Create env
         run: |
           cat <<EOF > .env.production
           NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
@@ -32,38 +32,27 @@ jobs:
           GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
           EOF
 
-      # 4) install & build (stand-alone)
-      - run: npm ci
-      - run: npm run build -- --no-lint        # .next/standalone 생성
+      # 3) 의존성 설치 & 프로덕션 빌드
+      - run: npm ci            # devDependencies도 그대로 설치
+      - run: npm run build -- --no-lint
 
-      # 5) make hooks executable
-      - run: chmod +x codedeploy/*.sh
-
-      # 6) bundle -- only what we need
-      - name: Zip bundle
+      # 4) 배포용 zip 만들기 (node_modules 포함)
+      - name: Make bundle
         run: |
-          mkdir bundle
-          # runtime 코드
-          cp -r .next/standalone/* bundle/
-          # 정적 리소스
-          mkdir -p bundle/.next && cp -r .next/static bundle/.next/
-          cp -r public bundle/
-          # 설정·스크립트
-          cp .env.production next.config.js package.json bundle/
-          cp -r codedeploy appspec.yml bundle/
-          cd bundle && zip -r ../trynic-front.zip .
+          zip -r trynic-front.zip \
+            .next public node_modules package.json package-lock.json \
+            next.config.* .env.production \
+            codedeploy appspec.yml
 
-      # 7) creds
+      # 5) AWS 자격 설정
       - uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
-      # 8) S3 업로드
+      # 6) S3 업로드 → CodeDeploy 트리거
       - run: aws s3 cp trynic-front.zip s3://$BUCKET/trynic-front.zip
-
-      # 9) CodeDeploy
       - run: |
           aws deploy create-deployment \
             --application-name $APP_NAME \
