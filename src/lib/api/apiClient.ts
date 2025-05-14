@@ -7,12 +7,17 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8080/api'
 const apiClient = axios.create({
   baseURL: BASE_URL,
   withCredentials: true, // 모든 요청에 쿠키 포함
-  timeout: 90000, // 타임아웃 설정
+  timeout: 30000, // 기본 타임아웃 30초로 설정 (개별 요청에서 조정 가능)
 });
 
 // 요청 인터셉터
 apiClient.interceptors.request.use(
   (config) => {
+    // 디버그 로깅 (개발 환경에서만)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📤 [API 요청] ${config.method?.toUpperCase()} ${config.url}`);
+    }
+
     // multipart/form-data인 경우 Content-Type 헤더를 자동으로 설정하도록 함
     if (config.data instanceof FormData) {
       if (config.headers) {
@@ -28,7 +33,13 @@ apiClient.interceptors.request.use(
 
 // 응답 인터셉터
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // 성공 응답 로깅 (개발 환경에서만)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📥 [API 응답] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
+    }
+    return response;
+  },
   (error) => {
     // 에러 처리 로직
     if (error.response) {
@@ -37,13 +48,17 @@ apiClient.interceptors.response.use(
         url: error.config?.url,
         method: error.config?.method,
         status: error.response.status,
-        data: error.response.data,
+        data: typeof error.response.data === 'object'
+          ? JSON.stringify(error.response.data).substring(0, 150)
+          : String(error.response.data).substring(0, 150),
       });
     } else if (error.request) {
       // 요청은 보냈지만 응답을 받지 못한 경우
       console.error('API 요청 에러: 서버로부터 응답이 없습니다', {
         url: error.config?.url,
         method: error.config?.method,
+        timeout: error.config?.timeout,
+        error: error.message,
       });
     } else {
       // 요청 설정 중에 에러가 발생한 경우

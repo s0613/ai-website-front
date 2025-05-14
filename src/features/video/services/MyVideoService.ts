@@ -10,7 +10,8 @@ export const getVideoById = async (id: number): Promise<VideoDto> => {
     const response = await apiClient.get<VideoDto>(`/my/videos/${id}`);
     return response.data;
   } catch (error) {
-    console.error(`ID ${id}의 비디오를 가져오는데 실패했습니다:`, error);
+    // 에러는 모든 환경에서 로깅 (중요 에러 추적용)
+    console.error(`[오류] ID ${id}의 비디오 조회 실패:`, error);
     throw error;
   }
 };
@@ -23,7 +24,8 @@ export const getUserVideos = async (): Promise<VideoDto[]> => {
     const response = await apiClient.get<VideoDto[]>('/my/videos/user');
     return response.data;
   } catch (error) {
-    console.error('사용자 비디오 목록을 가져오는데 실패했습니다:', error);
+    // 중요 에러만 로깅
+    console.error('[오류] 사용자 비디오 목록 조회 실패:', error);
     throw error;
   }
 };
@@ -36,7 +38,8 @@ export const getLikedVideos = async (): Promise<VideoDto[]> => {
     const response = await apiClient.get<VideoDto[]>('/videos/like/my');
     return response.data;
   } catch (error) {
-    console.error('좋아요한 비디오 목록을 가져오는데 실패했습니다:', error);
+    // 중요 에러만 로깅
+    console.error('[오류] 좋아요한 비디오 목록 조회 실패:', error);
     throw error;
   }
 };
@@ -49,7 +52,8 @@ export const getSharedVideos = async (): Promise<VideoDto[]> => {
     const response = await apiClient.get<VideoDto[]>('/videos/shared');
     return response.data;
   } catch (error) {
-    console.error('공유된 비디오 목록을 가져오는데 실패했습니다:', error);
+    // 중요 에러만 로깅
+    console.error('[오류] 공유된 비디오 목록 조회 실패:', error);
     throw error;
   }
 };
@@ -62,7 +66,8 @@ export const getSharedVideosNoLogin = async (): Promise<VideoDto[]> => {
     const response = await apiClient.get<VideoDto[]>('/videos/shared/no-login');
     return response.data;
   } catch (error) {
-    console.error('공유된 비디오 목록을 가져오는데 실패했습니다:', error);
+    // 중요 에러만 로깅
+    console.error('[오류] 공유된 비디오 목록(비로그인) 조회 실패:', error);
     throw error;
   }
 };
@@ -76,7 +81,8 @@ export const getVideosByType = async (type: string): Promise<VideoDto[]> => {
     const response = await apiClient.get<VideoDto[]>(`/my/videos/type/${type.toUpperCase()}`);
     return response.data;
   } catch (error) {
-    console.error(`타입 ${type}의 비디오를 가져오는데 실패했습니다:`, error);
+    // 중요 에러만 로깅
+    console.error(`[오류] 타입 ${type}의 비디오 목록 조회 실패:`, error);
     throw error;
   }
 };
@@ -89,9 +95,13 @@ export const getVideosByType = async (type: string): Promise<VideoDto[]> => {
 export const toggleVideoShare = async (id: number, share: boolean): Promise<VideoDto> => {
   try {
     const response = await apiClient.patch<VideoDto>(`/my/videos/${id}/share?share=${share}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[정보] 비디오 ID ${id} 공유 상태 변경: ${share}`);
+    }
     return response.data;
   } catch (error) {
-    console.error('비디오 공유 상태 변경에 실패했습니다:', error);
+    // 중요 에러만 로깅
+    console.error(`[오류] 비디오 ID ${id} 공유 상태 변경 실패:`, error);
     throw error;
   }
 };
@@ -104,9 +114,13 @@ export const toggleVideoShare = async (id: number, share: boolean): Promise<Vide
 export const updateVideoLike = async (id: number, like: boolean): Promise<VideoDto> => {
   try {
     const response = await apiClient.patch<VideoDto>(`/videos/like/${id}?like=${like}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[정보] 비디오 ID ${id} 좋아요 상태 변경: ${like}`);
+    }
     return response.data;
   } catch (error) {
-    console.error('비디오 좋아요 상태 업데이트에 실패했습니다:', error);
+    // 중요 에러만 로깅
+    console.error(`[오류] 비디오 ID ${id} 좋아요 상태 변경 실패:`, error);
     throw error;
   }
 };
@@ -139,6 +153,14 @@ export const saveVideo = async (
       new Blob([JSON.stringify(data)], { type: 'application/json' })
     );
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[정보] 비디오 업로드 시작', {
+        videoName: data.videoName,
+        videoSize: videoFile.size,
+        referenceFile: referenceFile ? true : false,
+      });
+    }
+
     // API 요청
     const response = await apiClient.post<VideoDto>('/my/videos', formData, {
       headers: {
@@ -146,9 +168,14 @@ export const saveVideo = async (
       },
     });
 
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[정보] 비디오 업로드 성공', { id: response.data.id });
+    }
+
     return response.data;
   } catch (error) {
-    console.error('비디오 저장에 실패했습니다:', error);
+    // 중요 에러만 로깅
+    console.error('[오류] 비디오 저장 실패:', error);
     throw error;
   }
 };

@@ -103,7 +103,7 @@ interface Veo2Request extends BaseVideoRequest {
 // Kling 요청 타입
 interface KlingRequest extends BaseVideoRequest {
   imageUrl?: string; // camelCase 주의
-  duration?: number; // 숫자 타입 주의
+  duration?: string;
   aspect_ratio?: string;
   camera_control?: string;
   // negative_prompt, cfg_scale 등 추가 가능
@@ -246,7 +246,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
           payload = {
             prompt: data.prompt,
             imageUrl: imageBase64 || data.fileUrl || undefined,
-            duration: data.duration ? parseInt(data.duration.replace('s', '')) : 5,
+            duration: data.duration,
             aspect_ratio: data.aspectRatio,
             camera_control: data.cameraControl,
           } as KlingRequest;
@@ -352,6 +352,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
             videoName: `AI 생성 영상 - ${new Date().toLocaleTimeString()}`,
             videoUrl: generatedVideoUrl,
             referenceUrl: data.fileUrl || referenceImageUrl || undefined,
+            activeTab: activeTab,
           });
           setSaveSuccess(true);
           toast.success("영상이 성공적으로 저장되었습니다.");

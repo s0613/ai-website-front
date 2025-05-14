@@ -6,6 +6,7 @@ import VideoGenerationFolder from "./VideoGenerationFolder";
 import useVideoGeneration from "../hooks/useVideoGeneration";
 import { toast } from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
+import { SidebarFormData } from "../hooks/useVideoSidebar";
 
 // 로딩 컴포넌트
 function LoadingComponent() {
@@ -18,10 +19,8 @@ function VideoGenerationContent() {
 
   const {
     videoUrl,
-    isLoading,
     isUpscaling,
     upscaledVideoUrl,
-    activeTab,
     referenceImageFile,
     referenceImageUrl,
     referencePrompt,
@@ -33,7 +32,7 @@ function VideoGenerationContent() {
   } = useVideoGeneration({ searchParams });
 
   // handleSidebarSubmit 함수 호출을 위한 래퍼 함수
-  const handleVideoSidebarSubmit = (data: any) => {
+  const handleVideoSidebarSubmit = (data: SidebarFormData) => {
     handleSidebarSubmit(data);
     // 영상 생성 시작 알림
     toast.success("영상 생성이 시작되었습니다. 생성이 완료되면 알림으로 알려드리겠습니다.", {
@@ -59,7 +58,7 @@ function VideoGenerationContent() {
         isUpscaling={isUpscaling}
         hasUpscaled={!!upscaledVideoUrl}
         videoGenerated={!!videoUrl}
-        isLoading={isLoading}
+        isLoading={false}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <VideoGenerationFolder onSelectImage={handleSelectImage} />

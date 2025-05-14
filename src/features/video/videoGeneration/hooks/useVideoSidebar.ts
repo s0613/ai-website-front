@@ -187,13 +187,7 @@ export function useVideoSidebar({
     if (settings.enablePromptExpansion !== undefined) setEnablePromptExpansion(settings.enablePromptExpansion);
   };
 
-  const promptRef = useRef(prompt);
-  const fileUrlRef = useRef(fileUrl);
-  const imageFileRef = useRef(imageFile);
-
-  useEffect(() => { promptRef.current = prompt; }, [prompt]);
-  useEffect(() => { fileUrlRef.current = fileUrl; }, [fileUrl]);
-  useEffect(() => { imageFileRef.current = imageFile; }, [imageFile]);
+  // 더 이상 ref를 사용하지 않고 직접 상태 변수 사용
 
   // 폼 제출 핸들러 (업스케일링 옵션은 제거됨)
   const handleSubmit = async (e: React.FormEvent) => {
@@ -222,14 +216,14 @@ export function useVideoSidebar({
     }
 
     onSubmit({
-      prompt: promptRef.current,
-      imageFile: imageFileRef.current,
+      prompt: prompt,
+      imageFile: imageFile,
       aspectRatio,
       duration,
       endpoint,
       quality,
       style,
-      fileUrl: fileUrlRef.current,
+      fileUrl: fileUrl,
       cameraControl,
       seed: endpoint === "hunyuan" || endpoint === "wan" ? seed : undefined,
       resolution:
@@ -326,12 +320,12 @@ export function useVideoSidebar({
         imageData = fileUrl;
       }
 
-      const response = await fetch('/api/gemini/generate-prompt', {
+      const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ imageUrlOrBase64: imageData }),
+        body: JSON.stringify({ imageUrl: imageData, existingPrompt: prompt }),
       });
 
       if (!response.ok) {
@@ -340,8 +334,8 @@ export function useVideoSidebar({
       }
 
       const data = await response.json();
-      if (data.prompt) {
-        setPrompt(data.prompt);
+      if (data.response) {
+        setPrompt(data.response);
         toast({
           title: "프롬프트 생성 완료",
           description: "Gemini API로부터 프롬프트를 성공적으로 생성했습니다.",

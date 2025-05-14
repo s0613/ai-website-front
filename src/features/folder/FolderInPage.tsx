@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +12,7 @@ import {
   Loader2,
   AlertTriangle,
   Upload,
+  File,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,13 +39,7 @@ const FolderInPage = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (folderId) {
-      fetchFiles();
-    }
-  }, [folderId]);
-
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     if (!folderId) return;
 
     try {
@@ -66,7 +62,13 @@ const FolderInPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [folderId]);
+
+  useEffect(() => {
+    if (folderId) {
+      fetchFiles();
+    }
+  }, [folderId, fetchFiles]);
 
   const handleBack = () => {
     router.push("/my/folder/my");
@@ -121,7 +123,7 @@ const FolderInPage = () => {
     setShowUploadModal(false);
 
     try {
-      const response = await FolderService.uploadFile(Number(folderId), selectedFile);
+      await FolderService.uploadFile(Number(folderId), selectedFile);
       toast.success(`${selectedFile.name} 파일이 업로드되었습니다`);
       await fetchFiles(); // 파일 목록 새로고침
     } catch (error) {
@@ -236,7 +238,7 @@ const FolderInPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isLoading ? (
           <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
             <div className="flex items-center justify-center h-32">
@@ -316,25 +318,24 @@ const FolderInPage = () => {
           filteredFiles.map((file) => (
             <Card
               key={file.id}
-              className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl hover:border-white/30 transition-all duration-300"
+              className="relative aspect-square cursor-pointer overflow-hidden group transition-all duration-300 border border-white/10 hover:border-sky-500/50"
             >
-              <div className="flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-white truncate max-w-[150px]">{file.name}</h3>
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors" />
+              {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                <Image
+                  src={file.url}
+                  alt={file.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center w-full h-full bg-gray-800">
+                  <Upload className="h-12 w-12 text-gray-400" />
                 </div>
-                <div className="relative aspect-video w-full overflow-hidden rounded-md">
-                  {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
-                    <img
-                      src={file.url}
-                      alt={file.name}
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center w-full h-full bg-gray-800">
-                      <Upload className="h-12 w-12 text-gray-400" />
-                    </div>
-                  )}
-                </div>
+              )}
+              <div className="absolute bottom-2 left-2 right-2 text-sm text-white truncate">
+                {file.name}
               </div>
             </Card>
           ))

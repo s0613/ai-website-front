@@ -6,8 +6,10 @@ export async function POST(req) {
         const body = await req.json();
         const { prompt, imageUrl, duration, aspectRatio, cameraControl } = body;
 
-        // duration에서 's' 제거
-        const durationValue = duration ? parseInt(duration.replace('s', '')) : 5;
+        // duration에서 's' 제거 및 안전한 파싱
+        const durationValue = typeof duration === 'string'
+            ? parseInt(duration.replace('s', ''))
+            : (typeof duration === 'number' ? duration : 5);
 
         // API 호출 (Fal.ai API)
         const result = await fal.subscribe("fal-ai/kling-video/v1.6/pro/image-to-video", {
