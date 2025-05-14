@@ -14,10 +14,10 @@ permissions:
 
 hooks:
   BeforeInstall:
-    - location: codedeploy/before_install.sh
+    - location: codedeploy/before-install.sh
       runas: root
   AfterInstall:
-    - location: codedeploy/after_install.sh
+    - location: codedeploy/after-install.sh
       runas: ec2-user
   ApplicationStart:
     - location: codedeploy/start.sh
