@@ -1,67 +1,64 @@
-name: Deploy to S3
+name: Deploy Front (Next.js → CodeDeploy)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 env:
-  S3_BUCKET_NAME: trynic-front-git
-  CODE_DEPLOY_APPLICATION_NAME: trynic-front
-  CODE_DEPLOY_DEPLOYMENT_GROUP_NAME: trynic-front-group
   AWS_REGION: ap-northeast-2
-  NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
-  FAL_KEY:              ${{ secrets.FAL_KEY }}
-  GOOGLE_API_KEY:       ${{ secrets.GOOGLE_API_KEY }}
+  BUCKET: trynic-front-git
+  APP_NAME: trynic-front
+  GROUP_NAME: trynic-front-group
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x]
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+    steps:
+      # 1) 체크아웃
+      - uses: actions/checkout@v4
+
+      # 2) Node 세팅
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18
           cache: "npm"
 
-      - name: Generate .env.local
+      # 3) 환경파일 생성
+      - name: Create .env.production
         run: |
-          echo "NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}" > .env.local
-          echo "FAL_KEY=${FAL_KEY}" >> .env.local
-          echo "GOOGLE_API_KEY=${GOOGLE_API_KEY}" >> .env.local
+          echo "NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}"  > .env.production
+          echo "FAL_KEY=${{ secrets.FAL_KEY }}"                            >> .env.production
+          echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}"              >> .env.production
 
-      - name: Prepare Deployment Package
+      # 4) 의존성 설치 + 프로덕션 빌드
+      - run: npm ci
+      - run: npm run build
+
+      # 5) devDependencies 제거 & node_modules 축소
+      - run: npm prune --omit=dev
+
+      # 6) 배포용 zip 구성
+      - name: Zip bundle
         run: |
-          mkdir deploy
-          rsync -av \
-            --exclude='deploy' \
-            --exclude='node_modules' \
-            --exclude='.git' \
-            ./ deploy/
-          cp .env.local deploy/.env.production
-          cd deploy
-          zip -r ../trynic-front.zip . && cd ..
+          zip -r trynic-front.zip \
+            .next public package.json package-lock.json next.config.js \
+            .env.production codedeploy appspec.yml node_modules
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      # 7) AWS 자격 증명
+      - uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
-      - name: Upload to S3
-        run: aws s3 cp trynic-front.zip s3://${{ env.S3_BUCKET_NAME }}/trynic-front.zip
+      # 8) S3 업로드
+      - run: aws s3 cp trynic-front.zip s3://$BUCKET/trynic-front.zip
 
-      - name: Trigger CodeDeploy
-        run: |
+      # 9) CodeDeploy 트리거
+      - run: |
           aws deploy create-deployment \
-            --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
+            --application-name $APP_NAME \
+            --deployment-group-name $GROUP_NAME \
             --deployment-config-name CodeDeployDefault.AllAtOnce \
-            --deployment-group-name ${{ env.CODE_DEPLOY_DEPLOYMENT_GROUP_NAME }} \
-            --s3-location bucket=${{ env.S3_BUCKET_NAME }},bundleType=zip,key=trynic-front.zip
+            --s3-location bucket=$BUCKET,key=trynic-front.zip,bundleType=zip
