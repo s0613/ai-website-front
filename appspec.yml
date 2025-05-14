@@ -2,23 +2,23 @@ version: 0.0
 os: linux
 
 files:
-  - source: .
+  - source: /
     destination: /home/ec2-user/trynic-front
-    overwrite: yes
+    overwrite: true
 
 permissions:
   - object: /home/ec2-user/trynic-front
+    pattern: "**"
     owner: ec2-user
     group: ec2-user
-    mode: 755
 
 hooks:
   BeforeInstall:
-    - location: scripts/before-install.sh
-      timeout: 300
+    - location: codedeploy/before_install.sh
       runas: root
-
   AfterInstall:
-    - location: scripts/after-install.sh
-      timeout: 1800
+    - location: codedeploy/after_install.sh
+      runas: ec2-user
+  ApplicationStart:
+    - location: codedeploy/start.sh
       runas: ec2-user

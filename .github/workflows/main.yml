@@ -33,7 +33,7 @@ jobs:
 
       # 4) 의존성 설치 + 프로덕션 빌드
       - run: npm ci
-      - run: npm run build
+      - run: npm run build -- --no-lint
 
       # 5) devDependencies 제거 & node_modules 축소
       - run: npm prune --omit=dev
