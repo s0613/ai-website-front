@@ -54,10 +54,6 @@ function VideoGenerationContent() {
         referenceImageUrl={referenceImageUrl}
         referencePrompt={referencePrompt}
         referenceModel={referenceModel}
-        onUpscale={handleUpscaleVideo}
-        isUpscaling={isUpscaling}
-        hasUpscaled={!!upscaledVideoUrl}
-        videoGenerated={!!videoUrl}
         isLoading={false}
       />
       <div className="flex-1 flex flex-col overflow-hidden">

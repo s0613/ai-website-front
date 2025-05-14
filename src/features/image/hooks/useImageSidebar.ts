@@ -1,8 +1,32 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
+interface ImageSubmitData {
+    prompt: string;
+    imageFile: File | null;
+    endpoint: string;
+    width: number;
+    height: number;
+    numOutputs: number;
+    guidanceScale: number;
+    seed?: number;
+    enableSafetyChecker?: boolean;
+    enablePromptExpansion?: boolean;
+}
+
+interface ImageSettings {
+    endpoint?: string;
+    width?: number;
+    height?: number;
+    numOutputs?: number;
+    guidanceScale?: number;
+    seed?: number;
+    enableSafetyChecker?: boolean;
+    enablePromptExpansion?: boolean;
+}
+
 interface UseImageSidebarProps {
-    onSubmit: (data: any) => void;
+    onSubmit: (data: ImageSubmitData) => void;
     onTabChange: (tab: string) => void;
     referenceImageFile?: File | null;
     referenceImageUrl?: string;
@@ -66,7 +90,7 @@ export function useImageSidebar({
         }
     };
 
-    const updateSettings = (settings: any) => {
+    const updateSettings = (settings: ImageSettings) => {
         if (settings.endpoint !== undefined) setEndpoint(settings.endpoint);
         if (settings.width !== undefined) setWidth(settings.width);
         if (settings.height !== undefined) setHeight(settings.height);

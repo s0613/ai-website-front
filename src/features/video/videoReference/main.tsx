@@ -15,7 +15,6 @@ export default function VideoReferencePage() {
   const [filteredVideos, setFilteredVideos] = useState<VideoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'latest' | 'popular'>('popular');
 
   useEffect(() => {
@@ -35,9 +34,7 @@ export default function VideoReferencePage() {
         cookies["auth-token"] || // 쿠키에서 auth-token 확인
         localStorage.getItem("auth-token");
 
-      const isLoggedIn = !!hasAuthToken;
-      setIsLoggedIn(isLoggedIn);
-      return isLoggedIn;
+      return !!hasAuthToken;
     };
 
     const fetchVideos = async () => {
@@ -132,7 +129,7 @@ export default function VideoReferencePage() {
 
   const handleSortChange = (newSortBy: 'latest' | 'popular') => {
     setSortBy(newSortBy);
-    let sortedVideos = [...filteredVideos];
+    const sortedVideos = [...filteredVideos];
 
     if (newSortBy === 'latest') {
       sortedVideos.sort((a, b) => b.id - a.id);
@@ -384,7 +381,6 @@ export default function VideoReferencePage() {
               <VideoDetail
                 videoId={selectedVideoId}
                 videoBasicInfo={videos.find((v) => v.id === selectedVideoId)!}
-                onBack={handleBackToList}
               />
             </div>
           </div>

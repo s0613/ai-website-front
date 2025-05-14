@@ -55,7 +55,9 @@ const VideoUploader = () => {
       const videoRequest: VideoCreateRequest = {
         videoName: aiVideoName,
         prompt: prompt,
-        endpoint: model
+        endpoint: model,
+        model: model,
+        videoUrl: URL.createObjectURL(aiVideo)
       };
 
       const result = await saveVideo(videoRequest, aiVideo, modeFile || undefined);

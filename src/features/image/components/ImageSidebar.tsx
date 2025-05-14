@@ -4,7 +4,6 @@ import { ImageGenerationSettings } from '../types/imageGeneration';
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 interface ImageSidebarProps {

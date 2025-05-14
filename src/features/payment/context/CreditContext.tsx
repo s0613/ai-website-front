@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { BillingService } from '../services/BillingService';
-import type { CreditResponse } from '../services/BillingService';
 
 interface CreditContextType {
     credits: number;

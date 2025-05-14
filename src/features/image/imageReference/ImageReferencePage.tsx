@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ImageItem } from "../types/Image";
 import { getImages, downloadImage } from "../services/ImageService";
 import { useImageFilter } from "../hooks/useImageFilter";
@@ -12,7 +11,7 @@ export default function ImageReferencePage() {
     const [images, setImages] = useState<ImageItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { filteredImages, filters, setFilters } = useImageFilter(images);
+    const { filteredImages, setFilters } = useImageFilter(images);
 
     useEffect(() => {
         const fetchImages = async () => {

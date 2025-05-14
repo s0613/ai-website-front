@@ -3,14 +3,7 @@
 import type React from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Sparkles, Video } from "lucide-react";
-import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-
-const fadeIn = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  transition: { duration: 1.2 },
-};
 
 type CategoryItem = {
   title: string;

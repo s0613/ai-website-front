@@ -13,17 +13,13 @@ import { Button } from "@/components/ui/button";
 import {
   Upload,
   CheckCircle,
-  ArrowUpToLine,
   Loader2,
   Film,
-  MessageSquare,
   Image as ImageIcon,
 } from "lucide-react";
-import { toast } from "sonner";
 import ModelSetting from "./ModelSetting";
 import { SidebarFormData, useVideoSidebar } from "../hooks/useVideoSidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { uploadImageAPI } from "../../services/fileService";
 import { AspectRatioType, ResolutionType } from "../types/modelSettingTypes";
 
 export type VideoSidebarProps = {
@@ -33,11 +29,7 @@ export type VideoSidebarProps = {
   referenceImageUrl?: string;
   referencePrompt?: string;
   referenceModel?: string;
-  videoGenerated?: boolean;
   isLoading?: boolean;
-  onUpscale?: () => void;
-  isUpscaling?: boolean;
-  hasUpscaled?: boolean;
 };
 
 export default function VideoSidebar(props: VideoSidebarProps) {
@@ -48,11 +40,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
     referenceImageUrl,
     referencePrompt,
     referenceModel,
-    videoGenerated,
     isLoading,
-    onUpscale,
-    isUpscaling,
-    hasUpscaled,
   } = props;
 
   const {
@@ -64,13 +52,11 @@ export default function VideoSidebar(props: VideoSidebarProps) {
     duration,
     endpoint,
     imageChanged,
-    cameraControl,
     seed,
     resolution,
     numFrames,
     numInferenceSteps,
     framesPerSecond,
-    enableSafetyChecker,
     enablePromptExpansion,
     updateSettings,
     handleSubmit,
@@ -371,11 +357,7 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                   aspectRatio: aspectRatio as AspectRatioType,
                   duration,
                   resolution: resolution as ResolutionType,
-                  numFrames,
-                  numInferenceSteps: numInferenceSteps as 20 | 30 | 40 | undefined,
                   seed,
-                  framesPerSecond: framesPerSecond as 8 | 16 | 24 | undefined,
-                  enablePromptExpansion,
                 }}
               />
             </div>

@@ -1,7 +1,6 @@
 // components/ModelSetting.tsx
 "use client";
 
-import React from "react";
 import { ModelSettingFactory } from "../modelSettings/ModelSettingFactory";
 import { ModelSettings } from "../types/modelSettingTypes";
 

@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, CreditCard, CheckCircle, AlertCircle, Lock } from "lucide-react";
+import { CreditCard, CheckCircle, Lock } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -11,25 +11,11 @@ import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-// 애니메이션 효과
-const fadeIn = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  transition: { duration: 0.8 },
-};
-
-const slideUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 },
-};
+// 결제 상태 타입
 
 // 결제 상태 타입
 type PaymentStatus = "idle" | "processing" | "success" | "error";
@@ -45,7 +31,6 @@ function PaymentFormContent() {
   const planTitle = searchParams.get("plan") || "";
   const planPrice = searchParams.get("price") || "";
   const planCredits = searchParams.get("credits") || "";
-  const billingType = searchParams.get("billing") || "monthly";
 
   const [paymentMethod, setPaymentMethod] = useState<string>("card");
   const [cardNumber, setCardNumber] = useState<string>("");
@@ -55,35 +40,6 @@ function PaymentFormContent() {
   const [email, setEmail] = useState<string>("");
   const [status, setStatus] = useState<PaymentStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
-
-  // 카드번호 포맷팅 (4자리마다 공백)
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || "";
-    const parts = [];
-
-    for (let i = 0; i < match.length; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-
-    if (parts.length) {
-      return parts.join(" ");
-    } else {
-      return value;
-    }
-  };
-
-  // 카드 만료일 포맷팅 (MM/YY)
-  const formatExpiry = (value: string) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-
-    if (v.length >= 2) {
-      return `${v.substring(0, 2)}/${v.substring(2, 4)}`;
-    }
-
-    return v;
-  };
 
   // 결제 처리 함수
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,7 +59,7 @@ function PaymentFormContent() {
       await new Promise((resolve) => setTimeout(resolve, 2000)); // 결제 처리 시뮬레이션
 
       setStatus("success");
-    } catch (error) {
+    } catch (_) {
       setStatus("error");
       setErrorMessage("결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
