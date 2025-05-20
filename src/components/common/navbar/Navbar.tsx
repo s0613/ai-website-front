@@ -12,16 +12,17 @@ import { UserMenu } from "./UserMenu";
 import { VideoGenerationNotificationBell } from "./VideoGenerationNotificationBell";
 
 const Navbar = () => {
-  const { isLoggedIn, email, logout, nickname } = useAuth();
+  const { isLoggedIn, email, logout, nickname, id } = useAuth();
   const router = useRouter();
   const [creditInfo, setCreditInfo] = useState<{ currentCredit: number } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-
   useEffect(() => {
     if (isLoggedIn) {
       loadCreditInfo();
+    } else {
+      setCreditInfo(null);
     }
   }, [isLoggedIn]);
 
@@ -34,8 +35,8 @@ const Navbar = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 

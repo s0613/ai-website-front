@@ -4,7 +4,6 @@ import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "./UserAvatar";
-import { logout as userLogout } from "@/features/user/services/UserService";
 
 interface Props {
   email: string;
@@ -47,8 +46,7 @@ export const UserMenu = ({
 
   const handleLogout = async () => {
     try {
-      await userLogout(); // UserService의 logout 함수 호출
-      onLogout(); // 기존 로그아웃 로직 실행 (상태 초기화)
+      await onLogout(); // AuthContext의 logout 함수 사용
       router.push("/"); // 홈으로 이동
     } catch (error) {
       console.error("로그아웃 실패:", error);

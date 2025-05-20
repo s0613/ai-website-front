@@ -142,14 +142,7 @@ const Login = () => {
             <span>구글 로그인</span>
           </Button>
         </CardContent>
-        <CardFooter className="text-center">
-          <p className="text-sm text-gray-400">
-            계정이 없으신가요?{" "}
-            <a href="/signup" className="text-sky-500 hover:text-sky-400">
-              회원가입
-            </a>
-          </p>
-        </CardFooter>
+
       </Card>
     </div>
   );

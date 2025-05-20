@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "start:prod": "cross-env NODE_ENV=production next start",
+    "lint": "next lint",
+    "workers": "tsx src/app/internal/workers/startWorkers.ts",
+    "workers:prod": "cross-env NODE_ENV=production tsx src/app/internal/workers/startWorkers.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",
@@ -35,10 +38,13 @@
     "@shadcn/ui": "^0.0.4",
     "@types/formidable": "^3.4.5",
     "axios": "^1.7.9",
+    "bull": "^4.16.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^16.5.0",
     "formidable": "^3.5.2",
     "framer-motion": "^12.5.0",
+    "ioredis": "^5.6.1",
     "jose": "^6.0.8",
     "lodash": "^4.17.21",
     "lucide-react": "^0.474.0",
@@ -54,6 +60,7 @@
     "react-icons": "^5.4.0",
     "react-markdown": "^9.0.3",
     "recharts": "^2.15.1",
+    "redis": "^5.0.1",
     "sonner": "^2.0.3",
     "swr": "^2.3.2",
     "tailwind-merge": "^3.0.1",
@@ -73,6 +80,7 @@
     "eslint-config-next": "15.1.3",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.4",
     "typescript": "^5"
   },
   "overrides": {

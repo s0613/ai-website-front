@@ -122,7 +122,7 @@ export default function CreationDetail({
       setIsUpscaling(true);
       setUpscaledVideoUrl("");
 
-      const response = await fetch('/api/video/upscaler', {
+      const response = await fetch('/internal/video/upscaler', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

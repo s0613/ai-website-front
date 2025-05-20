@@ -199,21 +199,21 @@ export function useVideoSidebar({
       duration: 5000,
     });
 
-    try {
-      const notification = await GenerationNotificationService.createNotification({
-        title: `영상 생성 요청 (${new Date().toLocaleTimeString()})`,
-        // 썸네일, mediaCount 등 필요시 추가
-      });
-      if (onNotifyProcessing) onNotifyProcessing(notification);
-    } catch (error: unknown) {
-      console.error('Gemini API Error:', error);
-      toast({
-        title: "오류 발생",
-        description: error instanceof Error ? error.message : "프롬프트 수정 중 오류가 발생했습니다.",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
+    // try {
+    //   const notification = await GenerationNotificationService.createNotification({
+    //     title: `영상 생성 요청 (${new Date().toLocaleTimeString()})`,
+    //     // 썸네일, mediaCount 등 필요시 추가
+    //   });
+    //   if (onNotifyProcessing) onNotifyProcessing(notification);
+    // } catch (error: unknown) {
+    //   console.error('Gemini API Error:', error);
+    //   toast({
+    //     title: "오류 발생",
+    //     description: error instanceof Error ? error.message : "프롬프트 수정 중 오류가 발생했습니다.",
+    //     variant: "destructive",
+    //     duration: 3000,
+    //   });
+    // }
 
     onSubmit({
       prompt: prompt,
@@ -305,50 +305,60 @@ export function useVideoSidebar({
 
     setIsPromptLoading(true);
     try {
-      let imageData = "";
-      if (imageFile) {
-        imageData = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(imageFile);
-        });
-      } else if (fileUrl) {
-        // URL인 경우, 직접 URL을 사용하거나 필요시 fetch하여 base64 변환
-        // 여기서는 간단히 fileUrl을 이미지 식별자로 간주 (Gemini API가 URL을 직접 처리할 수 있는 경우)
-        // 만약 Gemini API가 base64만 받는다면, URL을 fetch해서 변환하는 로직 필요
-        imageData = fileUrl;
-      }
+      // 이미지 URL 사용
+      const imageUrl = fileUrl || previewUrl;
 
-      const response = await fetch('/api/gemini', {
+      const response = await fetch('/internal/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ imageUrl: imageData, existingPrompt: prompt }),
+        body: JSON.stringify({
+          imageUrl: imageUrl,
+          existingPrompt: prompt
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate prompt from Gemini API');
+        let errorMessage = '프롬프트 생성 중 오류가 발생했습니다.';
+        let errorDetails = '';
+
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          errorDetails = errorData.details || '';
+        } catch (parseError) {
+          console.error('Error parsing error response:', parseError);
+          errorDetails = `응답 상태: ${response.status} ${response.statusText}`;
+        }
+
+        throw new Error(`${errorMessage}\n${errorDetails}`);
       }
 
-      const data = await response.json();
-      if (data.response) {
-        setPrompt(data.response);
+      const responseData = await response.json();
+
+      if (responseData.response) {
+        setPrompt(responseData.response);
         toast({
           title: "프롬프트 생성 완료",
           description: "Gemini API로부터 프롬프트를 성공적으로 생성했습니다.",
           duration: 3000,
         });
+      } else {
+        throw new Error('API 응답에 프롬프트 데이터가 없습니다.');
       }
     } catch (error: unknown) {
-      console.error('Gemini API Error:', error);
+      console.error('Gemini API Error:', {
+        error,
+        message: error instanceof Error ? error.message : '알 수 없는 오류',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
       toast({
         title: "오류 발생",
         description: error instanceof Error ? error.message : "프롬프트 수정 중 오류가 발생했습니다.",
         variant: "destructive",
-        duration: 3000,
+        duration: 5000,
       });
     } finally {
       setIsPromptLoading(false);

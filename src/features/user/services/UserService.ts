@@ -30,24 +30,28 @@ export const getGoogleLoginUrl = (): string => {
 interface AuthCheckResponse {
   isAuthenticated: boolean;
   email?: string;
-  role?: string;
+  id?: number;
   nickname?: string;
+  role?: string;
+  createdAt?: string;
 }
 
 export const getCurrentUser = async (): Promise<AuthCheckResponse> => {
   try {
     const response = await apiClient.get<AuthCheckResponse>('/auth/me');
-    
+
     // 정상 응답인 경우
     return {
       isAuthenticated: true,
       email: response.data.email,
+      id: response.data.id,
+      nickname: response.data.nickname,
       role: response.data.role,
-      nickname: response.data.nickname
+      createdAt: response.data.createdAt
     };
   } catch (error) {
     console.error('사용자 인증 확인 실패:', error);
-    
+
     // 인증 실패 시 기본 응답
     return {
       isAuthenticated: false

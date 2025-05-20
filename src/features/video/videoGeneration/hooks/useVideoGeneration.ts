@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import {
-  saveVideo,
-  readFileAsBase64,
   getVideoEndpointUrl
 } from "../../services/GenerateService";
 import { BillingService } from "@/features/payment/services/BillingService";
@@ -34,16 +32,6 @@ interface FileItem {
   fileUrl: string;
   name: string;
 }
-
-// VideoGenerationRequest 타입을 모델별로 다르게 처리하기 어려우므로,
-// payload 타입을 any로 하고, 전송 시 모델에 맞게 키를 조정합니다.
-// interface VideoGenerationRequest { ... }
-
-// 사용되지 않는 타입 제거 또는 주석 처리 (VideoGenerationResponse)
-// interface VideoGenerationResponse {
-//   videoUrl: string;
-//   requestId?: string;
-// }
 
 // Fal.ai 응답 구조에 맞는 새로운 타입 정의
 interface FalVideoFile {
@@ -123,9 +111,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
   // 영상 생성 및 저장 관련 상태
   const [videoUrl, setVideoUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState("");
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [upscaledVideoUrl, setUpscaledVideoUrl] = useState("");
 
@@ -162,8 +147,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
     setErrorMessage("");
     setVideoUrl("");
     setUpscaledVideoUrl("");
-    setSaveSuccess(false);
-    setSaveError("");
 
     let notificationId: number | null = null;
     try {
@@ -277,23 +260,41 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
       }
 
       // 2. 서버에 비디오 생성 API 요청
-      let result: FalVideoResponseData | CustomVideoResponse | null = null; // 응답 타입 유니온
       try {
         // 상태: PROCESSING
         if (notificationId !== null) {
           await GenerationNotificationService.updateNotification(notificationId, { status: 'PROCESSING' });
+          // 알림 벨 이벤트 트리거 추가
+          window.dispatchEvent(new Event('open-notification-bell'));
         }
-        const response = await fetch(endpointUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
 
-        // --- API 응답 상태 확인 --- 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15분
+
+        // notificationId를 payload에 추가
+        const requestPayload = {
+          ...payload,
+          notificationId: notificationId !== null ? notificationId.toString() : undefined
+        };
+
+        console.log(`[비디오 생성] 요청 전송 중: ${endpointUrl}, 알림 ID: ${notificationId || 'none'}`);
+
+        let response;
+        try {
+          response = await fetch(endpointUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestPayload),
+            signal: controller.signal, // AbortController의 signal 연결
+          });
+        } finally {
+          clearTimeout(timeoutId); // fetch가 완료되거나 실패하면 타이머 제거
+        }
+
+        // API 응답 상태 확인
         if (!response.ok) {
-          // 서버 오류 응답 처리 개선
           let errorBody = { error: `API 요청 실패: ${response.status}` };
           try {
             errorBody = await response.json();
@@ -301,31 +302,26 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
             console.error("Failed to parse error response body:", e);
           }
           console.error(`API 요청 실패: ${response.status}`, errorBody);
+
           // 실패 시 즉시 알림 상태 업데이트
           if (notificationId !== null) {
-            await GenerationNotificationService.updateNotification(notificationId, { status: 'FAILED' });
+            await GenerationNotificationService.updateNotification(notificationId, {
+              status: 'FAILED',
+              errorMessage: errorBody.error || `API 요청 실패: ${response.status}`
+            });
           }
           throw new Error(errorBody.error || `API 요청 실패: ${response.status}`);
         }
-        // --- 응답 상태 확인 끝 ---
 
-        result = await response.json();
-      } catch (err) {
-        // 생성 실패 (네트워크 오류, 타임아웃, 서버 오류 등)
-        if (notificationId !== null) {
-          await GenerationNotificationService.updateNotification(notificationId, { status: 'FAILED' });
-        }
-        throw err;
-      }
+        // API 응답 처리 - 여기서는 실제 저장 대신 상태만 설정
+        const result = await response.json();
 
-      // --- 3. 응답 처리 (모델별 분기) --- 
-      try {
+        // 응답에서 비디오 URL 추출 (UI 표시용)
         let generatedVideoUrl = "";
 
         if (result) {
           // WAN, Kling 모델 응답 처리 ({ videoUrl: ... })
           if (data.endpoint === "wan" || data.endpoint === "kling") {
-            // 타입 단언 사용 (주의해서 사용)
             const customResponse = result as CustomVideoResponse;
             if (customResponse && typeof customResponse.videoUrl === 'string') {
               generatedVideoUrl = customResponse.videoUrl;
@@ -333,7 +329,6 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
           }
           // Hunyuan, Veo2 모델 응답 처리 (Fal.ai 응답 그대로)
           else {
-            // 타입 단언 사용 (주의해서 사용)
             const falResponse = result as FalVideoResponseData;
             if (falResponse && typeof falResponse === 'object' && falResponse.video && typeof falResponse.video.url === 'string') {
               generatedVideoUrl = falResponse.video.url;
@@ -341,45 +336,43 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
           }
         }
 
-        // URL 추출 성공 시 저장 로직 실행
+        // 미리보기 URL 설정
         if (generatedVideoUrl) {
           setVideoUrl(generatedVideoUrl);
-          await saveVideo({
-            prompt: data.prompt,
-            endpoint: data.endpoint,
-            model: data.endpoint,
-            imageFile: data.imageFile,
-            videoName: `AI 생성 영상 - ${new Date().toLocaleTimeString()}`,
-            videoUrl: generatedVideoUrl,
-            referenceUrl: data.fileUrl || referenceImageUrl || undefined,
-            activeTab: activeTab,
-          });
-          setSaveSuccess(true);
-          toast.success("영상이 성공적으로 저장되었습니다.");
-
-          // 알림 상태 업데이트 (성공)
-          if (notificationId !== null) {
-            await GenerationNotificationService.updateNotification(notificationId, {
-              status: 'COMPLETED',
-              // resultUrl: generatedVideoUrl, // TODO: GenerationNotificationUpdateRequest 타입에 resultUrl 필드 추가 필요
-              thumbnailUrl: generatedVideoUrl // 임시로 비디오 URL 사용, 실제 썸네일 URL로 교체 필요 (타입 확인 필요)
-            });
-          }
-        } else {
-          console.error("API 응답에서 비디오 URL을 찾을 수 없습니다:", result);
-          throw new Error('비디오 URL 없음');
+          toast.success("영상 생성 요청이 처리 중입니다. 알림을 통해 완료 여부를 확인해주세요.");
         }
+
+        // 알림 모니터링 시작 - 비디오 자동 저장 알림
+        const notificationCheckInterval = setInterval(async () => {
+          try {
+            if (notificationId === null) {
+              clearInterval(notificationCheckInterval);
+              return;
+            }
+
+            const notifStatus = await GenerationNotificationService.getNotification(notificationId);
+            if (notifStatus.status === 'COMPLETED') {
+              clearInterval(notificationCheckInterval);
+              toast.success("영상이 생성되고 자동으로 저장되었습니다! 알림을 클릭하여 확인하세요.");
+            } else if (notifStatus.status === 'FAILED') {
+              clearInterval(notificationCheckInterval);
+              toast.error(`영상 생성 실패: ${notifStatus.errorMessage || '알 수 없는 오류'}`);
+            }
+          } catch (e) {
+            console.error("알림 상태 확인 실패:", e);
+          }
+        }, 5000); // 5초마다 확인
+
+        // 1분 후 인터벌 강제 종료 (너무 오래 확인하지 않도록)
+        setTimeout(() => {
+          clearInterval(notificationCheckInterval);
+        }, 60000);
       } catch (err) {
-        // 저장 실패
+        // 생성 실패 (네트워크 오류, 타임아웃, 서버 오류 등)
         if (notificationId !== null) {
           await GenerationNotificationService.updateNotification(notificationId, { status: 'FAILED' });
         }
         throw err;
-      }
-
-      // 4. 저장 성공 → COMPLETED
-      if (notificationId !== null) {
-        await GenerationNotificationService.updateNotification(notificationId, { status: 'COMPLETED' });
       }
     } catch (error: unknown) {
       console.error("비디오 생성 전체 플로우 오류:", error);
@@ -403,7 +396,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
     try {
       setIsUpscaling(true);
 
-      const response = await fetch('/api/video/upscaler', {
+      const response = await fetch('/internal/video/upscaler', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -458,12 +451,27 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
     setReferenceImageUrl("");
   };
 
+  // Base64 변환 함수
+  const readFileAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Failed to convert file to Base64'));
+        }
+      };
+      reader.onerror = () => {
+        reject(reader.error);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   return {
     videoUrl,
     errorMessage,
-    isSaving,
-    saveSuccess,
-    saveError,
     isUpscaling,
     upscaledVideoUrl,
     activeTab,

@@ -261,19 +261,19 @@ export function getVideoEndpointUrl(
   // 1) veo2 모델은 이미지 변환과 텍스트 변환을 구분 처리
   if (endpoint === "veo2") {
     if (activeTab === "image") {
-      return "/api/video/image-to-video/veo2";
+      return "/internal/video/image-to-video/veo2";
     } else {
       // "text" 또는 "video" 탭인 경우 텍스트→비디오 엔드포인트 사용
-      return "/api/video/text-to-video/veo2";
+      return "/internal/video/text-to-video/veo2";
     }
   }
 
   // 2) 그 외 모델들은 모두 이미지→비디오 변환용
   const urlMap: Record<string, string> = {
-    kling: "/api/video/image-to-video/kling",
-    wan: "/api/video/image-to-video/wan",
-    hunyuan: "/api/video/image-to-video/hunyuan",
-    upscaler: "/api/video/upscaler",
+    kling: "/internal/video/image-to-video/kling",
+    wan: "/internal/video/image-to-video/wan",
+    hunyuan: "/internal/video/image-to-video/hunyuan",
+    upscaler: "/internal/video/upscaler",
   };
 
   // 3) 매핑된 URL이 없으면 기본값(veo2 이미지 변환) 반환

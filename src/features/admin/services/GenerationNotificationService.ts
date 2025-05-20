@@ -27,6 +27,10 @@ export interface GenerationNotificationUpdateRequest {
     thumbnailUrl?: string;
     /** 변경된 이미지·영상 개수(선택) */
     mediaCount?: number;
+    /** 생성된 비디오 ID (선택) */
+    videoId?: number;
+    /** 실패 시 오류 메시지 (선택) */
+    errorMessage?: string;
 }
 
 /** 단건 응답 */
@@ -37,6 +41,10 @@ export interface GenerationNotificationResponse {
     mediaCount: number;
     status: GenerationStatus;
     updatedAt: string; // ISO‑8601 문자열
+    /** 생성된 비디오 ID (성공 시) */
+    videoId?: number;
+    /** 실패 시 오류 메시지 */
+    errorMessage?: string;
 }
 
 /** 목록 응답 */
@@ -92,7 +100,23 @@ export class GenerationNotificationService {
     }
 
     /**
-     * ③ 내 알림(요청 목록) 조회
+     * ③ 단일 알림 조회
+     */
+    static async getNotification(
+        id: number,
+    ): Promise<GenerationNotificationResponse> {
+        try {
+            const { data } = await apiClient.get<GenerationNotificationResponse>(
+                `${this.BASE_PATH}/${id}`,
+            );
+            return data;
+        } catch {
+            throw new Error('알림 정보 조회에 실패했습니다.');
+        }
+    }
+
+    /**
+     * ④ 내 알림(요청 목록) 조회
      */
     static async getNotifications(
         page: number = 0,

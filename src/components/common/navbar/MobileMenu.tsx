@@ -4,7 +4,6 @@ import React from 'react';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "./UserAvatar";
-import { logout as userLogout } from "@/features/user/services/UserService";
 
 interface Props {
   isLoggedIn: boolean;
@@ -27,8 +26,7 @@ export const MobileMenu = ({
 
   const handleLogout = async () => {
     try {
-      await userLogout();
-      onLogout();
+      await onLogout();
       router.push("/");
       onClose();
     } catch (error) {
