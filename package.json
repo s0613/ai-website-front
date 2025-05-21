@@ -39,6 +39,7 @@
     "@types/formidable": "^3.4.5",
     "axios": "^1.7.9",
     "bull": "^4.16.5",
+    "bullmq": "^5.52.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^16.5.0",

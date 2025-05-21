@@ -67,8 +67,10 @@ apiClient.interceptors.response.use(
 
     // 401 Unauthorized 에러 처리
     if (error.response?.status === 401) {
-      // 로그인 페이지로 리다이렉트 또는 토큰 갱신 로직
-      window.location.href = '/login';
+      // 서버 사이드에서는 리다이렉트를 하지 않고 에러만 반환
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
 
     return Promise.reject(error);

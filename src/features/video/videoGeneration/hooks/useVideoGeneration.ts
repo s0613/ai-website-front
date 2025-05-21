@@ -10,6 +10,7 @@ import { useCredit } from "@/features/payment/context/CreditContext";
 import { useRouter } from "next/navigation";
 import { ReadonlyURLSearchParams } from "next/navigation";
 import { GenerationNotificationService } from '@/features/admin/services/GenerationNotificationService';
+import { useAuth } from "@/features/user/AuthContext";
 
 // 타입 정의 추가
 interface VideoGenerationData {
@@ -107,6 +108,7 @@ type VideoGenerationRequestUnion =
 export default function useVideoGeneration({ searchParams }: UseVideoGenerationProps = {}) {
   const { updateCredits } = useCredit();
   const router = useRouter();
+  const { id: userId } = useAuth();
 
   // 영상 생성 및 저장 관련 상태
   const [videoUrl, setVideoUrl] = useState("");
@@ -150,6 +152,12 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
 
     let notificationId: number | null = null;
     try {
+      if (!userId) {
+        toast.error("사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
+        router.push("/login");
+        return;
+      }
+
       // 1. 알림 REQUESTED 등록
       const notification = await GenerationNotificationService.createNotification({
         title: `영상 생성 (${new Date().toLocaleTimeString()})`,
@@ -271,10 +279,11 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15분
 
-        // notificationId를 payload에 추가
+        // notificationId와 userId를 payload에 추가
         const requestPayload = {
           ...payload,
-          notificationId: notificationId !== null ? notificationId.toString() : undefined
+          notificationId: notificationId !== null ? notificationId.toString() : undefined,
+          userId: userId.toString() // AuthContext에서 가져온 userId 사용
         };
 
         console.log(`[비디오 생성] 요청 전송 중: ${endpointUrl}, 알림 ID: ${notificationId || 'none'}`);
