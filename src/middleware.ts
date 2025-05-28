@@ -73,5 +73,5 @@ export async function middleware(request: NextRequest) {
 
 // 미들웨어가 적용될 경로 설정
 export const config = {
-  matcher: ['/admin/:path*', '/my/:path*', '/internal/video/:path*']
+  matcher: ['/admin/:path*', '/my/:path*', '/api/video/:path*']
 }

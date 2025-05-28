@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 import {
   X,
@@ -17,20 +17,24 @@ import {
   Download,
   ArrowUpToLine,
   CheckCircle,
+  Edit2,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getVideoById, toggleVideoShare } from "../services/MyVideoService";
+import { getVideoById, toggleVideoShare, renameVideo } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
 import { formatDate } from "@/features/video/types/formatUtils";
 
 interface CreationDetailProps {
   videoId: number;
   onBack: () => void;
+  onVideoUpdate?: (updatedVideo: VideoDto) => void;
 }
 
 export default function CreationDetail({
   videoId,
   onBack,
+  onVideoUpdate,
 }: CreationDetailProps) {
   const router = useRouter();
   const [video, setVideo] = useState<VideoDto | null>(null);
@@ -41,18 +45,36 @@ export default function CreationDetail({
   const [hasUpscaled, setHasUpscaled] = useState(false);
   const [upscaledVideoUrl, setUpscaledVideoUrl] = useState("");
 
+  // 제목 편집 관련 상태
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const fetchVideoDetail = async () => {
       try {
         setIsLoading(true);
+        console.log('[CreationDetail] 비디오 로딩 시작, videoId:', videoId);
 
         // MyVideoService의 getVideoById 함수 사용
         const videoData = await getVideoById(videoId);
+        console.log('[CreationDetail] 비디오 로딩 성공:', {
+          id: videoData.id,
+          name: videoData.name,
+          url: videoData.url,
+          thumbnailUrl: videoData.thumbnailUrl
+        });
+
         setVideo(videoData);
+        setEditTitle(videoData.name || "");
         setIsSharing(videoData.share || false);
       } catch (err) {
+        console.error('[CreationDetail] 비디오 로딩 실패:', {
+          videoId,
+          error: err
+        });
         setError((err as Error).message);
-        console.error("Error fetching video:", err);
       } finally {
         setIsLoading(false);
       }
@@ -62,6 +84,62 @@ export default function CreationDetail({
       fetchVideoDetail();
     }
   }, [videoId]);
+
+  // 제목 편집 시작
+  const handleStartEditTitle = () => {
+    setIsEditingTitle(true);
+    setTimeout(() => {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    }, 0);
+  };
+
+  // 제목 편집 취소
+  const handleCancelEditTitle = () => {
+    setIsEditingTitle(false);
+    setEditTitle(video?.name || "");
+  };
+
+  // 제목 저장
+  const handleSaveTitle = async () => {
+    if (!video?.id || !editTitle.trim()) {
+      handleCancelEditTitle();
+      return;
+    }
+
+    if (editTitle.trim() === video.name) {
+      setIsEditingTitle(false);
+      return;
+    }
+
+    try {
+      setIsRenaming(true);
+      const updatedVideo = await renameVideo(video.id, editTitle.trim());
+
+      setVideo(updatedVideo);
+      setIsEditingTitle(false);
+      toast.success("영상 제목이 변경되었습니다");
+
+      // 부모 컴포넌트에 업데이트된 비디오 정보 전달
+      onVideoUpdate?.(updatedVideo);
+    } catch (error) {
+      console.error("제목 변경 실패:", error);
+      toast.error("제목 변경에 실패했습니다");
+      setEditTitle(video.name || "");
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
+  // 엔터키 및 ESC 키 핸들링
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveTitle();
+    } else if (e.key === "Escape") {
+      handleCancelEditTitle();
+    }
+  };
 
   // 비디오 재사용 핸들러
   const handleReuseVideo = () => {
@@ -96,6 +174,9 @@ export default function CreationDetail({
 
       // 비디오 객체도 업데이트
       setVideo(updatedVideo);
+
+      // 부모 컴포넌트에 업데이트된 비디오 정보 전달
+      onVideoUpdate?.(updatedVideo);
     } catch (err) {
       console.error("Error updating share status:", err);
       toast.error("공유 상태를 변경하는데 실패했습니다");
@@ -201,14 +282,50 @@ export default function CreationDetail({
       {/* 오른쪽: 비디오 정보 */}
       <div className="md:w-2/5 p-6 overflow-y-auto bg-black/40 backdrop-blur-xl border-l border-white/20">
         <div className="flex justify-between items-center mb-5">
-          <h2 className="text-xl font-bold text-white leading-tight">
-            {video.name}
-          </h2>
+          {/* 편집 가능한 제목 */}
+          <div className="flex items-center gap-2 flex-1 mr-2">
+            {isEditingTitle ? (
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onKeyDown={handleTitleKeyDown}
+                  onBlur={handleSaveTitle}
+                  className="flex-1 bg-black/60 text-white px-3 py-1 rounded border border-white/20 focus:outline-none focus:border-sky-500 text-xl font-bold"
+                  disabled={isRenaming}
+                />
+                {isRenaming ? (
+                  <Loader2 className="h-4 w-4 text-sky-500 animate-spin" />
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSaveTitle}
+                    className="h-8 w-8 p-0 hover:bg-sky-500/20"
+                  >
+                    <Check className="h-4 w-4 text-sky-400" />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div
+                onClick={handleStartEditTitle}
+                className="flex items-center gap-2 cursor-pointer group flex-1"
+              >
+                <h2 className="text-xl font-bold text-white leading-tight group-hover:text-sky-400 transition-colors">
+                  {video.name}
+                </h2>
+                <Edit2 className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            )}
+          </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="rounded-full h-8 w-8 hover:bg-black/60 text-white"
+            className="rounded-full h-8 w-8 hover:bg-black/60 text-white flex items-center justify-center"
           >
             <X className="h-5 w-5" />
           </Button>

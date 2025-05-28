@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
 
-if (!process.env.FAL_KEY) {
-    throw new Error("Missing FAL_KEY environment variable");
-}
-
-fal.config({
-    credentials: process.env.FAL_KEY,
-});
-
 export async function POST(request: Request) {
     try {
+        // 런타임에 환경 변수 확인
+        if (!process.env.FAL_KEY) {
+            return NextResponse.json(
+                {
+                    error: "FAL_KEY 환경 변수가 설정되지 않았습니다.",
+                },
+                { status: 500 }
+            );
+        }
+
+        fal.config({
+            credentials: process.env.FAL_KEY,
+        });
+
         const body = await request.json();
         const {
             prompt,

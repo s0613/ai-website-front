@@ -14,7 +14,7 @@ export type SidebarFormData = {
   duration: DurationType;
   endpoint: string;
   quality: "standard" | "high";
-  style: "realistic" | "creative";
+  style: "realistic" | "creative" | "anime" | "3d_animation" | "clay" | "comic" | "cyberpunk";
   fileUrl?: string;
   cameraControl?: string;
   advancedCameraControl?: boolean;
@@ -25,13 +25,14 @@ export type SidebarFormData = {
   numInferenceSteps?: number;
   enableSafetyChecker?: boolean;
   enablePromptExpansion?: boolean;
+  negative_prompt?: string;
 };
 
 // updateSettings 함수의 파라미터 타입을 정의
 interface SettingsUpdate {
   endpoint?: string;
   aspectRatio?: AspectRatioType;
-  duration?: DurationType;
+  duration?: DurationType | "5" | "8";
   cameraControl?: string;
   seed?: number;
   resolution?: string;
@@ -40,6 +41,8 @@ interface SettingsUpdate {
   numInferenceSteps?: number;
   enableSafetyChecker?: boolean;
   enablePromptExpansion?: boolean;
+  negative_prompt?: string;
+  style?: "anime" | "3d_animation" | "clay" | "comic" | "cyberpunk";
 }
 
 export interface UseVideoSidebarProps {
@@ -73,7 +76,7 @@ export function useVideoSidebar({
     referenceModel || (activeTab === "image" ? "kling" : activeTab === "video" ? "hunyuan" : "veo2")
   );
   const quality: "standard" | "high" = "standard";
-  const style: "realistic" | "creative" = "realistic";
+  const [style, setStyle] = useState<"realistic" | "creative" | "anime" | "3d_animation" | "clay" | "comic" | "cyberpunk">("realistic");
   const [imageChanged, setImageChanged] = useState(false);
   const [cameraControl, setCameraControl] = useState<string>("down_back");
   const [seed, setSeed] = useState<number | undefined>(undefined);
@@ -84,6 +87,8 @@ export function useVideoSidebar({
   const [enableSafetyChecker, setEnableSafetyChecker] = useState<boolean>(true);
   const [enablePromptExpansion, setEnablePromptExpansion] = useState<boolean>(true);
   const [isPromptLoading, setIsPromptLoading] = useState(false);
+  const [negativePrompt, setNegativePrompt] = useState<string>("");
+  const [pixverseStyle, setPixverseStyle] = useState<"anime" | "3d_animation" | "clay" | "comic" | "cyberpunk" | "">("anime");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,6 +144,12 @@ export function useVideoSidebar({
           defaultAspectRatio = "16:9"; // Kling 이미지 모드 기본 비율 (예시)
           defaultDuration = "5s";    // Kling 이미지 모드 기본 길이 (예시)
           break;
+        case "pixverse":
+          defaultAspectRatio = "16:9"; // Pixverse 기본 비율
+          defaultDuration = "5s";    // Pixverse 기본 길이
+          // Pixverse 기본 스타일을 항상 "anime"로 설정
+          setPixverseStyle("anime");
+          break;
         // 다른 이미지 모델에 대한 기본값 추가
       }
     } else if (activeTab === "text") {
@@ -174,9 +185,25 @@ export function useVideoSidebar({
   };
 
   const updateSettings = (settings: SettingsUpdate) => {
-    if (settings.endpoint !== undefined) setEndpoint(settings.endpoint);
+    console.log('[updateSettings] 호출됨:', settings);
+    if (settings.endpoint !== undefined) {
+      setEndpoint(settings.endpoint);
+      // endpoint가 pixverse로 변경될 때 기본 스타일 설정
+      if (settings.endpoint === "pixverse" && !pixverseStyle) {
+        setPixverseStyle("anime");
+      }
+    }
     if (settings.aspectRatio !== undefined) setAspectRatio(settings.aspectRatio);
-    if (settings.duration !== undefined) setDuration(settings.duration);
+    if (settings.duration !== undefined) {
+      // Pixverse duration 값을 DurationType으로 변환
+      if (settings.duration === "5") {
+        setDuration("5s");
+      } else if (settings.duration === "8") {
+        setDuration("8s");
+      } else {
+        setDuration(settings.duration as DurationType);
+      }
+    }
     if (settings.cameraControl !== undefined) setCameraControl(settings.cameraControl);
     if (settings.seed !== undefined) setSeed(settings.seed);
     if (settings.resolution !== undefined) setResolution(settings.resolution);
@@ -185,6 +212,12 @@ export function useVideoSidebar({
     if (settings.numInferenceSteps !== undefined) setNumInferenceSteps(settings.numInferenceSteps);
     if (settings.enableSafetyChecker !== undefined) setEnableSafetyChecker(settings.enableSafetyChecker);
     if (settings.enablePromptExpansion !== undefined) setEnablePromptExpansion(settings.enablePromptExpansion);
+    if (settings.negative_prompt !== undefined) setNegativePrompt(settings.negative_prompt);
+    if (settings.style !== undefined) {
+      console.log('[updateSettings] style 변경:', settings.style, '현재 pixverseStyle:', pixverseStyle);
+      setPixverseStyle(settings.style);
+      setStyle(settings.style); // 일반 style 상태도 업데이트
+    }
   };
 
   // 더 이상 ref를 사용하지 않고 직접 상태 변수 사용
@@ -222,7 +255,7 @@ export function useVideoSidebar({
       duration,
       endpoint,
       quality,
-      style,
+      style: endpoint === "pixverse" ? (pixverseStyle || "anime") : style,
       fileUrl: fileUrl,
       cameraControl,
       seed: endpoint === "hunyuan" || endpoint === "wan" ? seed : undefined,
@@ -239,6 +272,7 @@ export function useVideoSidebar({
       enableSafetyChecker: endpoint === "wan" ? enableSafetyChecker : undefined,
       enablePromptExpansion:
         endpoint === "wan" ? enablePromptExpansion : undefined,
+      negative_prompt: endpoint === "pixverse" ? negativePrompt : undefined,
     });
   };
 
@@ -387,6 +421,8 @@ export function useVideoSidebar({
     enableSafetyChecker,
     enablePromptExpansion,
     isPromptLoading,
+    negativePrompt,
+    pixverseStyle,
     fileInputRef,
     handleImageChange,
     updateSettings,

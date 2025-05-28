@@ -59,7 +59,7 @@ export const saveVideo = async (data: VideoSaveRequest): Promise<VideoDto> => {
         }
 
         // 4. 엔드포인트로 판단 (특정 엔드포인트는 항상 이미지 기반)
-        if (['kling', 'wan', 'hunyuan', 'upscaler'].includes(data.endpoint)) {
+        if (['kling', 'wan', 'hunyuan', 'upscaler', 'pixverse'].includes(data.endpoint)) {
           return 'IMAGE';
         }
 
@@ -170,7 +170,7 @@ export const saveVideoFromUrl = async (data: VideoSaveRequest): Promise<VideoDto
         }
 
         // 4. 엔드포인트로 판단 (특정 엔드포인트는 항상 이미지 기반)
-        if (['kling', 'wan', 'hunyuan', 'upscaler'].includes(data.endpoint)) {
+        if (['kling', 'wan', 'hunyuan', 'upscaler', 'pixverse'].includes(data.endpoint)) {
           return 'IMAGE';
         }
 
@@ -250,7 +250,7 @@ export const saveVideoFromUrl = async (data: VideoSaveRequest): Promise<VideoDto
 
 /**
  * 선택된 엔드포인트와 활성 탭에 따라 알맞은 API URL을 반환하는 함수
- * @param endpoint 선택한 모델 엔드포인트 (예: "veo2", "kling", "wan", "hunyuan", "upscaler")
+ * @param endpoint 선택한 모델 엔드포인트 (예: "veo2", "kling", "wan", "hunyuan", "upscaler", "pixverse")
  * @param activeTab 현재 활성화된 탭 ("image", "text", "video")
  * @returns API 엔드포인트 URL
  */
@@ -274,6 +274,7 @@ export function getVideoEndpointUrl(
     wan: "/internal/video/image-to-video/wan",
     hunyuan: "/internal/video/image-to-video/hunyuan",
     upscaler: "/internal/video/upscaler",
+    pixverse: "/internal/video/image-to-video/pixverse",
   };
 
   // 3) 매핑된 URL이 없으면 기본값(veo2 이미지 변환) 반환

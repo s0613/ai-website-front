@@ -355,12 +355,12 @@ export default function VideoReferencePage() {
           onClick={handleBackToList}
         >
           <div
-            className="relative bg-white rounded-lg shadow-xl overflow-hidden w-full max-w-4xl mx-auto"
+            className="relative bg-black rounded-lg shadow-xl overflow-hidden w-full max-w-4xl mx-auto"
             style={{ maxHeight: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-gray-800 hover:bg-white shadow-md"
+              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 shadow-md"
               onClick={handleBackToList}
             >
               <svg

@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Heart, Link as LinkIcon, Calendar, Eye, Info, Layers, ExternalLink } from "lucide-react";
+import { Heart, Calendar, Eye, Info, Layers } from "lucide-react";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
-import { getVideoById, updateVideoLike } from "../services/MyVideoService";
+import { getVideoById, getSharedVideoById, updateVideoLike, getLikedVideos } from "../services/MyVideoService";
 import type { VideoDto } from "../types/Video";
+import { useAuth } from "@/features/user/AuthContext";
 
 // 기본 비디오 정보 인터페이스
 interface VideoBasicInfo {
@@ -23,6 +24,7 @@ interface VideoDetailProps {
 
 export default function VideoDetail({ videoId, videoBasicInfo }: VideoDetailProps) {
   const router = useRouter();
+  const { isLoggedIn } = useAuth(); // AuthContext에서 로그인 상태 가져오기
   const [videoDetail, setVideoDetail] = useState<VideoDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(videoDetail?.liked || false);
@@ -33,43 +35,96 @@ export default function VideoDetail({ videoId, videoBasicInfo }: VideoDetailProp
       if (!videoId) return;
       setIsLoading(true);
       try {
+        // 비디오 정보 조회
         const data = await getVideoById(videoId);
         setVideoDetail(data);
-        setIsLiked(data.liked || false);
-        setLikeCount(data.likeCount || 0);
-      } catch {
+
+        // 로그인된 사용자의 경우 좋아요 상태를 별도로 확인
+        if (isLoggedIn) {
+          try {
+            // 현재 사용자가 좋아요한 비디오 목록을 가져와서 확인
+            const likedVideos = await getLikedVideos();
+            const isVideoLiked = likedVideos.some(video => video.id === videoId);
+
+            setIsLiked(isVideoLiked);
+            setLikeCount(data.likeCount || 0);
+          } catch (likedError) {
+            // 좋아요 목록 조회 실패 시 원본 데이터 사용
+            setIsLiked(data.liked || false);
+            setLikeCount(data.likeCount || 0);
+          }
+        } else {
+          // 비로그인 사용자는 원본 데이터 사용
+          setIsLiked(false);
+          setLikeCount(data.likeCount || 0);
+        }
+      } catch (error) {
         toast.error("비디오 정보를 불러오는데 실패했습니다.");
       } finally {
         setIsLoading(false);
       }
     };
     fetchVideo();
-  }, [videoId]);
+  }, [videoId, isLoggedIn]);
 
   const handleLikeToggle = async () => {
-    if (!videoDetail) return;
+    if (!videoDetail) {
+      return;
+    }
 
+    if (!isLoggedIn) {
+      toast.error("좋아요를 누르려면 로그인이 필요합니다.");
+      return;
+    }
+
+    // 즉시 UI 피드백 (Gallery.tsx 방식과 유사)
     const newLikedStatus = !isLiked;
+    const newLikeCount = newLikedStatus ? likeCount + 1 : likeCount - 1;
+
     setIsLiked(newLikedStatus);
-    setLikeCount((prev: number) => newLikedStatus ? prev + 1 : prev - 1);
+    setLikeCount(newLikeCount);
 
     try {
       const updatedVideo = await updateVideoLike(videoDetail.id!, newLikedStatus);
-      setIsLiked(updatedVideo.liked || false);
-      setLikeCount(updatedVideo.likeCount || 0);
-    } catch {
-      toast.error("좋아요 상태 변경에 실패했습니다.");
-      setIsLiked(!newLikedStatus);
-      setLikeCount((prev: number) => !newLikedStatus ? prev + 1 : prev - 1);
-    }
-  };
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("링크가 클립보드에 복사되었습니다.");
-    } catch {
-      toast.error("링크 복사에 실패했습니다.");
+      // API 응답 검증 - 예상한 상태와 일치하는지 확인
+      const isValidResponse =
+        typeof updatedVideo.liked === 'boolean' &&
+        typeof updatedVideo.likeCount === 'number' &&
+        updatedVideo.liked === newLikedStatus;
+
+      if (isValidResponse) {
+        setIsLiked(updatedVideo.liked || false);
+        setLikeCount(updatedVideo.likeCount || 0);
+
+        // videoDetail 상태도 업데이트
+        setVideoDetail(prev => prev ? {
+          ...prev,
+          liked: updatedVideo.liked || false,
+          likeCount: updatedVideo.likeCount || 0
+        } : null);
+      } else {
+        // API 응답이 예상과 다르므로 UI 상태를 유지
+        setVideoDetail(prev => prev ? {
+          ...prev,
+          liked: newLikedStatus,
+          likeCount: newLikeCount
+        } : null);
+
+        // 사용자에게 백엔드 문제임을 알림
+        toast.success(
+          newLikedStatus
+            ? "좋아요가 추가되었습니다 (서버 동기화 중...)"
+            : "좋아요가 취소되었습니다 (서버 동기화 중...)"
+        );
+      }
+
+    } catch (error) {
+      toast.error("좋아요 상태 변경에 실패했습니다.");
+
+      // 에러 시 원래 상태로 롤백
+      setIsLiked(!newLikedStatus);
+      setLikeCount(!newLikedStatus ? likeCount + 1 : likeCount - 1);
     }
   };
 
@@ -139,7 +194,7 @@ export default function VideoDetail({ videoId, videoBasicInfo }: VideoDetailProp
           {/* Prompt Section */}
           <div className="mb-4">
             <h3 className="text-sm font-medium text-gray-400 mb-1">프롬프트</h3>
-            <p className="text-xs text-white bg-black/20 p-2 rounded border border-white/10 max-h-20 overflow-y-auto">
+            <p className="text-xs text-white bg-black/20 p-3 rounded border border-white/10 max-h-32 overflow-y-auto">
               {videoDetail?.prompt || "프롬프트 정보 없음"}
             </p>
           </div>
@@ -162,10 +217,10 @@ export default function VideoDetail({ videoId, videoBasicInfo }: VideoDetailProp
         <div className="mt-auto pt-4 border-t border-white/10 space-y-2">
           <button
             onClick={handleLikeToggle}
-            className={`w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors duration-200 ${isLiked ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+            className={`w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors duration-200 ${isLiked ? 'bg-red-500/30 text-red-500 hover:bg-red-500/40' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
           >
-            <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-            {likeCount.toLocaleString()} 좋아요
+            <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current text-red-500' : ''}`} />
+            {likeCount.toLocaleString()} {isLiked ? '취소하기' : '좋아요'}
           </button>
           <button
             onClick={handleReuseVideo}
@@ -173,24 +228,6 @@ export default function VideoDetail({ videoId, videoBasicInfo }: VideoDetailProp
           >
             이 영상으로 새로 만들기
           </button>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => videoDetail?.share && shareUrl && copyToClipboard(shareUrl)}
-              disabled={!videoDetail?.share || !shareUrl}
-              className="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={videoDetail?.share ? "공유 링크 복사" : "공유되지 않은 영상"}
-            >
-              <LinkIcon className="w-4 h-4 mr-2" /> 복사
-            </button>
-            <button
-              onClick={() => videoDetail?.share && shareUrl && window.open(shareUrl, '_blank')}
-              disabled={!videoDetail?.share || !shareUrl}
-              className="flex-1 flex items-center justify-center px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={videoDetail?.share ? "공유 링크 열기" : "공유되지 않은 영상"}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" /> 열기
-            </button>
-          </div>
         </div>
       </div>
     </div>

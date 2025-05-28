@@ -19,10 +19,10 @@ export class VideoHunyuanModelSetting extends ModelSettingBase {
                     </label>
                     <select
                         value={settings.resolution || "720p"}
-                        onChange={(e) => updateSettings({ resolution: e.target.value as "480p" | "720p" })}
+                        onChange={(e) => updateSettings({ resolution: e.target.value as "540p" | "720p" })}
                         className="w-full rounded-lg border border-white/10 bg-black/30 backdrop-blur-md p-2 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                     >
-                        <option value="480p">480p (더 빠른 생성)</option>
+                        <option value="540p">540p (더 빠른 생성)</option>
                         <option value="720p">720p (고품질)</option>
                     </select>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   Upload,
   File,
+  CloudUpload,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -20,9 +22,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "react-hot-toast";
 import { FolderService, FileResponse } from "./services/FolderService";
 import { Card } from "@/components/ui/card";
+import Masonry from "react-masonry-css";
+
+interface UploadResult {
+  file: File;
+  success: boolean;
+  error?: string;
+}
 
 const FolderInPage = () => {
   const router = useRouter();
@@ -38,6 +53,12 @@ const FolderInPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadResults, setUploadResults] = useState<UploadResult[]>([]);
+  const [showUploadResults, setShowUploadResults] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const fetchFiles = useCallback(async () => {
     if (!folderId) return;
@@ -104,14 +125,16 @@ const FolderInPage = () => {
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0) {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!folderId || !event.target.files || event.target.files.length === 0) {
       return;
     }
 
-    const file = event.target.files[0];
-    setSelectedFile(file);
-    setShowUploadModal(true);
+    const files = Array.from(event.target.files);
+    await handleMultipleFileUpload(files);
+
+    // 파일 선택 후 같은 파일을 또 업로드하려면 value reset 필요
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleConfirmUpload = async () => {
@@ -145,6 +168,99 @@ const FolderInPage = () => {
   const handleCancelUpload = () => {
     setShowUploadModal(false);
     setSelectedFile(null);
+  };
+
+  /* ------------------- 드래그 앤 드롭 이벤트 핸들러 ------------------- */
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 폴더가 있고, 실제 파일이 있을 때만 드롭존 표시
+    if (folderId && e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      // 실제 파일인지 확인 (kind가 'file'인 항목이 있는지)
+      const hasFiles = Array.from(e.dataTransfer.items).some(item => item.kind === 'file');
+      if (hasFiles) {
+        setIsDragOver(true);
+      }
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // 드롭존을 완전히 벗어날 때만 isDragOver를 false로 설정
+    if (!dropZoneRef.current?.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (!folderId) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    await handleMultipleFileUpload(files);
+  };
+
+  /* ------------------- 다중 파일 업로드 ------------------- */
+  const handleMultipleFileUpload = async (files: File[]) => {
+    if (!folderId) return;
+
+    setIsUploading(true);
+    const results: UploadResult[] = [];
+
+    for (const file of files) {
+      // 이미지 파일인지 확인
+      if (!file.type.startsWith('image/')) {
+        results.push({
+          file,
+          success: false,
+          error: '이미지 파일만 업로드 가능합니다'
+        });
+        continue;
+      }
+
+      try {
+        await FolderService.uploadFile(Number(folderId), file);
+        results.push({
+          file,
+          success: true
+        });
+      } catch (error) {
+        console.error(`파일 업로드 오류 (${file.name}):`, error);
+        results.push({
+          file,
+          success: false,
+          error: '업로드에 실패했습니다'
+        });
+      }
+    }
+
+    // 결과 처리
+    const successCount = results.filter(r => r.success).length;
+    const errorCount = results.filter(r => !r.success).length;
+
+    if (successCount > 0) {
+      toast.success(`${successCount}개의 파일이 업로드되었습니다`);
+      await fetchFiles(); // 파일 목록 새로고침
+    }
+
+    if (errorCount > 0) {
+      setUploadResults(results.filter(r => !r.success));
+      setShowUploadResults(true);
+    }
+
+    setIsUploading(false);
   };
 
   const filteredFiles = files.filter((file) =>
@@ -183,38 +299,35 @@ const FolderInPage = () => {
           </div>
           <div className="relative">
             <input
+              ref={fileInputRef}
               type="file"
               id="file-upload"
               className="hidden"
               onChange={handleFileSelect}
               accept="image/*"
+              multiple
               disabled={isUploading}
             />
-            <label
-              htmlFor="file-upload"
-              className={`cursor-pointer ${isUploading ? 'opacity-50' : ''}`}
+            <Button
+              className="bg-sky-500 hover:bg-sky-600 text-white"
+              type="button"
+              disabled={isUploading}
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
             >
-              <Button
-                className="bg-sky-500 hover:bg-sky-600 text-white"
-                type="button"
-                disabled={isUploading}
-                onClick={() => {
-                  document.getElementById('file-upload')?.click();
-                }}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    업로드 중...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4 mr-2" />
-                    파일 업로드
-                  </>
-                )}
-              </Button>
-            </label>
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  업로드 중...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  파일 업로드
+                </>
+              )}
+            </Button>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -238,165 +351,257 @@ const FolderInPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {isLoading ? (
-          <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
-            <div className="flex items-center justify-center h-32">
+      {/* 파일 목록 */}
+      <div
+        className="relative"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        ref={dropZoneRef}
+      >
+        {/* 드래그 오버 시 드롭존 */}
+        {isDragOver && (
+          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+            <div className="border-2 border-dashed border-sky-400 rounded-lg p-12 bg-sky-500/10 backdrop-blur-xl">
               <div className="text-center">
-                <Loader2 className="h-10 w-10 mx-auto mb-2 text-sky-400 animate-spin" />
-                <p className="text-white">Loading files...</p>
-                <p className="text-sm text-gray-400">Please wait</p>
+                <CloudUpload className="h-16 w-16 mx-auto mb-4 text-sky-400" />
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  이미지를 여기에 드롭하세요
+                </h3>
+                <p className="text-gray-300">
+                  여러 이미지를 한번에 업로드할 수 있습니다
+                </p>
               </div>
             </div>
-          </Card>
-        ) : error ? (
-          <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
-            <div className="flex flex-col items-center justify-center h-32">
-              <div className="bg-red-500 text-red-500 rounded-full p-4 mb-4">
-                <AlertTriangle className="h-10 w-10" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                오류가 발생했습니다
-              </h3>
-              <p className="text-red-500 mb-4">{error}</p>
-              <Button
-                className="bg-sky-500 hover:bg-sky-600 text-white"
-                onClick={fetchFiles}
-              >
-                다시 시도
-              </Button>
-            </div>
-          </Card>
-        ) : filteredFiles.length === 0 ? (
-          <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
-            <div className="text-center">
-              <div className="h-12 w-12 mx-auto mb-4 text-gray-400 flex items-center justify-center">
-                <Upload className="h-12 w-12" />
-              </div>
-              <h3 className="text-xl font-medium text-white mb-2">No files yet</h3>
-              <p className="text-gray-400 mb-4">
-                Upload your first file to get started
-              </p>
-              <div className="relative">
-                <input
-                  type="file"
-                  id="file-upload-empty"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  accept="image/*"
-                  disabled={isUploading}
-                />
-                <label
-                  htmlFor="file-upload-empty"
-                  className={`cursor-pointer ${isUploading ? 'opacity-50' : ''}`}
-                >
-                  <Button
-                    className="bg-sky-500 hover:bg-sky-600 text-white"
-                    type="button"
-                    disabled={isUploading}
-                    onClick={() => {
-                      document.getElementById('file-upload-empty')?.click();
-                    }}
-                  >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        업로드 중...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload File
-                      </>
-                    )}
-                  </Button>
-                </label>
-              </div>
-            </div>
-          </Card>
-        ) : (
-          filteredFiles.map((file) => (
-            <Card
-              key={file.id}
-              className="relative aspect-square cursor-pointer overflow-hidden group transition-all duration-300 border border-white/10 hover:border-sky-500/50"
-            >
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors" />
-              {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
-                <Image
-                  src={file.url}
-                  alt={file.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center w-full h-full bg-gray-800">
-                  <Upload className="h-12 w-12 text-gray-400" />
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
+              <div className="flex items-center justify-center h-32">
+                <div className="text-center">
+                  <Loader2 className="h-10 w-10 mx-auto mb-2 text-sky-400 animate-spin" />
+                  <p className="text-white">Loading files...</p>
+                  <p className="text-sm text-gray-400">Please wait</p>
                 </div>
-              )}
-              <div className="absolute bottom-2 left-2 right-2 text-sm text-white truncate">
-                {file.name}
               </div>
             </Card>
-          ))
+          </div>
+        ) : error ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
+              <div className="flex flex-col items-center justify-center h-32">
+                <div className="bg-red-500 text-red-500 rounded-full p-4 mb-4">
+                  <AlertTriangle className="h-10 w-10" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  오류가 발생했습니다
+                </h3>
+                <p className="text-red-500 mb-4">{error}</p>
+                <Button
+                  className="bg-sky-500 hover:bg-sky-600 text-white"
+                  onClick={fetchFiles}
+                >
+                  다시 시도
+                </Button>
+              </div>
+            </Card>
+          </div>
+        ) : filteredFiles.length === 0 ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Card className="p-8 border border-white/20 bg-black/40 backdrop-blur-xl max-w-md mx-auto">
+              <div className="text-center">
+                <div className="h-12 w-12 mx-auto mb-4 text-gray-400 flex items-center justify-center">
+                  <Upload className="h-12 w-12" />
+                </div>
+                <h3 className="text-xl font-medium text-white mb-2">No files yet</h3>
+                <p className="text-gray-400 mb-4">
+                  Upload your first file to get started
+                </p>
+                <Button
+                  className="bg-sky-500 hover:bg-sky-600 text-white"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      업로드 중...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      이미지 업로드
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        ) : (
+          <Masonry
+            breakpointCols={{
+              default: 4,
+              1100: 3,
+              700: 2,
+              500: 1
+            }}
+            className="my-masonry-grid"
+            columnClassName="my-masonry-grid_column"
+          >
+            {filteredFiles.map((file) => (
+              <Card
+                key={file.id}
+                className="relative cursor-pointer overflow-hidden group mb-4 break-inside-avoid transition-all duration-300 border border-white/10 hover:border-sky-500/50 bg-black/40 backdrop-blur-xl hover:bg-black/60"
+              >
+                <div className="relative">
+                  {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                    <Image
+                      src={file.url}
+                      alt={file.name}
+                      width={300}
+                      height={200}
+                      className="w-full h-auto object-cover"
+                      sizes="(max-width: 500px) 100vw, (max-width: 700px) 50vw, (max-width: 1100px) 33vw, 25vw"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-48 bg-gray-800">
+                      <File className="h-12 w-12 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <p className="text-sm text-white truncate font-medium">
+                      {file.name}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </Masonry>
+        )}
+
+        {/* 업로드 확인 모달 */}
+        {showUploadModal && selectedFile && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+              <h3 className="text-xl font-bold text-white mb-4">파일 업로드 확인</h3>
+              <p className="text-gray-300 mb-4">
+                다음 파일을 업로드하시겠습니까?<br />
+                <span className="font-medium">{selectedFile.name}</span>
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  onClick={handleCancelUpload}
+                >
+                  취소
+                </Button>
+                <Button
+                  className="bg-sky-500 hover:bg-sky-600 text-white"
+                  onClick={handleConfirmUpload}
+                >
+                  업로드
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 삭제 확인 모달 */}
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+              <h3 className="text-xl font-bold text-white mb-4">폴더 삭제 확인</h3>
+              <p className="text-gray-300 mb-4">
+                정말로 이 폴더를 삭제하시겠습니까?<br />
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                >
+                  취소
+                </Button>
+                <Button
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                  onClick={handleDeleteFolder}
+                >
+                  삭제
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 업로드 에러 결과 다이얼로그 */}
+        <Dialog open={showUploadResults} onOpenChange={setShowUploadResults}>
+          <DialogContent className="bg-black/40 backdrop-blur-xl border-white/20 max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-400" />
+                업로드 오류
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-white text-sm">
+                다음 파일들이 업로드되지 않았습니다:
+              </p>
+              <div className="max-h-40 overflow-y-auto space-y-2">
+                {uploadResults.map((result, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-2 p-2 bg-red-500/10 rounded border border-red-500/20"
+                  >
+                    <X className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white truncate">
+                        {result.file.name}
+                      </p>
+                      <p className="text-xs text-red-400">
+                        {result.error}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  className="bg-sky-500 hover:bg-sky-600 text-white"
+                  onClick={() => {
+                    setShowUploadResults(false);
+                    setUploadResults([]);
+                  }}
+                >
+                  확인
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* 업로드 중 로딩 오버레이 */}
+        {isUploading && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <div className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-lg p-8">
+              <div className="text-center">
+                <Loader2 className="h-12 w-12 mx-auto mb-4 text-sky-400 animate-spin" />
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  이미지 업로드 중...
+                </h3>
+                <p className="text-gray-400">
+                  잠시만 기다려주세요
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
-
-      {/* 업로드 확인 모달 */}
-      {showUploadModal && selectedFile && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-xl font-bold text-white mb-4">파일 업로드 확인</h3>
-            <p className="text-gray-300 mb-4">
-              다음 파일을 업로드하시겠습니까?<br />
-              <span className="font-medium">{selectedFile.name}</span>
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                onClick={handleCancelUpload}
-              >
-                취소
-              </Button>
-              <Button
-                className="bg-sky-500 hover:bg-sky-600 text-white"
-                onClick={handleConfirmUpload}
-              >
-                업로드
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 삭제 확인 모달 */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-xl font-bold text-white mb-4">폴더 삭제 확인</h3>
-            <p className="text-gray-300 mb-4">
-              정말로 이 폴더를 삭제하시겠습니까?<br />
-              이 작업은 되돌릴 수 없습니다.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                onClick={() => setIsDeleteModalOpen(false)}
-              >
-                취소
-              </Button>
-              <Button
-                className="bg-red-500 hover:bg-red-600 text-white"
-                onClick={handleDeleteFolder}
-              >
-                삭제
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

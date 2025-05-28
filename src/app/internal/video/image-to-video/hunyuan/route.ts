@@ -1,31 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fal } from "@fal-ai/client";
-import { saveVideoFromUrl } from '@/app/internal/video/services/VideoStorageService';
+import { addVideoJob, getJobStatus } from '@/app/internal/video/services/VideoQueueService';
 
-if (!process.env.FAL_KEY) {
-    throw new Error("Missing FAL_KEY environment variable");
-}
-
-fal.config({
-    credentials: process.env.FAL_KEY,
-});
-
-export const runtime = 'edge';
+type AspectRatio = "16:9" | "9:16";
+type Resolution = "720p";
+type NumFrames = 129;
 
 interface HunyuanRequest {
     prompt: string;
-    image_url: string;
+    imageUrl: string;
     seed?: number;
-    aspect_ratio?: "16:9" | "9:16";
-    resolution?: "512p" | "720p";
-    num_frames?: number;
+    aspect_ratio?: AspectRatio;
+    resolution?: Resolution;
+    num_frames?: NumFrames;
     i2v_stability?: boolean;
-    negative_prompt?: string;
-    num_inference_steps?: number;
-    fps?: number;
-    cfg_scale?: number;
-    enable_prompt_expansion?: boolean;
-    enable_safety_checker?: boolean;
     userId: string;
     notificationId?: string;
 }
@@ -33,135 +20,124 @@ interface HunyuanRequest {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json() as HunyuanRequest;
+        console.log('[HUNYUAN POST] 요청 바디:', JSON.stringify(body));
+
         const {
             prompt,
-            image_url,
+            imageUrl,
             seed,
             aspect_ratio = "16:9",
             resolution = "720p",
             num_frames = 129,
             i2v_stability = false,
-            negative_prompt,
-            num_inference_steps = 30,
-            fps = 25,
-            cfg_scale = 7.5,
-            enable_prompt_expansion = true,
-            enable_safety_checker = true,
             userId,
             notificationId
         } = body;
 
         // 필수 파라미터 검증
-        const missingParams = [];
-        if (!prompt) missingParams.push('prompt');
-        if (!image_url) missingParams.push('image_url');
-        if (!userId) missingParams.push('userId');
+        const missing: string[] = [];
+        if (!prompt) missing.push('prompt');
+        if (!imageUrl) missing.push('imageUrl');
+        if (!userId) missing.push('userId');
 
-        if (missingParams.length > 0) {
-            console.error('[Hunyuan] 필수 파라미터 누락:', missingParams);
+        if (missing.length > 0) {
+            console.warn('[HUNYUAN POST] 필수 파라미터 누락:', missing);
             return NextResponse.json(
-                {
-                    error: "필수 파라미터가 누락되었습니다.",
-                    missingParams
-                },
+                { error: '필수 파라미터 누락', missing },
                 { status: 400 }
             );
         }
 
-        // API 호출 전 로깅
-        console.log("[Hunyuan] API 호출 시작:", {
+        // aspect_ratio 유효성 검증
+        const validAspectRatios: AspectRatio[] = ["16:9", "9:16"];
+        if (!validAspectRatios.includes(aspect_ratio)) {
+            console.warn('[HUNYUAN POST] 잘못된 aspect_ratio:', aspect_ratio);
+            return NextResponse.json(
+                { error: `잘못된 aspect_ratio: ${aspect_ratio}. 가능한 값: ${validAspectRatios.join(', ')}` },
+                { status: 400 }
+            );
+        }
+
+        // resolution 유효성 검증 (현재는 720p만 지원)
+        if (resolution !== "720p") {
+            console.warn('[HUNYUAN POST] 잘못된 resolution:', resolution);
+            return NextResponse.json(
+                { error: `잘못된 resolution: ${resolution}. 현재 720p만 지원됩니다.` },
+                { status: 400 }
+            );
+        }
+
+        // num_frames 유효성 검증 (현재는 129만 지원)
+        if (num_frames !== 129) {
+            console.warn('[HUNYUAN POST] 잘못된 num_frames:', num_frames);
+            return NextResponse.json(
+                { error: `잘못된 num_frames: ${num_frames}. 현재 129만 지원됩니다.` },
+                { status: 400 }
+            );
+        }
+
+        console.log('[HUNYUAN POST] 큐에 작업 추가 시도 →', {
             prompt,
-            image_url,
+            imageUrl,
+            userId,
             seed,
             aspect_ratio,
             resolution,
             num_frames,
             i2v_stability,
-            negative_prompt,
-            num_inference_steps,
-            fps,
-            cfg_scale,
-            enable_prompt_expansion,
-            enable_safety_checker,
             notificationId
         });
 
-        // Hunyuan API 호출
-        const result = await fal.subscribe("fal-ai/hunyuan-video-image-to-video", {
-            input: {
-                prompt,
-                image_url,
-                seed,
-                aspect_ratio,
-                resolution,
-                num_frames,
-                i2v_stability,
-                negative_prompt,
-                num_inference_steps,
-                fps,
-                cfg_scale,
-                enable_prompt_expansion,
-                enable_safety_checker
-            },
-            logs: true,
-            onQueueUpdate: (update) => {
-                if (update.status === "IN_PROGRESS") {
-                    console.log('[Hunyuan] 처리 중:', update.logs.map((log) => log.message));
-                }
-            },
+        // 작업을 큐에 추가
+        const jobId = await addVideoJob('hunyuan', {
+            type: 'hunyuan',
+            prompt,
+            imageUrl,
+            seed,
+            aspect_ratio,
+            resolution,
+            num_frames,
+            i2v_stability,
+            userId,
+            notificationId
         });
 
-        console.log('[Hunyuan] 영상 생성 완료:', {
-            requestId: result.requestId,
-            videoUrl: result.data?.video?.url
-        });
-
-        // 비디오 생성이 완료되면 스프링부트 서버에 저장
-        if (result.data?.video?.url) {
-            try {
-                console.log('[Hunyuan] 스프링부트 저장 요청 시작');
-                const savedVideo = await saveVideoFromUrl({
-                    prompt,
-                    endpoint: 'hunyuan',
-                    model: 'hunyuan-video-image-to-video',
-                    videoName: `Hunyuan Video - ${new Date().toISOString()}`,
-                    videoUrl: result.data.video.url,
-                    referenceUrl: image_url,
-                    activeTab: 'image',
-                    userId: userId,
-                });
-                console.log('[Hunyuan] 스프링부트 저장 성공:', {
-                    videoId: savedVideo.id,
-                    videoName: savedVideo.name
-                });
-            } catch (error) {
-                console.error('[Hunyuan] 스프링부트 저장 실패:', error);
-                // 저장 실패는 전체 프로세스를 실패시키지 않음
-            }
-        }
+        console.log('[HUNYUAN POST] 큐에 작업 추가 완료. jobId=', jobId);
 
         return NextResponse.json({
-            videoUrl: result.data?.video?.url,
-            requestId: result.requestId
-        }, { status: 200 });
+            jobId,
+            status: 'queued'
+        }, { status: 202 });
+
     } catch (error: unknown) {
-        console.error("[Hunyuan] 비디오 생성 오류:", error);
+        console.error('[HUNYUAN POST] 오류 발생:', error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json(
-            {
-                error: error instanceof Error ? error.message : "영상 생성 중 오류 발생",
-                details: error instanceof Error ? error.stack : undefined
-            },
+            { error: message },
             { status: 500 }
         );
     }
 }
 
 export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const requestId = searchParams.get('requestId');
-    if (!requestId) return NextResponse.json({ error: 'requestId required' }, { status: 400 });
+    try {
+        const jobId = new URL(req.url).searchParams.get('jobId');
+        console.log('[HUNYUAN GET] 조회 요청 jobId=', jobId);
 
-    console.log('[Hunyuan] 상태 확인 요청:', { requestId });
-    // FAL API의 상태 확인은 클라이언트에서 직접 처리
-    return NextResponse.json({ status: 'NOT_SUPPORTED' }, { status: 200 });
+        if (!jobId) {
+            console.warn('[HUNYUAN GET] jobId가 없습니다');
+            return NextResponse.json({ error: 'jobId required' }, { status: 400 });
+        }
+
+        const status = await getJobStatus(jobId);
+        console.log('[HUNYUAN GET] 상태 조회 결과 →', status);
+        return NextResponse.json(status, { status: 200 });
+    } catch (error: unknown) {
+        console.error('[HUNYUAN GET] 오류 발생:', error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json(
+            { error: message },
+            { status: 500 }
+        );
+    }
 } 

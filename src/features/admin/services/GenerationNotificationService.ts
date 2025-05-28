@@ -31,6 +31,8 @@ export interface GenerationNotificationUpdateRequest {
     videoId?: number;
     /** 실패 시 오류 메시지 (선택) */
     errorMessage?: string;
+    /** 사용자 ID (필수) */
+    userId: string;
 }
 
 /** 단건 응답 */
@@ -89,13 +91,39 @@ export class GenerationNotificationService {
         request: GenerationNotificationUpdateRequest,
     ): Promise<GenerationNotificationResponse> {
         try {
+            console.log(`[GenerationNotificationService] 알림 업데이트 요청:`, {
+                id,
+                request,
+                url: `${this.BASE_PATH}/${id}`
+            });
+
             const { data } = await apiClient.put<GenerationNotificationResponse>(
                 `${this.BASE_PATH}/${id}`,
                 request,
             );
+
+            console.log(`[GenerationNotificationService] 알림 업데이트 성공:`, {
+                id,
+                response: data
+            });
+
             return data;
-        } catch {
-            throw new Error('알림 상태 업데이트에 실패했습니다.');
+        } catch (error: unknown) {
+            console.error(`[GenerationNotificationService] 알림 업데이트 실패:`, {
+                id,
+                request,
+                error
+            });
+
+            const err = error as { response?: { status?: number, data?: unknown } };
+            if (err.response?.status === 401) {
+                throw new Error('인증이 필요합니다.');
+            }
+
+            // 더 자세한 에러 정보 출력
+            const responseData = err.response?.data as { message?: string } | undefined;
+            const errorMessage = responseData?.message || (typeof err.response?.data === 'string' ? err.response.data : '알림 상태 업데이트에 실패했습니다.');
+            throw new Error(errorMessage);
         }
     }
 

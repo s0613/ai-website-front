@@ -3,7 +3,7 @@
    =======================================================================*/
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FolderService } from "../../features/folder/services/FolderService";
 import type {
     FolderResponse,
@@ -24,6 +24,9 @@ import {
     ArrowLeft,
     Plus,
     CheckCircle,
+    ImageIcon,
+    CloudUpload,
+    X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -45,6 +48,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { uploadFashnImage } from "./services/ImageService";
 import { GenerationNotificationService } from "@/features/admin/services/GenerationNotificationService";
+import Masonry from "react-masonry-css";
+
+interface UploadResult {
+    file: File;
+    success: boolean;
+    error?: string;
+}
 
 export default function EditImagePage() {
     /* ------------------------------------------------------------------
@@ -63,6 +73,9 @@ export default function EditImagePage() {
     const [folderToDelete, setFolderToDelete] = useState<number | null>(null);
     const [folderNameError, setFolderNameError] = useState<string | null>(null);
     const [folderError, setFolderError] = useState<string | null>(null);
+    const [isDragOver, setIsDragOver] = useState(false);
+    const [uploadResults, setUploadResults] = useState<UploadResult[]>([]);
+    const [showUploadResults, setShowUploadResults] = useState(false);
 
     /** 1번(의류) / 2번(모델) 슬롯  */
     const [slot1Image, setSlot1Image] = useState<FileResponse | null>(null);
@@ -70,6 +83,9 @@ export default function EditImagePage() {
 
     /** 가상-피팅 호출 로딩 */
     const [isFittingLoading, setIsFittingLoading] = useState(false);
+
+    /** 드래그 앤 드롭 ref */
+    const dropZoneRef = useRef<HTMLDivElement>(null);
 
     /* ------------------------------------------------------------------
        폴더/파일 데이터 로딩
@@ -118,18 +134,99 @@ export default function EditImagePage() {
     ) => {
         if (!selectedFolder || !e.target.files?.length) return;
 
-        const file = e.target.files[0];
-        setIsUploading(true);
-        try {
-            const resp = await FolderService.uploadFile(selectedFolder.id, file);
-            setFiles((prev) => [...prev, resp]);
-            toast.success(`${file.name} 파일이 업로드되었습니다`);
-        } catch (err) {
-            console.error("파일 업로드 실패:", err);
-            toast.error("파일 업로드에 실패했습니다");
-        } finally {
-            setIsUploading(false);
+        const files = Array.from(e.target.files);
+        await handleMultipleFileUpload(files);
+    };
+
+    /* ------------------------------------------------------------------
+       드래그 앤 드롭 이벤트 핸들러
+    ------------------------------------------------------------------ */
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (selectedFolder && e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            setIsDragOver(true);
         }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 드롭존을 완전히 벗어날 때만 isDragOver를 false로 설정
+        if (!dropZoneRef.current?.contains(e.relatedTarget as Node)) {
+            setIsDragOver(false);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+
+        if (!selectedFolder) return;
+
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length === 0) return;
+
+        await handleMultipleFileUpload(files);
+    };
+
+    /* ------------------------------------------------------------------
+       다중 파일 업로드
+    ------------------------------------------------------------------ */
+    const handleMultipleFileUpload = async (files: File[]) => {
+        if (!selectedFolder) return;
+
+        setIsUploading(true);
+        const results: UploadResult[] = [];
+
+        for (const file of files) {
+            // 이미지 파일인지 확인
+            if (!file.type.startsWith('image/')) {
+                results.push({
+                    file,
+                    success: false,
+                    error: '이미지 파일만 업로드 가능합니다'
+                });
+                continue;
+            }
+
+            try {
+                const resp = await FolderService.uploadFile(selectedFolder.id, file);
+                setFiles((prev) => [...prev, resp]);
+                results.push({
+                    file,
+                    success: true
+                });
+            } catch (error) {
+                console.error(`파일 업로드 오류 (${file.name}):`, error);
+                results.push({
+                    file,
+                    success: false,
+                    error: '업로드에 실패했습니다'
+                });
+            }
+        }
+
+        // 결과 처리
+        const successCount = results.filter(r => r.success).length;
+        const errorCount = results.filter(r => !r.success).length;
+
+        if (successCount > 0) {
+            toast.success(`${successCount}개의 파일이 업로드되었습니다`);
+        }
+
+        if (errorCount > 0) {
+            setUploadResults(results.filter(r => !r.success));
+            setShowUploadResults(true);
+        }
+
+        setIsUploading(false);
     };
 
     /* ------------------------------------------------------------------
@@ -230,7 +327,7 @@ export default function EditImagePage() {
             fd.append("num_samples", String(settings.num_samples));
             fd.append("segmentation_free", String(settings.segmentation_free));
 
-            const res = await fetch("/api/image/edit/fashn", {
+            const res = await fetch("/internal/image/edit/fashn", {
                 method: "POST",
                 body: fd,
             });
@@ -275,7 +372,11 @@ export default function EditImagePage() {
             }
         } catch (err: unknown) {
             console.error("가상 피팅 실패:", err);
-            toast.error((err instanceof Error ? err.message : String(err)) || "가상 피팅에 실패했습니다");
+            let msg = (err instanceof Error ? err.message : String(err));
+            if (msg.includes("Failed to detect body pose")) {
+                msg = "모델 이미지에서 사람의 신체를 인식하지 못했습니다. 정면이 잘 나온 이미지를 사용해 주세요.";
+            }
+            toast.error(msg || "가상 피팅에 실패했습니다");
         } finally {
             setIsFittingLoading(false);
         }
@@ -413,6 +514,7 @@ export default function EditImagePage() {
                                         type="file"
                                         className="hidden"
                                         accept="image/*"
+                                        multiple
                                         disabled={isUploading}
                                         onChange={handleFileUpload}
                                     />
@@ -446,7 +548,31 @@ export default function EditImagePage() {
                     </div>
 
                     {/* ----------------- 내용(폴더 or 파일 그리드) ----------------- */}
-                    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/40 pr-2">
+                    <div
+                        className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/40 pr-2 relative"
+                        onDragEnter={handleDragEnter}
+                        onDragLeave={handleDragLeave}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                        ref={dropZoneRef}
+                    >
+                        {/* 드래그 오버 시 드롭존 */}
+                        {isDragOver && selectedFolder && (
+                            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+                                <div className="border-2 border-dashed border-sky-400 rounded-lg p-12 bg-sky-500/10 backdrop-blur-xl">
+                                    <div className="text-center">
+                                        <CloudUpload className="h-16 w-16 mx-auto mb-4 text-sky-400" />
+                                        <h3 className="text-2xl font-bold text-white mb-2">
+                                            이미지를 여기에 드롭하세요
+                                        </h3>
+                                        <p className="text-gray-300">
+                                            여러 이미지를 한번에 업로드할 수 있습니다
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
                             {/* ----------- 로딩/오류 처리 ----------- */}
                             {isLoading ? (
@@ -522,44 +648,85 @@ export default function EditImagePage() {
                                             </div>
                                         </Card>
                                     ))
+                                ) : filteredFiles.length === 0 ? (
+                                    /* -------- 빈 폴더 placeholder -------- */
+                                    <div className="col-span-full flex items-center justify-center h-full min-h-[400px]">
+                                        <div className="text-center">
+                                            <div className="border-2 border-dashed border-gray-600 rounded-lg p-12 max-w-md mx-auto">
+                                                <ImageIcon className="h-16 w-16 mx-auto mb-4 text-gray-500" />
+                                                <h3 className="text-xl font-semibold text-white mb-2">
+                                                    아직 이미지가 없습니다
+                                                </h3>
+                                                <p className="text-gray-400 mb-6">
+                                                    이미지를 드래그 앤 드롭하거나<br />
+                                                    업로드 버튼을 사용해 이미지를 추가하세요
+                                                </p>
+                                                <Button
+                                                    className="bg-sky-500 hover:bg-sky-600 text-white"
+                                                    onClick={() => document.getElementById("file-upload")?.click()}
+                                                    disabled={isUploading}
+                                                >
+                                                    <Upload className="h-4 w-4 mr-2" />
+                                                    이미지 선택
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ) : /* ----------- 파일 뷰 ----------- */
                                     (
-                                        filteredFiles.map((file) => {
-                                            const isSlot1 = slot1Image?.id === file.id;
-                                            const isSlot2 = slot2Image?.id === file.id;
-                                            return (
-                                                <Card
-                                                    key={file.id}
-                                                    className={cn(
-                                                        "relative aspect-square cursor-pointer overflow-hidden group",
-                                                        "transition-all duration-300",
-                                                        isSlot1 || isSlot2
-                                                            ? "border-sky-500/50"
-                                                            : "border-white/10",
-                                                        "border hover:border-sky-500/50"
-                                                    )}
-                                                    onClick={() => handleSelectImage(file)}
-                                                >
-                                                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors" />
-                                                    <Image
-                                                        src={file.url}
-                                                        alt={file.name}
-                                                        fill
-                                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                                        className="object-cover"
-                                                    />
-                                                    <div className="absolute bottom-2 left-2 right-2 text-sm text-white truncate">
-                                                        {file.name}
-                                                    </div>
-                                                    {(isSlot1 || isSlot2) && (
-                                                        <div className="absolute top-2 right-2 bg-sky-500 text-white text-xs rounded-full px-2 py-1 flex items-center gap-1">
-                                                            <CheckCircle className="h-3 w-3" />
-                                                            {isSlot1 ? "1번" : "2번"}
+                                        <Masonry
+                                            breakpointCols={{
+                                                default: 4,
+                                                1100: 3,
+                                                700: 2,
+                                                500: 1
+                                            }}
+                                            className="my-masonry-grid col-span-full"
+                                            columnClassName="my-masonry-grid_column"
+                                        >
+                                            {filteredFiles.map((file) => {
+                                                const isSlot1 = slot1Image?.id === file.id;
+                                                const isSlot2 = slot2Image?.id === file.id;
+                                                return (
+                                                    <Card
+                                                        key={file.id}
+                                                        className={cn(
+                                                            "relative cursor-pointer overflow-hidden group mb-4 break-inside-avoid",
+                                                            "transition-all duration-300",
+                                                            isSlot1 || isSlot2
+                                                                ? "border-sky-500/50"
+                                                                : "border-white/10",
+                                                            "border hover:border-sky-500/50",
+                                                            "bg-black/40 backdrop-blur-xl hover:bg-black/60"
+                                                        )}
+                                                        onClick={() => handleSelectImage(file)}
+                                                    >
+                                                        <div className="relative">
+                                                            <Image
+                                                                src={file.url}
+                                                                alt={file.name}
+                                                                width={300}
+                                                                height={200}
+                                                                className="w-full h-auto object-cover"
+                                                                sizes="(max-width: 500px) 100vw, (max-width: 700px) 50vw, (max-width: 1100px) 33vw, 25vw"
+                                                            />
+                                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                                                                <p className="text-sm text-white truncate font-medium">
+                                                                    {file.name}
+                                                                </p>
+                                                            </div>
+                                                            {(isSlot1 || isSlot2) && (
+                                                                <div className="absolute top-2 right-2 bg-sky-500 text-white text-xs rounded-full px-2 py-1 flex items-center gap-1">
+                                                                    <CheckCircle className="h-3 w-3" />
+                                                                    {isSlot1 ? "1번" : "2번"}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </Card>
-                                            );
-                                        })
+                                                    </Card>
+                                                );
+                                            })}
+                                        </Masonry>
                                     )}
                         </div>
                     </div>
@@ -596,6 +763,73 @@ export default function EditImagePage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* ------------------------------------------------------------ */}
+            {/*   4. 업로드 에러 결과 다이얼로그                               */}
+            {/* ------------------------------------------------------------ */}
+            <Dialog open={showUploadResults} onOpenChange={setShowUploadResults}>
+                <DialogContent className="bg-black/40 backdrop-blur-xl border-white/20 max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-white flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-red-400" />
+                            업로드 오류
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <p className="text-white text-sm">
+                            다음 파일들이 업로드되지 않았습니다:
+                        </p>
+                        <div className="max-h-40 overflow-y-auto space-y-2">
+                            {uploadResults.map((result, index) => (
+                                <div
+                                    key={index}
+                                    className="flex items-start gap-2 p-2 bg-red-500/10 rounded border border-red-500/20"
+                                >
+                                    <X className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-white truncate">
+                                            {result.file.name}
+                                        </p>
+                                        <p className="text-xs text-red-400">
+                                            {result.error}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end">
+                            <Button
+                                className="bg-sky-500 hover:bg-sky-600 text-white"
+                                onClick={() => {
+                                    setShowUploadResults(false);
+                                    setUploadResults([]);
+                                }}
+                            >
+                                확인
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* ------------------------------------------------------------ */}
+            {/*   5. 업로드 중 로딩 오버레이                                   */}
+            {/* ------------------------------------------------------------ */}
+            {isUploading && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                    <div className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-lg p-8">
+                        <div className="text-center">
+                            <Loader2 className="h-12 w-12 mx-auto mb-4 text-sky-400 animate-spin" />
+                            <h3 className="text-lg font-semibold text-white mb-2">
+                                이미지 업로드 중...
+                            </h3>
+                            <p className="text-gray-400">
+                                잠시만 기다려주세요
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

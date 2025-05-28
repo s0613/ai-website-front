@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
 
 // 공통 타입 정의
-export type AspectRatioType = "16:9" | "9:16" | "1:1" | "auto" | "auto_prefer_portrait";
+export type AspectRatioType = "16:9" | "9:16" | "1:1" | "4:3" | "3:4" | "auto" | "auto_prefer_portrait";
 export type DurationType = "5s" | "6s" | "7s" | "8s" | "10s";
-export type ResolutionType = "480p" | "720p";
+export type ResolutionType = "360p" | "540p" | "720p" | "1080p";
 export type CameraControlType = "down_back" | "forward_up" | "right_turn_forward" | "left_turn_forward";
 
 // 기본 모델 설정 인터페이스
@@ -40,6 +40,13 @@ export interface ImageVeo2ModelSettings extends BaseModelSettings {
     enableSafetyChecker?: boolean;
 }
 
+// 이미지-비디오 Pixverse 모델 설정
+export interface ImagePixverseModelSettings extends BaseModelSettings {
+    duration?: "5" | "8";
+    negative_prompt?: string;
+    style?: "anime" | "3d_animation" | "clay" | "comic" | "cyberpunk";
+}
+
 // 텍스트-비디오 Veo2 모델 설정
 export interface TextVeo2ModelSettings extends BaseModelSettings {
     duration?: DurationType;
@@ -59,6 +66,7 @@ export type ModelSettings =
     | ImageWanModelSettings
     | ImageKlingModelSettings
     | ImageVeo2ModelSettings
+    | ImagePixverseModelSettings
     | TextVeo2ModelSettings
     | VideoHunyuanModelSettings;
 

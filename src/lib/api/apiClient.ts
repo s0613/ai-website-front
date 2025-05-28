@@ -67,9 +67,13 @@ apiClient.interceptors.response.use(
 
     // 401 Unauthorized 에러 처리
     if (error.response?.status === 401) {
-      // 서버 사이드에서는 리다이렉트를 하지 않고 에러만 반환
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      // 현재 요청 URL이 인증이 필요한 API인지 확인
+      const url = error.config?.url || '';
+      if (url.includes('/api/video') || url.includes('/my/') || url.includes('/admin/')) {
+        // 서버 사이드에서는 리다이렉트를 하지 않고 에러만 반환
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       }
     }
 

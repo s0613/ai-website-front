@@ -7,11 +7,32 @@ import { VideoDto, VideoCreateRequest } from '../types/Video';
  */
 export const getVideoById = async (id: number): Promise<VideoDto> => {
   try {
+    console.log(`[MyVideoService] 비디오 조회 시작, ID: ${id}`);
     const response = await apiClient.get<VideoDto>(`/my/videos/${id}`);
+    console.log(`[MyVideoService] 비디오 조회 성공, ID: ${id}`, {
+      videoId: response.data.id,
+      name: response.data.name,
+      url: response.data.url ? '있음' : '없음',
+      thumbnailUrl: response.data.thumbnailUrl ? '있음' : '없음'
+    });
     return response.data;
   } catch (error) {
     // 에러는 모든 환경에서 로깅 (중요 에러 추적용)
     console.error(`[오류] ID ${id}의 비디오 조회 실패:`, error);
+    throw error;
+  }
+};
+
+/**
+ * 공유된 비디오 상세 조회 (현재 사용자의 좋아요 상태 포함)
+ * @param id 비디오 ID
+ */
+export const getSharedVideoById = async (id: number): Promise<VideoDto> => {
+  try {
+    const response = await apiClient.get<VideoDto>(`/videos/shared/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`[오류] 공유된 비디오 ID ${id} 조회 실패:`, error);
     throw error;
   }
 };
@@ -121,6 +142,27 @@ export const updateVideoLike = async (id: number, like: boolean): Promise<VideoD
   } catch (error) {
     // 중요 에러만 로깅
     console.error(`[오류] 비디오 ID ${id} 좋아요 상태 변경 실패:`, error);
+    throw error;
+  }
+};
+
+/**
+ * 비디오 이름 변경
+ * @param id 비디오 ID
+ * @param newName 새로운 비디오 이름
+ */
+export const renameVideo = async (id: number, newName: string): Promise<VideoDto> => {
+  try {
+    const response = await apiClient.patch<VideoDto>(`/my/videos/${id}/rename`, {
+      name: newName
+    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[정보] 비디오 ID ${id} 이름 변경 성공: ${newName}`);
+    }
+    return response.data;
+  } catch (error) {
+    // 중요 에러만 로깅
+    console.error(`[오류] 비디오 ID ${id} 이름 변경 실패:`, error);
     throw error;
   }
 };

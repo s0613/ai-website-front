@@ -2,12 +2,6 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/ge
 import { NextRequest, NextResponse } from 'next/server';
 import fetch from 'node-fetch';
 
-if (!process.env.GOOGLE_API_KEY) {
-    throw new Error('GOOGLE_API_KEY 환경 변수가 설정되지 않았습니다.');
-}
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-
 async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType: string }> {
     try {
         // URL이 유효한지 확인
@@ -69,6 +63,18 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
 
 export async function POST(req: NextRequest) {
     try {
+        // 런타임에 환경 변수 확인
+        if (!process.env.GOOGLE_API_KEY) {
+            return NextResponse.json(
+                {
+                    error: 'GOOGLE_API_KEY 환경 변수가 설정되지 않았습니다.',
+                },
+                { status: 500 }
+            );
+        }
+
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+
         const { imageUrl, existingPrompt } = await req.json();
 
         if (!imageUrl) {

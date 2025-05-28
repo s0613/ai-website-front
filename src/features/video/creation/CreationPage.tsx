@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Video, Plus, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -18,12 +18,46 @@ import { VideoDto } from "../types/Video";
 
 type VideoType = "ALL" | "IMAGE" | "VIDEO" | "TEXT";
 
+// 날짜 포맷팅 함수
+const formatDateKey = (dateString: string): string => {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // 오늘
+  if (date.toDateString() === today.toDateString()) {
+    return "오늘";
+  }
+  // 어제
+  if (date.toDateString() === yesterday.toDateString()) {
+    return "어제";
+  }
+  // 그 외
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long'
+  });
+};
+
+// 날짜별 그룹화된 비디오 타입
+interface GroupedVideos {
+  [dateKey: string]: {
+    displayDate: string;
+    videos: VideoDto[];
+    rawDate: string; // 정렬용 원본 날짜
+  };
+}
+
 export default function CreationPage() {
   const [videos, setVideos] = useState<VideoDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<VideoType>("ALL");
   const [showModal, setShowModal] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
 
   const fetchVideos = useCallback(async () => {
     try {
@@ -37,7 +71,14 @@ export default function CreationPage() {
         data = await getVideosByType(selectedFilter.toLowerCase());
       }
 
-      setVideos(Array.isArray(data) ? data : []);
+      // 최신순으로 정렬 (createdAt 기준 내림차순)
+      const sortedData = Array.isArray(data) ? data.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateB - dateA; // 내림차순 정렬 (최신이 먼저)
+      }) : [];
+
+      setVideos(sortedData);
     } catch (error) {
       console.error("Error fetching videos:", error);
       toast.error("작업물을 불러오는 데 실패했습니다.");
@@ -46,11 +87,81 @@ export default function CreationPage() {
     }
   }, [selectedFilter]);
 
+  // 날짜별로 비디오 그룹화
+  const groupedVideos = useMemo((): GroupedVideos => {
+    const groups: GroupedVideos = {};
+
+    videos.forEach(video => {
+      if (!video.createdAt) return;
+
+      const date = new Date(video.createdAt);
+      const dateKey = date.toDateString(); // 고유 키
+      const displayDate = formatDateKey(video.createdAt);
+
+      if (!groups[dateKey]) {
+        groups[dateKey] = {
+          displayDate,
+          videos: [],
+          rawDate: video.createdAt
+        };
+      }
+
+      groups[dateKey].videos.push(video);
+    });
+
+    // 각 날짜 그룹 내에서도 최신순 정렬
+    Object.keys(groups).forEach(dateKey => {
+      groups[dateKey].videos.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+    });
+
+    return groups;
+  }, [videos]);
+
+  // 날짜 키를 최신순으로 정렬
+  const sortedDateKeys = useMemo(() => {
+    return Object.keys(groupedVideos).sort((a, b) => {
+      const dateA = new Date(groupedVideos[a].rawDate).getTime();
+      const dateB = new Date(groupedVideos[b].rawDate).getTime();
+      return dateB - dateA; // 최신 날짜가 먼저
+    });
+  }, [groupedVideos]);
+
   useEffect(() => {
     fetchVideos();
   }, [fetchVideos]);
 
-  const handleVideoClick = (videoId: number) => {
+  // ESC 키 이벤트 리스너
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showModal) {
+        closeModal();
+      }
+    };
+
+    if (showModal) {
+      document.addEventListener('keydown', handleEscapeKey);
+      // 모달 열릴 때 스크롤 방지
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+      // 모달 닫힐 때 스크롤 복원
+      document.body.style.overflow = 'unset';
+    };
+  }, [showModal]);
+
+  const handleVideoClick = (videoId: number, event: React.MouseEvent) => {
+    // 클릭한 위치를 기준으로 모달 위치 계산
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
+    setModalPosition({ x, y });
     setSelectedVideoId(videoId);
     setShowModal(true);
   };
@@ -58,6 +169,22 @@ export default function CreationPage() {
   const closeModal = () => {
     setShowModal(false);
     setSelectedVideoId(null);
+  };
+
+  // 비디오 업데이트 핸들러
+  const handleVideoUpdate = useCallback((updatedVideo: VideoDto) => {
+    setVideos(prevVideos =>
+      prevVideos.map(video =>
+        video.id === updatedVideo.id ? updatedVideo : video
+      )
+    );
+  }, []);
+
+  // 모달 배경 클릭 핸들러
+  const handleModalBackgroundClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      closeModal();
+    }
   };
 
   return (
@@ -121,67 +248,87 @@ export default function CreationPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {videos.map((video) => (
-              <div
-                key={video.id}
-                className="overflow-hidden transition-all cursor-pointer bg-black/40 backdrop-blur-xl rounded-lg border border-white/20 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-[1.02] hover:bg-black/80 hover:border-white/30 group"
-                onClick={() => handleVideoClick(video.id!)}
-              >
-                <div className="aspect-video bg-black/60 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-10">
-                    <div className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                      <Video className="w-6 h-6 text-sky-500" />
-                    </div>
-                  </div>
-                  <video
-                    src={video.url}
-                    className="w-full h-full object-cover"
-                    poster={
-                      video.thumbnailUrl || "/video-thumbnail-placeholder.jpg"
-                    }
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
-                </div>
-                <div className="p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium text-sm line-clamp-1 text-white">
-                      {video.name}
-                    </h3>
-                    <div
-                      className={`w-2.5 h-2.5 rounded-full ${video.share
-                        ? "bg-emerald-500"
-                        : "bg-gray-500"
-                        }`}
-                      title={video.share ? "공개" : "비공개"}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-400 line-clamp-1">
-                    {video.prompt}
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-xs text-gray-500">
-                      {new Date(video.createdAt || "").toLocaleDateString()}
-                    </p>
-                    <span className="text-xs px-1.5 py-0.5 bg-gray-500/20 rounded-full text-gray-400">
-                      {video.model}
+          <div className="space-y-8">
+            {sortedDateKeys.map((dateKey) => {
+              const group = groupedVideos[dateKey];
+              return (
+                <div key={dateKey} className="space-y-4">
+                  {/* 날짜 헤더 */}
+                  <div className="flex items-center gap-3 pb-2 border-b border-white/10">
+                    <h2 className="text-lg font-semibold text-white">
+                      {group.displayDate}
+                    </h2>
+                    <span className="text-sm text-gray-400">
+                      ({group.videos.length}개)
                     </span>
                   </div>
+
+                  {/* 해당 날짜의 비디오 그리드 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {group.videos.map((video) => (
+                      <div
+                        key={video.id}
+                        className="overflow-hidden transition-all cursor-pointer bg-black/40 backdrop-blur-xl rounded-lg border border-white/20 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-[1.02] hover:bg-black/80 hover:border-white/30 group"
+                        onClick={(e) => handleVideoClick(video.id!, e)}
+                      >
+                        <div className="aspect-[4/3] bg-black/60 relative overflow-hidden">
+                          {/* 호버 시 제목 표시 */}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-10 p-4">
+                            <div className="text-center">
+                              <h3 className="text-white font-medium text-base line-clamp-2">
+                                {video.name}
+                              </h3>
+                            </div>
+                          </div>
+                          <video
+                            src={video.url}
+                            className="w-full h-full object-cover"
+                            poster={
+                              video.thumbnailUrl || "/video-thumbnail-placeholder.jpg"
+                            }
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+
+                          {/* 공유 상태 표시 (우상단) */}
+                          <div className="absolute top-2 right-2">
+                            <div
+                              className={`w-2.5 h-2.5 rounded-full ${video.share
+                                ? "bg-emerald-500"
+                                : "bg-gray-500"
+                                }`}
+                              title={video.share ? "공개" : "비공개"}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* 비디오 상세 모달 */}
       {showModal && selectedVideoId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-in fade-in duration-300"
+          onClick={handleModalBackgroundClick}
+        >
           <div
-            className="w-full max-w-6xl max-h-[90vh] animate-in zoom-in-95 duration-300"
+            className="absolute w-full max-w-6xl max-h-[90vh] animate-in zoom-in-95 duration-300"
+            style={{
+              left: `${Math.min(Math.max(modalPosition.x - 384, 16), window.innerWidth - 768 - 16)}px`,
+              top: `${Math.min(Math.max(modalPosition.y - 200, 16), window.innerHeight - 400)}px`,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <CreationDetail videoId={selectedVideoId} onBack={closeModal} />
+            <CreationDetail
+              videoId={selectedVideoId}
+              onBack={closeModal}
+              onVideoUpdate={handleVideoUpdate}
+            />
           </div>
         </div>
       )}

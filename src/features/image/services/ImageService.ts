@@ -34,6 +34,23 @@ export const uploadFashnImage = async (imageUrl: string): Promise<ApiResponse<Im
   }
 };
 
+/**
+ * Upscaler 폴더에 이미지를 업로드하는 함수
+ * @param imageUrl 업로드할 이미지 URL
+ * @returns 업로드된 파일 정보
+ */
+export const uploadUpscalerImage = async (imageUrl: string): Promise<ApiResponse<ImageItem>> => {
+  try {
+    const uploadResponse = await apiClient.post<ApiResponse<ImageItem>>(
+      '/files/upload/upscaler',
+      { imageUrl }
+    );
+    return uploadResponse.data;
+  } catch (error) {
+    console.error('Upscaler 이미지 업로드에 실패했습니다:', error);
+    throw error;
+  }
+};
 
 /**
  * 카테고리별 이미지 목록을 가져오는 함수

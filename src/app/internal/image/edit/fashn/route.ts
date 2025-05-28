@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
 
-if (!process.env.FAL_KEY) {
-    throw new Error("Missing FAL_KEY environment variable");
-}
-
-fal.config({
-    credentials: process.env.FAL_KEY,
-});
-
 export const runtime = 'edge';
 
 export async function POST(req: NextRequest) {
     try {
+        // 런타임에 환경 변수 확인
+        if (!process.env.FAL_KEY) {
+            return NextResponse.json(
+                {
+                    error: "FAL_KEY 환경 변수가 설정되지 않았습니다.",
+                },
+                { status: 500 }
+            );
+        }
+
+        fal.config({
+            credentials: process.env.FAL_KEY,
+        });
+
         const formData = await req.formData();
         const model_image_url = formData.get('model_image_url') as string;
         const garment_image_url = formData.get('garment_image_url') as string;

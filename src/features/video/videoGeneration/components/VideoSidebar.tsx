@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { forwardRef } from "react";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -16,6 +16,7 @@ import {
   Loader2,
   Film,
   Image as ImageIcon,
+  Sparkles,
 } from "lucide-react";
 import ModelSetting from "./ModelSetting";
 import { SidebarFormData, useVideoSidebar } from "../hooks/useVideoSidebar";
@@ -30,9 +31,14 @@ export type VideoSidebarProps = {
   referencePrompt?: string;
   referenceModel?: string;
   isLoading?: boolean;
+  isDragOver?: boolean;
+  onDragEnter?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
 };
 
-export default function VideoSidebar(props: VideoSidebarProps) {
+const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) => {
   const {
     onSubmit,
     onTabChange,
@@ -41,6 +47,11 @@ export default function VideoSidebar(props: VideoSidebarProps) {
     referencePrompt,
     referenceModel,
     isLoading,
+    isDragOver,
+    onDragEnter,
+    onDragLeave,
+    onDragOver,
+    onDrop,
   } = props;
 
   const {
@@ -58,6 +69,8 @@ export default function VideoSidebar(props: VideoSidebarProps) {
     numInferenceSteps,
     framesPerSecond,
     enablePromptExpansion,
+    negativePrompt,
+    pixverseStyle,
     updateSettings,
     handleSubmit,
     handleImageChange,
@@ -83,7 +96,30 @@ export default function VideoSidebar(props: VideoSidebarProps) {
   });
 
   return (
-    <div className="w-[400px] h-full bg-black/90 backdrop-blur-xl border-r border-white/20 flex flex-col overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.4)] z-10">
+    <div
+      ref={ref}
+      className="w-[400px] h-full bg-black/90 backdrop-blur-xl border-r border-white/20 flex flex-col overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.4)] z-10 relative"
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      {/* 드래그 오버 시 드롭존 오버레이 */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 bg-sky-500/20 backdrop-blur-sm flex items-center justify-center border-2 border-dashed border-sky-400">
+          <div className="text-center p-8">
+            <div className="bg-sky-500/20 rounded-full p-6 mx-auto mb-4 w-fit">
+              <Sparkles className="h-12 w-12 text-sky-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">
+              참조 이미지로 설정
+            </h3>
+            <p className="text-gray-300">
+              이미지를 여기에 드롭하세요
+            </p>
+          </div>
+        </div>
+      )}
       <ScrollArea className="flex-1 [&_.simplebar-scrollbar]:bg-black [&_.simplebar-scrollbar]:hover:bg-black/80 [&_.simplebar-scrollbar]:before:bg-black [&_.simplebar-scrollbar]:before:hover:bg-black/80 [&_.simplebar-scrollbar]:w-1 [&_.simplebar-scrollbar]:rounded-full">
         <div className="p-6">
           {/* 탭 선택 영역 */}
@@ -301,11 +337,14 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                     <option value="wan">
                       WAN - 복잡한 동작과 영화 같은 스타일을 지원하며, 텍스트 삽입이 가능한 다재다능한 영상 생성
                     </option>
-                    <option value="hunyuan">
+                    {/* <option value="hunyuan">
                       HUNYUAN - 현실과 가상 스타일을 자유롭게 전환하며, 정교한 모션과 물리 시뮬레이션을 구현하는 영상 생성
-                    </option>
+                    </option> */}
                     <option value="veo2">
                       VEO2 - 영화 같은 카메라 연출과 사실적인 움직임을 갖춘 고화질 영상 생성
+                    </option>
+                    <option value="pixverse">
+                      PIXVERSE - 고품질 이미지-비디오 변환과 다양한 스타일 옵션을 제공하는 창의적인 영상 생성
                     </option>
                   </>
                 ) : activeTab === "video" ? (
@@ -355,9 +394,13 @@ export default function VideoSidebar(props: VideoSidebarProps) {
                 updateSettings={updateSettings}
                 currentSettings={{
                   aspectRatio: aspectRatio as AspectRatioType,
-                  duration,
+                  duration: endpoint === "pixverse" ? duration.replace('s', '') as "5" | "8" : duration,
                   resolution: resolution as ResolutionType,
                   seed,
+                  ...(endpoint === "pixverse" && {
+                    style: pixverseStyle || "anime",
+                    negative_prompt: negativePrompt,
+                  }),
                 }}
               />
             </div>
@@ -389,4 +432,8 @@ export default function VideoSidebar(props: VideoSidebarProps) {
       </div>
     </div>
   );
-}
+});
+
+VideoSidebar.displayName = "VideoSidebar";
+
+export default VideoSidebar;

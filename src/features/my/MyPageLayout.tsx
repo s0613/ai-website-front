@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+
 
 interface SidebarItem {
   icon: React.ElementType;
@@ -47,7 +47,7 @@ interface MyPageLayoutProps {
 }
 
 const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
-  useSession();
+
   const pathname = usePathname();
 
   return (
