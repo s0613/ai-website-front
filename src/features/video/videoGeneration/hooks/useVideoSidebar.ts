@@ -26,6 +26,7 @@ export type SidebarFormData = {
   enableSafetyChecker?: boolean;
   enablePromptExpansion?: boolean;
   negative_prompt?: string;
+  autoSelectNotificationId?: number | null;
 };
 
 // updateSettings 함수의 파라미터 타입을 정의
@@ -52,7 +53,7 @@ export interface UseVideoSidebarProps {
   referenceImageUrl?: string;
   referencePrompt?: string;
   referenceModel?: string;
-  onNotifyProcessing?: (notification: unknown) => void; // any -> unknown
+  onNotifyProcessing?: (notification: { title: string; thumbnailUrl: string }) => Promise<unknown> | void;
 }
 
 export function useVideoSidebar({
@@ -73,7 +74,7 @@ export function useVideoSidebar({
   const [aspectRatio, setAspectRatio] = useState<AspectRatioType>("16:9");
   const [duration, setDuration] = useState<DurationType>("5s");
   const [endpoint, setEndpoint] = useState(
-    referenceModel || (activeTab === "image" ? "kling" : activeTab === "video" ? "hunyuan" : "veo2")
+    referenceModel || "auto"
   );
   const quality: "standard" | "high" = "standard";
   const [style, setStyle] = useState<"realistic" | "creative" | "anime" | "3d_animation" | "clay" | "comic" | "cyberpunk">("realistic");
@@ -89,6 +90,9 @@ export function useVideoSidebar({
   const [isPromptLoading, setIsPromptLoading] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState<string>("");
   const [pixverseStyle, setPixverseStyle] = useState<"anime" | "3d_animation" | "clay" | "comic" | "cyberpunk" | "">("anime");
+
+  // Auto-Select 모드에서 생성된 알림 ID 저장
+  const [autoSelectNotificationId, setAutoSelectNotificationId] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -226,6 +230,185 @@ export function useVideoSidebar({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Auto-Select 모드일 때 모델 추천 받기
+    if (endpoint === "auto") {
+      if (!previewUrl && !fileUrl) {
+        toast({
+          title: "이미지 필요",
+          description: "Auto-Select 모드를 사용하려면 참조 이미지가 필요합니다.",
+          variant: "destructive",
+          duration: 3000,
+        });
+        return;
+      }
+
+      // 즉시 실제 영상 생성 알림 생성 (onNotifyProcessing 콜백 호출)
+      if (onNotifyProcessing) {
+        try {
+          console.log('[Auto-Select] 알림 생성 중...');
+          // 영상 생성 알림 생성 신호 전송
+          const createdNotification = await onNotifyProcessing({
+            title: `영상 생성 (${new Date().toLocaleTimeString()})`,
+            thumbnailUrl: fileUrl || previewUrl || '',
+          });
+
+          // 생성된 알림 ID 저장
+          if (createdNotification && typeof createdNotification === 'object' && 'id' in createdNotification) {
+            const notificationId = (createdNotification as { id: number }).id;
+            setAutoSelectNotificationId(notificationId);
+            console.log('[Auto-Select] 알림 생성 완료, ID:', notificationId);
+          } else {
+            console.warn('[Auto-Select] 알림 생성은 완료되었지만 ID를 찾을 수 없음:', createdNotification);
+          }
+        } catch (error) {
+          console.error('[Auto-Select] 알림 생성 실패:', error);
+        }
+      } else {
+        console.warn('[Auto-Select] onNotifyProcessing 콜백이 없습니다');
+      }
+
+      // 즉시 알림 생성 (토스트)
+      toast({
+        title: "비디오 생성 시작",
+        description: "비디오 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.",
+        duration: 5000,
+      });
+
+      // 알림 벨 이벤트 트리거 (즉시 실행)
+      setTimeout(() => {
+        console.log('[Auto-Select] 알림 벨 이벤트 트리거');
+        window.dispatchEvent(new CustomEvent('open-notification-bell'));
+      }, 1000);
+
+      try {
+        toast({
+          title: "모델 분석 중",
+          description: "AI가 최적의 모델과 설정을 분석하고 있습니다...",
+          duration: 3000,
+        });
+
+        const imageUrl = fileUrl || previewUrl;
+        const response = await fetch('/internal/gemini', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            imageUrl: imageUrl,
+            existingPrompt: prompt,
+            mode: 'model-recommendation'
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('모델 추천 API 호출 실패');
+        }
+
+        const recommendation = await response.json();
+
+        if (recommendation.model && recommendation.settings) {
+          // UI의 endpoint는 "auto"로 유지하고, 추천된 설정만 내부적으로 적용
+          // setEndpoint(recommendation.model); // 이 줄을 제거하여 UI 변경 방지
+
+          // 추천된 설정들을 내부 상태에 적용 (UI에는 반영되지 않음)
+          if (recommendation.settings.aspectRatio) setAspectRatio(recommendation.settings.aspectRatio);
+          if (recommendation.settings.duration) {
+            // duration 값 변환 처리
+            const durationValue = recommendation.settings.duration;
+            if (durationValue === "5" || durationValue === "8") {
+              setDuration(`${durationValue}s` as DurationType);
+            } else {
+              setDuration(durationValue);
+            }
+          }
+          if (recommendation.settings.cameraControl) setCameraControl(recommendation.settings.cameraControl);
+          if (recommendation.settings.seed !== undefined) setSeed(recommendation.settings.seed);
+          if (recommendation.settings.resolution) setResolution(recommendation.settings.resolution);
+          if (recommendation.settings.numFrames !== undefined) setNumFrames(recommendation.settings.numFrames);
+          if (recommendation.settings.framesPerSecond !== undefined) setFramesPerSecond(recommendation.settings.framesPerSecond);
+          if (recommendation.settings.numInferenceSteps !== undefined) setNumInferenceSteps(recommendation.settings.numInferenceSteps);
+          if (recommendation.settings.enableSafetyChecker !== undefined) setEnableSafetyChecker(recommendation.settings.enableSafetyChecker);
+          if (recommendation.settings.enablePromptExpansion !== undefined) setEnablePromptExpansion(recommendation.settings.enablePromptExpansion);
+          if (recommendation.settings.negative_prompt) setNegativePrompt(recommendation.settings.negative_prompt);
+          if (recommendation.settings.style) setPixverseStyle(recommendation.settings.style);
+          if (recommendation.settings.i2vStability !== undefined) {
+            // i2vStability 설정이 있으면 처리 (HUNYUAN 모델용)
+          }
+
+          toast({
+            title: "모델 선택 완료",
+            description: `${recommendation.model.toUpperCase()} 모델이 선택되었습니다. 영상 생성을 시작합니다.`,
+            duration: 3000,
+          });
+
+          // 추천된 설정으로 제출 (endpoint는 추천된 모델명으로 전달)
+          // 이때 onSubmit은 이미 생성된 알림을 업데이트하는 형태로 처리됨
+          onSubmit({
+            prompt: prompt,
+            imageFile: imageFile,
+            aspectRatio: recommendation.settings.aspectRatio || aspectRatio,
+            duration: recommendation.settings.duration ?
+              (recommendation.settings.duration === "5" || recommendation.settings.duration === "8" ?
+                `${recommendation.settings.duration}s` as DurationType :
+                recommendation.settings.duration) :
+              duration,
+            endpoint: recommendation.model, // 여기서만 추천된 모델명 사용
+            quality,
+            style: recommendation.model === "pixverse" ? (recommendation.settings.style || "anime") : style,
+            fileUrl: fileUrl,
+            cameraControl: recommendation.settings.cameraControl || cameraControl,
+            seed: recommendation.settings.seed,
+            resolution: recommendation.settings.resolution,
+            numFrames: recommendation.settings.numFrames,
+            framesPerSecond: recommendation.settings.framesPerSecond,
+            numInferenceSteps: recommendation.settings.numInferenceSteps,
+            enableSafetyChecker: recommendation.settings.enableSafetyChecker,
+            enablePromptExpansion: recommendation.settings.enablePromptExpansion,
+            negative_prompt: recommendation.settings.negative_prompt,
+            // Auto-Select 모드에서 생성된 알림 ID 전달
+            autoSelectNotificationId: autoSelectNotificationId,
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Auto-Select 오류:', error);
+        toast({
+          title: "모델 추천 실패",
+          description: "기본 모델로 진행합니다. 다시 시도해주세요.",
+          variant: "destructive",
+          duration: 3000,
+        });
+        // 실패 시 기본 모델(kling)로 설정하되, UI는 여전히 "auto" 유지
+        // setEndpoint("kling"); // 이 줄도 제거하여 UI 변경 방지
+
+        // 실패 시에도 기본 설정으로 제출
+        // 이때도 이미 생성된 알림을 업데이트하는 형태로 처리됨
+        onSubmit({
+          prompt: prompt,
+          imageFile: imageFile,
+          aspectRatio,
+          duration,
+          endpoint: "kling", // 실패 시 기본값으로 kling 사용
+          quality,
+          style,
+          fileUrl: fileUrl,
+          cameraControl,
+          seed,
+          resolution,
+          numFrames,
+          framesPerSecond,
+          numInferenceSteps,
+          enableSafetyChecker,
+          enablePromptExpansion,
+          negative_prompt: negativePrompt,
+          // Auto-Select 모드에서 생성된 알림 ID 전달
+          autoSelectNotificationId: autoSelectNotificationId,
+        });
+        return;
+      }
+    }
+
+    // 일반 모드에서의 알림 처리
     toast({
       title: "비디오 생성 시작",
       description: "비디오 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.",
@@ -248,32 +431,35 @@ export function useVideoSidebar({
     //   });
     // }
 
-    onSubmit({
-      prompt: prompt,
-      imageFile: imageFile,
-      aspectRatio,
-      duration,
-      endpoint,
-      quality,
-      style: endpoint === "pixverse" ? (pixverseStyle || "anime") : style,
-      fileUrl: fileUrl,
-      cameraControl,
-      seed: endpoint === "hunyuan" || endpoint === "wan" ? seed : undefined,
-      resolution:
-        endpoint === "hunyuan" || endpoint === "wan" ? resolution : undefined,
-      numFrames:
-        endpoint === "hunyuan"
-          ? numFrames
-          : endpoint === "wan"
+    // 일반 모드일 때는 기존 로직 사용
+    if (endpoint !== "auto") {
+      onSubmit({
+        prompt: prompt,
+        imageFile: imageFile,
+        aspectRatio,
+        duration,
+        endpoint,
+        quality,
+        style: endpoint === "pixverse" ? (pixverseStyle || "anime") : style,
+        fileUrl: fileUrl,
+        cameraControl,
+        seed: endpoint === "hunyuan" || endpoint === "wan" ? seed : undefined,
+        resolution:
+          endpoint === "hunyuan" || endpoint === "wan" ? resolution : undefined,
+        numFrames:
+          endpoint === "hunyuan"
             ? numFrames
-            : undefined,
-      framesPerSecond: endpoint === "wan" ? framesPerSecond : undefined,
-      numInferenceSteps: endpoint === "wan" ? numInferenceSteps : undefined,
-      enableSafetyChecker: endpoint === "wan" ? enableSafetyChecker : undefined,
-      enablePromptExpansion:
-        endpoint === "wan" ? enablePromptExpansion : undefined,
-      negative_prompt: endpoint === "pixverse" ? negativePrompt : undefined,
-    });
+            : endpoint === "wan"
+              ? numFrames
+              : undefined,
+        framesPerSecond: endpoint === "wan" ? framesPerSecond : undefined,
+        numInferenceSteps: endpoint === "wan" ? numInferenceSteps : undefined,
+        enableSafetyChecker: endpoint === "wan" ? enableSafetyChecker : undefined,
+        enablePromptExpansion:
+          endpoint === "wan" ? enablePromptExpansion : undefined,
+        negative_prompt: endpoint === "pixverse" ? negativePrompt : undefined,
+      });
+    }
   };
 
   // 탭 전환 핸들러

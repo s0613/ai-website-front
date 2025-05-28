@@ -16,7 +16,7 @@ interface KlingRequest {
 export async function POST(req: Request) {
     try {
         const body = await req.json() as KlingRequest;
-        console.log('[Kling POST] 요청 바디:', JSON.stringify(body));
+        // console.log('[Kling POST] 요청 바디:', JSON.stringify(body));
 
         const {
             prompt,
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
             );
         }
 
-        console.log('[Kling POST] 큐에 작업 추가 시도 →', { prompt, imageUrl, userId, duration, aspect_ratio, camera_control, notificationId });
+        // console.log('[Kling POST] 큐에 작업 추가 시도 →', { prompt, imageUrl, userId, duration, aspect_ratio, camera_control, notificationId });
         const jobId = await addVideoJob('kling', {
             type: 'kling',
             prompt,
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
             camera_control,
             notificationId
         });
-        console.log('[Kling POST] 큐에 작업 추가 완료. jobId=', jobId);
+        // console.log('[Kling POST] 큐에 작업 추가 완료. jobId=', jobId);
 
         return NextResponse.json(
             { jobId, status: 'queued' },

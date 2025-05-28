@@ -61,10 +61,72 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
     }
 }
 
+// 모델 추천용 프롬프트 생성 함수
+function getModelRecommendationPrompt(existingPrompt: string) {
+    return `당신은 영상 생성 모델 추천 시스템입니다.
+제공된 이미지와 프롬프트를 분석하여 최적의 모델과 설정을 JSON 형식으로 반환해주세요.
+
+사용 가능한 모델과 각각의 설정 파라미터:
+
+1. KLING:
+{
+  "model": "kling",
+  "settings": {
+    "aspectRatio": "16:9" | "9:16" | "1:1",
+    "duration": "5s" | "10s",
+    "cameraControl": "down_back" | "forward_up" | "right_turn_forward" | "left_turn_forward"
+  }
+}
+
+2. WAN:
+{
+  "model": "wan",
+  "settings": {
+    "aspectRatio": "16:9" | "9:16" | "1:1",
+    "numFrames": number,
+    "framesPerSecond": 8 | 16 | 24,
+    "numInferenceSteps": 20 | 30 | 40,
+    "enableSafetyChecker": boolean,
+    "enablePromptExpansion": boolean
+  }
+}
+
+3. VEO2:
+{
+  "model": "veo2",
+  "settings": {
+    "aspectRatio": "16:9" | "9:16" | "1:1",
+    "duration": "5s" | "6s" | "7s" | "8s" | "10s",
+    "enableSafetyChecker": boolean
+  }
+}
+
+4. PIXVERSE:
+{
+  "model": "pixverse",
+  "settings": {
+    "aspectRatio": "16:9" | "9:16" | "1:1",
+    "duration": "5" | "8",
+    "negative_prompt": string,
+    "style": "anime" | "3d_animation" | "clay" | "comic" | "cyberpunk"
+  }
+}
+
+위 모델들 중에서 프롬프트와 이미지에 가장 적합한 모델을 선택하고, 해당 모델의 설정 파라미터만 포함하여 JSON 형식으로 응답해주세요.
+모델별로 필요한 파라미터만 포함해야 합니다.
+
+프롬프트:
+${existingPrompt}
+`;
+}
+
 export async function POST(req: NextRequest) {
     try {
+        // console.log('[Gemini API] 요청 시작');
+
         // 런타임에 환경 변수 확인
         if (!process.env.GOOGLE_API_KEY) {
+            console.error('[Gemini API] GOOGLE_API_KEY 환경 변수 누락');
             return NextResponse.json(
                 {
                     error: 'GOOGLE_API_KEY 환경 변수가 설정되지 않았습니다.',
@@ -75,9 +137,11 @@ export async function POST(req: NextRequest) {
 
         const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-        const { imageUrl, existingPrompt } = await req.json();
+        const { imageUrl, existingPrompt, mode = 'prompt' } = await req.json();
+        // console.log('[Gemini API] 요청 파라미터:', { imageUrl: imageUrl?.substring(0, 50) + '...', existingPrompt: existingPrompt?.substring(0, 100) + '...', mode });
 
         if (!imageUrl) {
+            console.error('[Gemini API] imageUrl 누락');
             return NextResponse.json(
                 {
                     error: '이미지 URL이 필요합니다.',
@@ -88,6 +152,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (!existingPrompt) {
+            console.error('[Gemini API] existingPrompt 누락');
             return NextResponse.json(
                 {
                     error: '기존 프롬프트가 필요합니다.',
@@ -98,10 +163,33 @@ export async function POST(req: NextRequest) {
         }
 
         // 이미지 URL을 base64로 변환
-        const { data: imageBase64, mimeType } = await fetchImageAsBase64(imageUrl);
+        // console.log('[Gemini API] 이미지 다운로드 시작:', imageUrl);
+        let imageBase64, mimeType;
+        try {
+            const imageData = await fetchImageAsBase64(imageUrl);
+            imageBase64 = imageData.data;
+            mimeType = imageData.mimeType;
+            // console.log('[Gemini API] 이미지 다운로드 완료, 크기:', imageBase64.length, 'mimeType:', mimeType);
+        } catch (imageError) {
+            console.error('[Gemini API] 이미지 처리 실패:', imageError);
+            return NextResponse.json(
+                {
+                    error: '이미지 처리 실패',
+                    details: imageError instanceof Error ? imageError.message : '알 수 없는 이미지 오류',
+                },
+                { status: 400 }
+            );
+        }
+
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-        const prompt = `당신은 영상 생성용 프롬프트를 보정하는 인공지능입니다.
+        // mode에 따라 다른 프롬프트 사용
+        let prompt: string;
+        if (mode === 'model-recommendation') {
+            prompt = getModelRecommendationPrompt(existingPrompt);
+            // console.log('[Gemini API] 모델 추천 모드 프롬프트 생성 완료');
+        } else {
+            prompt = `당신은 영상 생성용 프롬프트를 보정하는 인공지능입니다.
 
 당신의 목표는 다음과 같습니다:
 
@@ -117,53 +205,104 @@ export async function POST(req: NextRequest) {
 기존 프롬프트:
 ${existingPrompt}
 `;
+            // console.log('[Gemini API] 프롬프트 보정 모드 프롬프트 생성 완료');
+        }
 
-        const result = await model.generateContent({
-            contents: [
-                {
-                    role: 'user',
-                    parts: [
-                        { text: prompt },
-                        {
-                            inlineData: {
-                                mimeType,
-                                data: imageBase64,
+        // console.log('[Gemini API] Gemini 모델 호출 시작');
+        let result;
+        try {
+            result = await model.generateContent({
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType,
+                                    data: imageBase64,
+                                },
                             },
+                        ],
+                    },
+                ],
+                generationConfig: {
+                    temperature: mode === 'model-recommendation' ? 0.1 : 0.2,
+                    topP: 0.8,
+                    maxOutputTokens: 1024,
+                },
+                safetySettings: [
+                    {
+                        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    },
+                    {
+                        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    },
+                    {
+                        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    },
+                    {
+                        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    },
+                ],
+            });
+            // console.log('[Gemini API] Gemini 모델 호출 완료');
+            // console.log('[Gemini API] 응답 텍스트 길이:', text.length);
+
+            const text = result.response.text();
+
+            // mode에 따라 다른 응답 처리
+            if (mode === 'model-recommendation') {
+                // console.log('[Gemini API] JSON 파싱 시도:', text.substring(0, 200) + '...');
+                // 마크다운 코드 블록 제거 (```json ... ```)
+                const cleanedText = text.replace(/^```json\\n|\\n```$/g, '').trim();
+                // console.log('[Gemini API] 정제된 텍스트:', cleanedText.substring(0, 200) + '...');
+                try {
+                    const parsedResponse = JSON.parse(cleanedText);
+                    // console.log('[Gemini API] JSON 파싱 성공:', parsedResponse);
+
+                    // 필수 파라미터 검증
+                    if (!parsedResponse.model || !parsedResponse.settings) {
+                        console.error('[Gemini API] 필수 파라미터 검증 실패:', parsedResponse);
+                        throw new Error('필수 파라미터가 누락되었습니다.');
+                    }
+
+                    // console.log('[Gemini API] 모델 추천 응답 성공');
+                    return NextResponse.json(parsedResponse);
+                } catch (e) {
+                    console.error('[Gemini API] JSON 파싱 또는 검증 실패:', e);
+                    console.error('[Gemini API] 원본 텍스트:', text);
+                    return NextResponse.json(
+                        {
+                            error: '모델 추천 응답 파싱 실패',
+                            details: e instanceof Error ? e.message : '알 수 없는 오류',
+                            rawResponse: text.substring(0, 500), // 디버깅용으로 일부 텍스트 포함
                         },
-                    ],
-                },
-            ],
-            generationConfig: {
-                temperature: 0.2,
-                topP: 0.8,
-                maxOutputTokens: 1024,
-            },
-            safetySettings: [
+                        { status: 500 }
+                    );
+                }
+            } else {
+                // 프롬프트 보정 모드에서는 텍스트 그대로 반환
+                // console.log('[Gemini API] 프롬프트 보정 응답 성공');
+                return NextResponse.json({ generated_prompt: text });
+            }
+        } catch (geminiError) {
+            console.error('[Gemini API] Gemini 모델 호출 실패:', geminiError);
+            return NextResponse.json(
                 {
-                    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    error: 'Gemini AI 호출 실패',
+                    details: geminiError instanceof Error ? geminiError.message : '알 수 없는 Gemini 오류',
                 },
-                {
-                    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-                {
-                    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-                {
-                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-            ],
-        });
-
-        const response = await result.response;
-        const text = await response.text();
-
-        return NextResponse.json({ response: text });
+                { status: 500 }
+            );
+        }
     } catch (error) {
-        console.error('API 요청 처리 중 오류가 발생했습니다:', error);
+        console.error('[Gemini API] 전체 처리 중 예상치 못한 오류:', error);
+        console.error('[Gemini API] 오류 스택:', error instanceof Error ? error.stack : 'No stack trace');
 
         // 에러 응답을 항상 JSON 형식으로 반환
         return NextResponse.json(

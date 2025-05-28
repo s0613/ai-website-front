@@ -28,6 +28,7 @@ interface VideoGenerationData {
   resolution?: string;
   numFrames?: number;
   negative_prompt?: string;
+  autoSelectNotificationId?: number;
 }
 
 interface FileItem {
@@ -163,6 +164,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
     setUpscaledVideoUrl("");
 
     let notificationId: number | null = null;
+
     try {
       if (!userId) {
         toast.error("사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
@@ -170,12 +172,19 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         return;
       }
 
-      // 1. 알림 REQUESTED 등록
-      const notification = await GenerationNotificationService.createNotification({
-        title: `영상 생성 (${new Date().toLocaleTimeString()})`,
-        thumbnailUrl: data.fileUrl || referenceImageUrl || '',
-      });
-      notificationId = notification.id;
+      // Auto-Select 모드에서 전달된 알림 ID 확인
+      if (data.autoSelectNotificationId) {
+        notificationId = data.autoSelectNotificationId;
+        console.log('[비디오 생성] Auto-Select 모드: 전달받은 알림 ID 사용:', notificationId);
+      } else {
+        console.log('[비디오 생성] 일반 모드: 새 알림 생성');
+        // 일반 모드에서 새로운 알림 생성
+        const notification = await GenerationNotificationService.createNotification({
+          title: `영상 생성 (${new Date().toLocaleTimeString()})`,
+          thumbnailUrl: data.fileUrl || referenceImageUrl || '',
+        });
+        notificationId = notification.id;
+      }
 
       // 현재 크레딧 확인
       const creditResponse = await BillingService.getCurrentCredit();

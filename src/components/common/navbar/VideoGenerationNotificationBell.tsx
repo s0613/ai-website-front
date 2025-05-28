@@ -9,6 +9,21 @@ import {
 } from "@/components/ui/dialog";
 import CreationDetail from "@/features/video/creation/CreationDetail";
 
+// 점 애니메이션 컴포넌트 수정 - 텍스트를 prop으로 받도록
+const DotsAnimation = ({ text }: { text: string }) => {
+    const [dotCount, setDotCount] = useState(1);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDotCount(prev => prev >= 3 ? 1 : prev + 1);
+        }, 500); // 0.5초마다 점 개수 변경
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return <span>{text + ".".repeat(dotCount)}</span>;
+};
+
 export const VideoGenerationNotificationBell = () => {
     const [notifications, setNotifications] = useState<GenerationNotificationResponse[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -250,7 +265,6 @@ export const VideoGenerationNotificationBell = () => {
             }
         } else if (notification.status === 'PROCESSING') {
             toast("영상이 아직 처리 중입니다. 잠시 후 다시 확인해주세요.", {
-                icon: "⏳",
                 duration: 3000
             });
         } else if (notification.status === 'FAILED') {
@@ -260,7 +274,6 @@ export const VideoGenerationNotificationBell = () => {
             });
         } else if (notification.status === 'REQUESTED') {
             toast("영상 생성 요청이 대기 중입니다.", {
-                icon: "⏰",
                 duration: 3000
             });
         } else {
@@ -279,15 +292,15 @@ export const VideoGenerationNotificationBell = () => {
             <Button
                 variant="ghost"
                 size="icon"
-                className={`relative hover:text-sky-500 transition-colors duration-300 ${hasNewNotification ? 'animate-pulse' : ''}`}
+                className={`relative hover:text-gray-100 transition-colors duration-300 ${hasNewNotification ? 'animate-pulse' : ''}`}
                 onClick={() => {
                     setIsOpen((prev) => !prev);
                     setHasNewNotification(false); // 클릭하면 알림 표시 제거
                 }}
             >
-                <Bell className={`w-5 h-5 ${hasNewNotification ? 'text-sky-500' : 'text-gray-300'}`} />
+                <Bell className={`w-5 h-5 ${hasNewNotification ? 'text-white' : 'text-gray-300'}`} />
                 {(hasProcessingItems || hasNewNotification) && (
-                    <span className={`absolute top-0 right-0 w-2 h-2 ${hasNewNotification ? 'bg-red-500' : 'bg-sky-500'} rounded-full`} />
+                    <span className={`absolute top-0 right-0 w-2 h-2 ${hasNewNotification ? 'bg-white' : 'bg-gray-400'} rounded-full`} />
                 )}
             </Button>
             {isOpen && (
@@ -299,16 +312,16 @@ export const VideoGenerationNotificationBell = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={handleRefresh}
-                                className="h-8 px-2 text-xs text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
+                                className="h-8 px-2 text-xs text-gray-200 hover:text-white hover:bg-gray-700/30"
                             >
-                                <Loader2 className="w-3 h-3 mr-1" /> 새로고침
+                                <Loader2 className="w-3 h-3 mr-1 text-gray-400" /> 새로고침
                             </Button>
                         )}
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                         {isLoading ? (
                             <div className="flex justify-center items-center p-4">
-                                <Loader2 className="w-5 h-5 text-sky-500 animate-spin" />
+                                <Loader2 className="w-5 h-5 text-gray-300 animate-spin" />
                             </div>
                         ) : notifications.length > 0 ? (
                             <div className="divide-y divide-gray-800/50">
@@ -320,45 +333,45 @@ export const VideoGenerationNotificationBell = () => {
                                             : notification.status === 'PROCESSING'
                                                 ? 'hover:bg-black/60 cursor-pointer'
                                                 : notification.status === 'FAILED'
-                                                    ? 'hover:bg-red-500/10 cursor-pointer'
+                                                    ? 'hover:bg-gray-800/30 cursor-pointer'
                                                     : 'cursor-default'
                                             }`}
                                         onClick={() => handleNotificationClick(notification)}
                                     >
                                         {notification.status === "PROCESSING" && (
-                                            <Loader2 className="w-4 h-4 text-sky-500 animate-spin" />
+                                            <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
                                         )}
                                         {notification.status === "COMPLETED" && (
-                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                            <CheckCircle2 className="w-4 h-4 text-white" />
                                         )}
                                         {notification.status === "FAILED" && (
-                                            <XCircle className="w-4 h-4 text-red-500" />
+                                            <XCircle className="w-4 h-4 text-gray-500" />
                                         )}
                                         <div className="flex-1">
                                             <p className="text-sm font-medium text-gray-200 mb-1 text-left">{notification.title.length > 20 ? notification.title.slice(0, 20) + '...' : notification.title}</p>
 
                                             {notification.status === "COMPLETED" && notification.videoId && (
-                                                <p className="text-xs text-green-400 mt-1 text-left flex items-center gap-1">
+                                                <p className="text-xs text-gray-400 mt-1 text-left flex items-center gap-1">
                                                     <span>클릭하여 영상 보기</span>
                                                 </p>
                                             )}
                                             {notification.status === "COMPLETED" && !notification.videoId && (
-                                                <p className="text-xs text-yellow-400 mt-1 text-left flex items-center gap-1">
+                                                <p className="text-xs text-gray-400 mt-1 text-left flex items-center gap-1">
                                                     <span>내 작업물에서 확인 가능</span>
                                                 </p>
                                             )}
                                             {notification.status === "PROCESSING" && (
-                                                <p className="text-xs text-blue-400 mt-1 text-left flex items-center gap-1">
-                                                    <span>⏳ 처리 중...</span>
+                                                <p className="text-xs text-gray-400 mt-1 text-left flex items-center gap-1">
+                                                    <DotsAnimation text="처리 중" />
                                                 </p>
                                             )}
                                             {notification.status === "REQUESTED" && (
-                                                <p className="text-xs text-gray-400 mt-1 text-left flex items-center gap-1">
-                                                    <span>⏰ 대기 중</span>
+                                                <p className="text-xs text-gray-500 mt-1 text-left flex items-center gap-1">
+                                                    <DotsAnimation text="대기 중" />
                                                 </p>
                                             )}
                                             {notification.status === "FAILED" && notification.errorMessage && (
-                                                <p className="text-xs text-red-400 mt-1 text-left">❌ {notification.errorMessage}</p>
+                                                <p className="text-xs text-gray-500 mt-1 text-left">❌ {notification.errorMessage}</p>
                                             )}
                                         </div>
                                     </div>

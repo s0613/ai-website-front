@@ -15,6 +15,7 @@ import {
 import CreationDetail from "./CreationDetail";
 import { getUserVideos, getVideosByType } from "../services/MyVideoService";
 import { VideoDto } from "../types/Video";
+import { createPortal } from "react-dom";
 
 type VideoType = "ALL" | "IMAGE" | "VIDEO" | "TEXT";
 
@@ -57,7 +58,6 @@ export default function CreationPage() {
   const [selectedFilter, setSelectedFilter] = useState<VideoType>("ALL");
   const [showModal, setShowModal] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
-  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
 
   const fetchVideos = useCallback(async () => {
     try {
@@ -156,12 +156,6 @@ export default function CreationPage() {
   }, [showModal]);
 
   const handleVideoClick = (videoId: number, event: React.MouseEvent) => {
-    // 클릭한 위치를 기준으로 모달 위치 계산
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-
-    setModalPosition({ x, y });
     setSelectedVideoId(videoId);
     setShowModal(true);
   };
@@ -188,7 +182,7 @@ export default function CreationPage() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-black">
+    <div className="h-full flex flex-col bg-black relative">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">내 작업물</h1>
@@ -311,26 +305,44 @@ export default function CreationPage() {
       </div>
 
       {/* 비디오 상세 모달 */}
-      {showModal && selectedVideoId && (
+      {showModal && selectedVideoId && typeof window !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-in fade-in duration-300"
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/90 backdrop-blur-sm p-4"
           onClick={handleModalBackgroundClick}
         >
           <div
-            className="absolute w-full max-w-6xl max-h-[90vh] animate-in zoom-in-95 duration-300"
-            style={{
-              left: `${Math.min(Math.max(modalPosition.x - 384, 16), window.innerWidth - 768 - 16)}px`,
-              top: `${Math.min(Math.max(modalPosition.y - 200, 16), window.innerHeight - 400)}px`,
-            }}
+            className="relative bg-black/30 backdrop-blur-md rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden w-full max-w-4xl mx-auto border border-white/10"
+            style={{ maxHeight: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <CreationDetail
-              videoId={selectedVideoId}
-              onBack={closeModal}
-              onVideoUpdate={handleVideoUpdate}
-            />
+            <button
+              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+              onClick={closeModal}
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <div className="h-full overflow-y-auto">
+              <CreationDetail
+                videoId={selectedVideoId}
+                onBack={closeModal}
+                onVideoUpdate={handleVideoUpdate}
+              />
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

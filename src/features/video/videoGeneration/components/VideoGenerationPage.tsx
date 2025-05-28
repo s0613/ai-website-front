@@ -7,6 +7,7 @@ import useVideoGeneration from "../hooks/useVideoGeneration";
 import { toast } from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
 import { SidebarFormData } from "../hooks/useVideoSidebar";
+import { GenerationNotificationService } from '@/features/admin/services/GenerationNotificationService';
 
 // 로딩 컴포넌트
 function LoadingComponent() {
@@ -37,11 +38,38 @@ function VideoGenerationContent() {
 
   // handleSidebarSubmit 함수 호출을 위한 래퍼 함수
   const handleVideoSidebarSubmit = (data: SidebarFormData) => {
-    handleSidebarSubmit(data);
+    // SidebarFormData를 VideoGenerationData로 변환 (null을 undefined로 변환)
+    const convertedData = {
+      ...data,
+      autoSelectNotificationId: data.autoSelectNotificationId ?? undefined
+    };
+    handleSidebarSubmit(convertedData);
     // 영상 생성 시작 알림
     toast.success("영상 생성이 시작되었습니다. 생성이 완료되면 알림으로 알려드리겠습니다.", {
       duration: 5000,
     });
+  };
+
+  // Auto-Select 모드에서 즉시 알림 생성 콜백
+  const handleNotifyProcessing = async (notificationData: { title: string; thumbnailUrl: string }) => {
+    try {
+      console.log('[VideoGenerationPage] 알림 생성 요청:', notificationData);
+      const notification = await GenerationNotificationService.createNotification({
+        title: notificationData.title,
+        thumbnailUrl: notificationData.thumbnailUrl,
+      });
+      console.log('[VideoGenerationPage] 알림 생성 완료:', notification);
+
+      // 알림 벨 열기 신호 전송 (약간 지연)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('open-notification-bell'));
+      }, 500);
+
+      return notification;
+    } catch (error) {
+      console.error('[VideoGenerationPage] 알림 생성 실패:', error);
+      throw error;
+    }
   };
 
   // 이미지 선택 핸들러
@@ -100,6 +128,7 @@ function VideoGenerationContent() {
         referenceImageUrl={referenceImageUrl}
         referencePrompt={referencePrompt}
         referenceModel={referenceModel}
+        onNotifyProcessing={handleNotifyProcessing}
         isLoading={false}
         isDragOver={isSidebarDragOver}
         onDragEnter={handleSidebarDragEnter}

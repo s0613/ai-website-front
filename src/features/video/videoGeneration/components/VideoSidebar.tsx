@@ -30,6 +30,7 @@ export type VideoSidebarProps = {
   referenceImageUrl?: string;
   referencePrompt?: string;
   referenceModel?: string;
+  onNotifyProcessing?: (notification: { title: string; thumbnailUrl: string }) => Promise<unknown> | void;
   isLoading?: boolean;
   isDragOver?: boolean;
   onDragEnter?: (e: React.DragEvent) => void;
@@ -46,6 +47,7 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
     referenceImageUrl,
     referencePrompt,
     referenceModel,
+    onNotifyProcessing,
     isLoading,
     isDragOver,
     onDragEnter,
@@ -87,12 +89,7 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
     referenceImageUrl,
     referencePrompt,
     referenceModel,
-    onNotifyProcessing: () => {
-      // 지연시간 추가 후 NotificationBell 오픈 신호 전송 (백엔드 처리 시간 확보)
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('open-notification-bell'));
-      }, 500);
-    },
+    onNotifyProcessing,
   });
 
   return (
@@ -329,6 +326,7 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
                 onChange={(e) => updateSettings({ endpoint: e.target.value })}
                 className="w-full rounded-lg border border-white/20 bg-black/30 backdrop-blur-md p-2.5 text-sm focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none text-white"
               >
+                <option value="auto">Auto-Select - AI가 프롬프트와 이미지에 최적화된 모델 자동 선택</option>
                 {activeTab === "image" ? (
                   <>
                     <option value="kling">
@@ -361,49 +359,72 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
                   </>
                 )}
               </select>
+
+              {/* Auto-Select 가이드 */}
+              {endpoint === "auto" && (
+                <div className="mt-2 p-3 bg-sky-500/10 border border-sky-500/20 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-sky-500/20 flex items-center justify-center mt-0.5 flex-shrink-0">
+                      <svg className="w-3 h-3 text-sky-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="text-xs text-sky-300">
+                      <p className="font-medium mb-1">🎯 스마트 모델 선택 모드</p>
+                      <ul className="space-y-1 text-sky-300/80">
+                        <li>• 프롬프트와 참조 이미지를 AI가 분석</li>
+                        <li>• 최적의 모델과 세부 설정을 자동 선택</li>
+                        <li>• 모델 선택의 부담 없이 최고의 결과 획득</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 모델 설정 컴포넌트 */}
-            <div className="border border-white/10 rounded-lg p-4 bg-black/30 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
-              <h3 className="text-sm font-medium text-white mb-3 flex items-center">
-                <svg
-                  className="h-4 w-4 mr-1.5 text-sky-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                모델 세부 설정
-              </h3>
-              <ModelSetting
-                endpoint={endpoint}
-                mode={activeTab}
-                updateSettings={updateSettings}
-                currentSettings={{
-                  aspectRatio: aspectRatio as AspectRatioType,
-                  duration: endpoint === "pixverse" ? duration.replace('s', '') as "5" | "8" : duration,
-                  resolution: resolution as ResolutionType,
-                  seed,
-                  ...(endpoint === "pixverse" && {
-                    style: pixverseStyle || "anime",
-                    negative_prompt: negativePrompt,
-                  }),
-                }}
-              />
-            </div>
+            {endpoint !== "auto" && (
+              <div className="border border-white/10 rounded-lg p-4 bg-black/30 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+                <h3 className="text-sm font-medium text-white mb-3 flex items-center">
+                  <svg
+                    className="h-4 w-4 mr-1.5 text-sky-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  모델 세부 설정
+                </h3>
+                <ModelSetting
+                  endpoint={endpoint}
+                  mode={activeTab}
+                  updateSettings={updateSettings}
+                  currentSettings={{
+                    aspectRatio: aspectRatio as AspectRatioType,
+                    duration: endpoint === "pixverse" ? duration.replace('s', '') as "5" | "8" : duration,
+                    resolution: resolution as ResolutionType,
+                    seed,
+                    ...(endpoint === "pixverse" && {
+                      style: pixverseStyle || "anime",
+                      negative_prompt: negativePrompt,
+                    }),
+                  }}
+                />
+              </div>
+            )}
 
           </form>
         </div>
