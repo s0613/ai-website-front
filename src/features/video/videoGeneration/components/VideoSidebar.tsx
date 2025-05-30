@@ -22,6 +22,7 @@ import ModelSetting from "./ModelSetting";
 import { SidebarFormData, useVideoSidebar } from "../hooks/useVideoSidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AspectRatioType, ResolutionType } from "../types/modelSettingTypes";
+import { useToast } from "@/hooks/use-toast";
 
 export type VideoSidebarProps = {
   onSubmit: (data: SidebarFormData) => void;
@@ -92,6 +93,8 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
     onNotifyProcessing,
   });
 
+  const { toast } = useToast();
+
   return (
     <div
       ref={ref}
@@ -123,24 +126,41 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
           <div className="mb-6">
             <Tabs
               value={activeTab}
-              onValueChange={(val) => handleTabSelection(val as "image" | "text" | "video")}
+              onValueChange={() => { }}
               className="w-full"
             >
               <TabsList className="grid w-full grid-cols-3 bg-transparent">
                 <TabsTrigger
                   value="image"
+                  onClick={() => handleTabSelection("image")}
                   className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
                 >
                   IMAGE
                 </TabsTrigger>
                 <TabsTrigger
                   value="video"
+                  onClick={e => {
+                    e.preventDefault();
+                    toast({
+                      title: "VIDEO 모드",
+                      description: "곧 업데이트 예정입니다!",
+                      duration: 3000,
+                    });
+                  }}
                   className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
                 >
                   VIDEO
                 </TabsTrigger>
                 <TabsTrigger
                   value="text"
+                  onClick={e => {
+                    e.preventDefault();
+                    toast({
+                      title: "TEXT 모드",
+                      description: "곧 업데이트 예정입니다!",
+                      duration: 3000,
+                    });
+                  }}
                   className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
                 >
                   TEXT

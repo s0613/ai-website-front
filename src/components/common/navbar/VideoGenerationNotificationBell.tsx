@@ -184,9 +184,9 @@ export const VideoGenerationNotificationBell = () => {
             if (!isOpen) setIsOpen(true);
             fetchNotifications(); // 알림 등록 시 즉시 목록 갱신
 
-            // 알림 벨 토스트 표시
-            toast("비디오 생성 요청이 접수되었습니다", {
-                icon: "🎬",
+            // 알림 벨 토스트 표시 - 일반화된 메시지
+            toast("작업 요청이 접수되었습니다", {
+                icon: "🔔",
                 duration: 3000
             });
 
@@ -249,33 +249,66 @@ export const VideoGenerationNotificationBell = () => {
                     icon: "🎬"
                 });
             } else {
-                // 영상 ID가 없는 경우 - 내 작업물 페이지로 이동
-                console.warn('[알림 클릭] 완료된 알림이지만 videoId가 없음:', {
+                // 영상 ID가 없는 경우 - 가상 피팅이나 기타 작업 완료
+                console.log('[알림 클릭] 완료된 작업 - 내 작업물 페이지로 이동:', {
                     notificationId: notification.id,
                     status: notification.status,
-                    videoId: notification.videoId,
                     title: notification.title
                 });
-                toast("영상이 생성되었지만 상세 정보를 찾을 수 없습니다. 내 작업물 페이지에서 확인해보세요.", {
-                    icon: "📹",
-                    duration: 4000
-                });
+
+                // 가상 피팅인지 확인
+                if (notification.title.includes("가상 피팅")) {
+                    toast.success("가상 피팅이 완료되었습니다! 내 작업물에서 확인하세요.", {
+                        icon: "👗",
+                        duration: 4000
+                    });
+                } else {
+                    toast.success("작업이 완료되었습니다! 내 작업물에서 확인하세요.", {
+                        icon: "✅",
+                        duration: 4000
+                    });
+                }
+
                 // 내 작업물 페이지로 이동
                 window.location.href = '/my';
             }
         } else if (notification.status === 'PROCESSING') {
-            toast("영상이 아직 처리 중입니다. 잠시 후 다시 확인해주세요.", {
-                duration: 3000
-            });
+            // 가상 피팅인지 확인하여 적절한 메시지 표시
+            if (notification.title.includes("가상 피팅")) {
+                toast("가상 피팅이 처리 중입니다. 잠시 후 다시 확인해주세요.", {
+                    icon: "👗",
+                    duration: 3000
+                });
+            } else {
+                toast("작업이 아직 처리 중입니다. 잠시 후 다시 확인해주세요.", {
+                    duration: 3000
+                });
+            }
         } else if (notification.status === 'FAILED') {
             const errorMsg = notification.errorMessage || '알 수 없는 오류가 발생했습니다.';
-            toast.error(`영상 생성 실패: ${errorMsg}`, {
-                duration: 5000
-            });
+
+            // 가상 피팅인지 확인하여 적절한 메시지 표시
+            if (notification.title.includes("가상 피팅")) {
+                toast.error(`가상 피팅 실패: ${errorMsg}`, {
+                    duration: 5000
+                });
+            } else {
+                toast.error(`작업 실패: ${errorMsg}`, {
+                    duration: 5000
+                });
+            }
         } else if (notification.status === 'REQUESTED') {
-            toast("영상 생성 요청이 대기 중입니다.", {
-                duration: 3000
-            });
+            // 가상 피팅인지 확인하여 적절한 메시지 표시
+            if (notification.title.includes("가상 피팅")) {
+                toast("가상 피팅 요청이 대기 중입니다.", {
+                    icon: "👗",
+                    duration: 3000
+                });
+            } else {
+                toast("작업 요청이 대기 중입니다.", {
+                    duration: 3000
+                });
+            }
         } else {
             console.warn('[알림 클릭] 알 수 없는 상태:', {
                 status: notification.status,
@@ -330,13 +363,28 @@ export const VideoGenerationNotificationBell = () => {
                                         key={notification.id}
                                         className={`p-4 flex items-center gap-2 transition-colors ${notification.status === 'COMPLETED' && notification.videoId
                                             ? 'hover:bg-black/60 cursor-pointer'
-                                            : notification.status === 'PROCESSING'
+                                            : notification.status === 'COMPLETED' && !notification.videoId
                                                 ? 'hover:bg-black/60 cursor-pointer'
-                                                : notification.status === 'FAILED'
-                                                    ? 'hover:bg-gray-800/30 cursor-pointer'
-                                                    : 'cursor-default'
+                                                : notification.status === 'PROCESSING'
+                                                    ? 'hover:bg-black/60 cursor-pointer'
+                                                    : notification.status === 'FAILED'
+                                                        ? 'hover:bg-gray-800/30 cursor-pointer'
+                                                        : 'cursor-default'
                                             }`}
-                                        onClick={() => handleNotificationClick(notification)}
+                                        onClick={() => {
+                                            if (
+                                                notification.status === "COMPLETED" &&
+                                                !notification.videoId &&
+                                                notification.title.includes("가상 피팅")
+                                            ) {
+                                                toast("가상 피팅 결과는 아래 ‘fashn’ 폴더에서 확인해주세요.", {
+                                                    icon: "👗",
+                                                    duration: 4000
+                                                });
+                                            } else {
+                                                handleNotificationClick(notification);
+                                            }
+                                        }}
                                     >
                                         {notification.status === "PROCESSING" && (
                                             <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
@@ -357,7 +405,12 @@ export const VideoGenerationNotificationBell = () => {
                                             )}
                                             {notification.status === "COMPLETED" && !notification.videoId && (
                                                 <p className="text-xs text-gray-400 mt-1 text-left flex items-center gap-1">
-                                                    <span>내 작업물에서 확인 가능</span>
+                                                    <span>
+                                                        {notification.title.includes("가상 피팅")
+                                                            ? "클릭하여 결과 확인"
+                                                            : "내 작업물에서 확인 가능"
+                                                        }
+                                                    </span>
                                                 </p>
                                             )}
                                             {notification.status === "PROCESSING" && (

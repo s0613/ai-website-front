@@ -3,6 +3,7 @@ import "./styles/globals.css";
 import Navbar from "@/components/common/navbar/Navbar";
 import type { Metadata } from "next";
 import Providers from "./providers";
+import ClarityProvider from "./ClarityProvider";
 
 export const metadata: Metadata = {
   title: "Trynic",
@@ -17,6 +18,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
+        <ClarityProvider />
         <Providers>
           <Navbar />
           <div>{children}</div>

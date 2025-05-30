@@ -535,7 +535,7 @@ export function useVideoSidebar({
         },
         body: JSON.stringify({
           imageUrl: imageUrl,
-          existingPrompt: prompt
+          existingPrompt: prompt ?? "" // 프롬프트가 비어있어도 빈 문자열 전달
         }),
       });
 
@@ -557,8 +557,8 @@ export function useVideoSidebar({
 
       const responseData = await response.json();
 
-      if (responseData.response) {
-        setPrompt(responseData.response);
+      if (responseData.generated_prompt) {
+        setPrompt(responseData.generated_prompt);
         toast({
           title: "프롬프트 생성 완료",
           description: "Gemini API로부터 프롬프트를 성공적으로 생성했습니다.",

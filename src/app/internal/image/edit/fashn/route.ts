@@ -83,8 +83,22 @@ export async function POST(req: NextRequest) {
         });
     } catch (error) {
         console.error("Error in image generation:", error);
+        let errorMsg = "Failed to generate image";
+        // ValidationError 등에서 body.detail[0].msg 추출
+        if (error && typeof error === 'object') {
+            const errObj = error as { body?: { detail?: { msg?: string }[] }, message?: string, toString?: () => string };
+            if (errObj.body && Array.isArray(errObj.body.detail) && errObj.body.detail[0]?.msg) {
+                errorMsg = errObj.body.detail[0].msg!;
+            } else if (typeof errObj.message === 'string') {
+                errorMsg = errObj.message;
+            } else if (typeof errObj.toString === 'function') {
+                errorMsg = errObj.toString();
+            }
+        } else if (typeof error === 'string') {
+            errorMsg = error;
+        }
         return NextResponse.json(
-            { error: "Failed to generate image", details: error instanceof Error ? error.message : String(error) },
+            { error: errorMsg, details: error },
             { status: 500 }
         );
     }

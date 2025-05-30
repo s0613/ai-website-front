@@ -15,6 +15,7 @@ import {
 import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { BillingService } from "@/features/payment/services/BillingService";
+import { useCredit } from "@/features/payment/context/CreditContext";
 
 export interface UpscalerImageSettings {
     prompt: string;
@@ -79,6 +80,7 @@ const UpscalerImageSidebar = forwardRef<HTMLDivElement, UpscalerImageSidebarProp
 }, ref) => {
     const [settings, setSettings] = useState<UpscalerImageSettings>(DEFAULT_SETTINGS);
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+    const { updateCredits } = useCredit();
 
     // 부모 컴포넌트에서 selectedImage 변경 시마다 settings에 반영
     useEffect(() => {
@@ -120,11 +122,17 @@ const UpscalerImageSidebar = forwardRef<HTMLDivElement, UpscalerImageSidebarProp
         }
 
         try {
-            // 크레딧 소비 요청
-            await BillingService.consumeCredit({
-                amount: 3,
-                reason: "이미지 업스케일링 사용"
-            });
+            // 크레딧 소비 요청: UI 즉시 반영
+            updateCredits(-3);
+            try {
+                await BillingService.consumeCredit({
+                    amount: 3,
+                    reason: "이미지 업스케일링 사용"
+                });
+            } catch {
+                updateCredits(3); // 실패시 롤백
+                throw new Error("크레딧 차감 실패");
+            }
 
             // 크레딧 소비 성공 시 업스케일링 실행
             onUpscale(settings);

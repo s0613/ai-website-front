@@ -201,12 +201,18 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         return;
       }
 
-      // 크레딧 소비 요청
-      await BillingService.consumeCredit({
-        amount: 10,
-        reason: "비디오 생성"
-      });
+      // 크레딧 소비 요청: UI 즉시 반영
       updateCredits(-10);
+      try {
+        await BillingService.consumeCredit({
+          amount: 10,
+          reason: "비디오 생성"
+        });
+      } catch (err) {
+        // 실패시 롤백
+        updateCredits(10);
+        throw err;
+      }
 
       const endpointUrl = getVideoEndpointUrl(data.endpoint, activeTab);
 

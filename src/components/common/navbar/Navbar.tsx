@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FiMenu, FiX } from "react-icons/fi";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "@/features/user/AuthContext";
+import { useCredit } from "@/features/payment/context/CreditContext";
 
 import { MobileMenu } from "./MobileMenu";
 import { BillingService } from "@/features/payment/services/BillingService";
@@ -14,26 +15,9 @@ import { VideoGenerationNotificationBell } from "./VideoGenerationNotificationBe
 const Navbar = () => {
   const { isLoggedIn, email, logout, nickname, id } = useAuth();
   const router = useRouter();
-  const [creditInfo, setCreditInfo] = useState<{ currentCredit: number } | null>(null);
+  const { credits, updateCredits, refreshCredits } = useCredit();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      loadCreditInfo();
-    } else {
-      setCreditInfo(null);
-    }
-  }, [isLoggedIn]);
-
-  const loadCreditInfo = async () => {
-    try {
-      const response = await BillingService.getCurrentCredit();
-      setCreditInfo(response);
-    } catch (error) {
-      console.error("Failed to load credit info:", error);
-    }
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -42,6 +26,20 @@ const Navbar = () => {
 
   const handleBadgeClick = () => {
     router.push('/payment');
+  };
+
+  // 크레딧 감소 이벤트를 위한 함수 (예시)
+  const handleConsumeCredit = (amount: number) => {
+    updateCredits(-amount); // 즉시 UI 반영
+    // 비동기로 백엔드에 요청
+    BillingService.consumeCredit({ amount, reason: "사용자 요청" })
+      .then(() => {
+        refreshCredits(); // 실제 값 동기화(실패시 롤백 등 추가 가능)
+      })
+      .catch(() => {
+        // 실패시 롤백
+        updateCredits(amount);
+      });
   };
 
   return (
@@ -79,7 +77,7 @@ const Navbar = () => {
                 <div className="absolute inset-0 bg-[conic-gradient(from_0deg,#ff00ff,#00ffff,#ff00ff)] opacity-[0.15] animate-spin-slow"></div>
                 <div className="relative flex items-center">
                   <span className="text-sm font-mono tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[#ff00ff] to-[#00ffff] animate-pulse">
-                    {creditInfo?.currentCredit || 0}
+                    {credits || 0}
                   </span>
                   <span className="ml-2 text-sm font-medium text-white/80 group-hover:text-white/90 transition-colors duration-300">크레딧</span>
                 </div>
@@ -89,7 +87,7 @@ const Navbar = () => {
               <UserMenu
                 email={email}
                 nickname={nickname}
-                credits={creditInfo?.currentCredit || 0}
+                credits={credits || 0}
                 onLogout={handleLogout}
                 onBadgeClick={handleBadgeClick}
                 isOpen={isDropdownOpen}
@@ -127,7 +125,7 @@ const Navbar = () => {
           isLoggedIn={isLoggedIn}
           email={email}
           nickname={nickname}
-          credits={creditInfo?.currentCredit || 0}
+          credits={credits || 0}
           onLogout={handleLogout}
           onClose={() => setIsMenuOpen(false)}
         />

@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { useCredit } from "@/features/payment/context/CreditContext";
 
 /* ------------------------------------------------------------------ */
 /*  타입                                                               */
@@ -110,6 +111,7 @@ export default function FashnImageSidebar({
     slot2Image,
 }: EditImageSidebarProps) {
     const [settings, setSettings] = useState<EditImageSettings>(DEFAULT_SETTINGS);
+    const { updateCredits } = useCredit();
 
     /* slot1 / slot2 변경 시 settings 에 반영 */
     useEffect(() => {
@@ -142,8 +144,14 @@ export default function FashnImageSidebar({
         if (!settings.slot2) return toast.error("2번(모델) 이미지를 선택해주세요");
 
         try {
-            /* 1. 크레딧 차감 ------------------------------------------------ */
-            await BillingService.consumeCredit({ amount: 5, reason: "가상 피팅 사용" });
+            // 크레딧 소비 요청: UI 즉시 반영
+            updateCredits(-5);
+            try {
+                await BillingService.consumeCredit({ amount: 5, reason: "가상 피팅 사용" });
+            } catch {
+                updateCredits(5); // 실패시 롤백
+                throw new Error("크레딧 차감 실패");
+            }
 
             /* 2. 고유 파일명 생성 ------------------------------------------- */
             const uniqueFileName = generateUniqueFileName(settings.slot1.name);

@@ -49,6 +49,7 @@ import { Label } from "@/components/ui/label";
 import { uploadFashnImage } from "./services/ImageService";
 import { GenerationNotificationService } from "@/features/admin/services/GenerationNotificationService";
 import Masonry from "react-masonry-css";
+import { useAuth } from "@/features/user/AuthContext";
 
 interface UploadResult {
     file: File;
@@ -60,6 +61,7 @@ export default function EditImagePage() {
     /* ------------------------------------------------------------------
        상태값
     ------------------------------------------------------------------ */
+    const { id: userId } = useAuth();
     const [folders, setFolders] = useState<FolderResponse[]>([]);
     const [selectedFolder, setSelectedFolder] =
         useState<FolderResponse | null>(null);
@@ -311,6 +313,43 @@ export default function EditImagePage() {
     ------------------------------------------------------------------ */
     const handleGenerate = async (settings: EditImageSettings) => {
         setIsFittingLoading(true);
+
+        // 1. 알림 생성 (가상 피팅 시작 시) - 작업 시작 전에 먼저 알림 생성
+        let notificationId: number | null = null;
+        if (slot2Image?.url && userId) {
+            try {
+                const notification = await GenerationNotificationService.createNotification({
+                    title: "가상 피팅하기",
+                    thumbnailUrl: slot2Image.url,
+                });
+                notificationId = notification.id;
+                console.log("가상 피팅 알림 생성 완료:", notification);
+
+                // Bell 새로고침 이벤트
+                window.dispatchEvent(new Event('open-notification-bell'));
+
+                // 즉시 처리 중 상태로 업데이트
+                try {
+                    await GenerationNotificationService.updateNotification(notificationId, {
+                        status: 'PROCESSING',
+                        userId: String(userId),
+                        thumbnailUrl: slot2Image.url,
+                    });
+                    console.log("가상 피팅 처리 중 알림 업데이트 성공");
+
+                    // 다시 한번 알림 목록 새로고침
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('open-notification-bell'));
+                    }, 200);
+                } catch (updateError) {
+                    console.error("알림 처리 중 상태 업데이트 실패:", updateError);
+                }
+            } catch (e) {
+                // 알림 생성 실패는 치명적이지 않으므로 무시
+                console.error("알림 생성 실패:", e);
+            }
+        }
+
         try {
             if (!settings.slot1?.url || !settings.slot2?.url)
                 throw new Error("의류 이미지와 모델 이미지를 모두 선택해주세요.");
@@ -356,27 +395,55 @@ export default function EditImagePage() {
             if (selectedFolder) await loadFiles(selectedFolder.id);
             toast.success("가상 피팅이 완료되었습니다!");
 
-            // 1. 알림 생성 (가상 피팅 시작)
-            if (slot2Image?.url) {
+            // 2. 알림 상태 업데이트 (완료로 변경)
+            if (notificationId && userId) {
                 try {
-                    await GenerationNotificationService.createNotification({
-                        title: "가상 피팅하기",
-                        thumbnailUrl: slot2Image.url,
+                    await GenerationNotificationService.updateNotification(notificationId, {
+                        status: 'COMPLETED',
+                        userId: String(userId),
+                        thumbnailUrl: resultUrl, // 생성된 이미지를 썸네일로 사용
                     });
-                    // Bell 새로고침 이벤트
-                    window.dispatchEvent(new Event('open-notification-bell'));
+                    console.log("가상 피팅 완료 알림 업데이트 성공");
+
+                    // 알림 목록 새로고침
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('open-notification-bell'));
+                    }, 500);
                 } catch (e) {
-                    // 알림 생성 실패는 치명적이지 않으므로 무시
-                    console.error("알림 생성 실패:", e);
+                    console.error("알림 상태 업데이트 실패:", e);
                 }
             }
         } catch (err: unknown) {
             console.error("가상 피팅 실패:", err);
-            let msg = (err instanceof Error ? err.message : String(err));
-            if (msg.includes("Failed to detect body pose")) {
-                msg = "모델 이미지에서 사람의 신체를 인식하지 못했습니다. 정면이 잘 나온 이미지를 사용해 주세요.";
+            // 서버에서 내려온 에러 메시지 최대한 raw하게 추출
+            let msg = "가상 피팅에 실패했습니다";
+            if (err instanceof Error) {
+                msg = err.message;
+            } else if (typeof err === 'object' && err !== null && 'error' in err) {
+                msg = (err as { error?: string }).error || msg;
+            } else if (typeof err === 'string') {
+                msg = err;
             }
             toast.error(msg || "가상 피팅에 실패했습니다");
+
+            // 3. 실패 시 알림 상태 업데이트
+            if (notificationId && userId) {
+                try {
+                    await GenerationNotificationService.updateNotification(notificationId, {
+                        status: 'FAILED',
+                        userId: String(userId),
+                        errorMessage: msg,
+                    });
+                    console.log("가상 피팅 실패 알림 업데이트 성공");
+
+                    // 알림 목록 새로고침
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('open-notification-bell'));
+                    }, 500);
+                } catch (e) {
+                    console.error("알림 상태 업데이트 실패:", e);
+                }
+            }
         } finally {
             setIsFittingLoading(false);
         }
