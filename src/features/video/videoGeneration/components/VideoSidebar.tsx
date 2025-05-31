@@ -133,7 +133,7 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
                 <TabsTrigger
                   value="image"
                   onClick={() => handleTabSelection("image")}
-                  className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
+                  className={`flex items-center justify-center py-2 px-4 hover:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300 ${activeTab === "image" ? "!font-bold !text-sky-400 data-[state=active]:!text-sky-400" : "text-white/70"}`}
                 >
                   IMAGE
                 </TabsTrigger>
@@ -147,7 +147,7 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
                       duration: 3000,
                     });
                   }}
-                  className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
+                  className={`flex items-center justify-center py-2 px-4 hover:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300 ${activeTab === "video" ? "!font-bold !text-sky-400 data-[state=active]:!text-sky-400" : "text-white/70"}`}
                 >
                   VIDEO
                 </TabsTrigger>
@@ -161,7 +161,7 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
                       duration: 3000,
                     });
                   }}
-                  className="flex items-center justify-center py-2 px-4 text-white/70 hover:text-white/70 data-[state=active]:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300"
+                  className={`flex items-center justify-center py-2 px-4 hover:text-white/70 data-[state=active]:bg-transparent transition-all relative after:absolute after:bottom-0 after:left-1/2 after:right-1/2 after:h-0.5 after:bg-sky-500 data-[state=active]:after:left-0 data-[state=active]:after:right-0 after:transition-all after:duration-300 ${activeTab === "text" ? "!font-bold !text-sky-400 data-[state=active]:!text-sky-400" : "text-white/70"}`}
                 >
                   TEXT
                 </TabsTrigger>

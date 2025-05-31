@@ -1,151 +1,160 @@
-"use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
-import { useAuth } from "@/features/user/AuthContext";
-import { login as loginApi, getGoogleLoginUrl } from "../services/UserService";
-import { LoginRequest } from "../types/User";
+"use client"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { getGoogleLoginUrl } from "../services/UserService"
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();
-  const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false)
 
-  // 이메일/비밀번호 로그인
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Enhanced typing animation states
+  const [displayText, setDisplayText] = useState("")
+  const [animationPhase, setAnimationPhase] = useState("typing")
+  const [showUnderline, setShowUnderline] = useState(false)
+  const [fadeOut, setFadeOut] = useState(false)
+  const [trynicText, setTrynicText] = useState("")
 
-    try {
-      const loginRequest: LoginRequest = { email, password };
-      const data = await loginApi(loginRequest);
+  const fullText = "Try it. Make it dynamic"
+  const trynicFullText = "Trynic AI"
 
-      const token = data.token;
-      if (!token) {
-        throw new Error("토큰이 전달되지 않았습니다.");
+  useEffect(() => {
+    let timeout: NodeJS.Timeout
+
+    if (animationPhase === "typing") {
+      if (displayText.length < fullText.length) {
+        timeout = setTimeout(() => {
+          setDisplayText(fullText.slice(0, displayText.length + 1))
+        }, 80)
+      } else {
+        timeout = setTimeout(() => {
+          setAnimationPhase("fading")
+          setFadeOut(true)
+        }, 1500)
       }
-
-      // API 응답에서 role 정보 추출
-      const role = data.role || "user"; // role이 없으면 기본값으로 'user' 설정
-      console.log("로그인 성공, 역할:", role);
-
-      setError("");
-      // role 정보를 login 함수에 전달
-      login(email, token, role);
-
-      // 로그인 완료 후 쿠키 확인
-      console.log("로그인 완료 후 최종 쿠키 상태:", document.cookie);
-
-      router.push("/");
-    } catch (error) {
-      setError((error as Error).message || "로그인에 실패했습니다");
+    } else if (animationPhase === "fading") {
+      timeout = setTimeout(() => {
+        setDisplayText("")
+        setFadeOut(false)
+        setAnimationPhase("showing")
+      }, 1000)
+    } else if (animationPhase === "showing") {
+      if (trynicText.length < trynicFullText.length) {
+        timeout = setTimeout(() => {
+          setTrynicText(trynicFullText.slice(0, trynicText.length + 1))
+        }, 120)
+      } else {
+        timeout = setTimeout(() => {
+          setAnimationPhase("underlining")
+          setShowUnderline(true)
+        }, 800)
+      }
     }
-  };
 
-  // 구글 로그인 버튼 클릭 시
+    return () => clearTimeout(timeout)
+  }, [displayText, animationPhase, trynicText])
+
   const handleGoogleLogin = () => {
-    window.location.href = getGoogleLoginUrl();
-  };
+    setIsLoading(true)
+    // Google OAuth redirect using UserService
+    setTimeout(() => {
+      window.location.href = getGoogleLoginUrl()
+    }, 500)
+  }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black">
-      <Card className="w-full max-w-md bg-black/40 backdrop-blur-xl border-white/20">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-white">
-            로그인
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* 이메일 로그인 폼은 숨김 처리 */}
-          <div className="hidden">
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-400"
-                >
-                  이메일
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="mt-1 block w-full bg-black/40 backdrop-blur-xl border-white/20 text-white"
-                />
+    <div className="flex min-h-screen bg-gradient-to-br from-black via-gray-900 to-black overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-sky-400/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+
+      {/* Left side: Enhanced typing animation */}
+      <div className="w-1/2 flex items-center justify-center relative z-10">
+        <div className="text-center space-y-8">
+          {/* Main animated text */}
+          <div className="relative">
+            {(animationPhase === "typing" || animationPhase === "fading") && (
+              <h1
+                className={`text-5xl lg:text-6xl xl:text-7xl font-bold text-white font-mono transition-all duration-1000 ${fadeOut ? "opacity-0 scale-95" : "opacity-100 scale-100"
+                  }`}
+              >
+                {displayText}
+                {animationPhase === "typing" && <span className="animate-pulse text-sky-400">|</span>}
+              </h1>
+            )}
+
+            {(animationPhase === "showing" || animationPhase === "underlining") && (
+              <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-white font-mono animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <span className="bg-gradient-to-r from-white via-sky-200 to-sky-400 bg-clip-text text-transparent">
+                  {trynicText}
+                </span>
+                {animationPhase === "showing" && <span className="animate-pulse text-sky-400">|</span>}
+              </h1>
+            )}
+
+            {showUnderline && (
+              <div className="relative mt-1 overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-sky-400 rounded-full animate-[slideWidth_1000ms_ease-out_forwards] w-0"></div>
+                <div className="absolute inset-0 h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-sky-400 rounded-full blur-sm opacity-50 animate-[slideWidth_1000ms_ease-out_forwards] w-0"></div>
               </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-400"
-                >
-                  비밀번호
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="mt-1 block w-full bg-black/40 backdrop-blur-xl border-white/20 text-white"
-                />
-              </div>
-              {error && <p className="text-red-400 text-sm">{error}</p>}
-              <Button type="submit" className="w-full bg-sky-500 hover:bg-sky-600 text-white">
-                이메일/비밀번호 로그인
-              </Button>
-            </form>
+            )}
           </div>
+        </div>
+      </div>
 
-          {/* 구글 로그인 버튼만 표시 */}
-          <Button
-            type="button"
-            className="w-full flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 text-white"
-            onClick={handleGoogleLogin}
-          >
-            <svg
-              className="w-5 h-5"
-              version="1.1"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 48 48"
-              xmlnsXlink="http://www.w3.org/1999/xlink"
-              style={{ display: "block" }}
+      {/* Right side: Enhanced login form */}
+      <div className="w-1/2 flex items-center justify-center p-8 relative z-10">
+        <Card className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl animate-in fade-in slide-in-from-right duration-1000">
+          <CardContent className="p-8 space-y-6">
+            {/* Header */}
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-white">Welcome Back</h2>
+              <p className="text-gray-400">Sign in to continue to Trynic AI</p>
+            </div>
+
+            {/* Google Login Button */}
+            <Button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-medium py-3 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
             >
-              <path
-                fill="#EA4335"
-                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-              />
-              <path
-                fill="#4285F4"
-                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-              />
-              <path
-                fill="#34A853"
-                d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-              />
-              <path fill="none" d="M0 0h48v48H0z" />
-            </svg>
-            <span>구글 로그인</span>
-          </Button>
-        </CardContent>
-
-      </Card>
+              {isLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center space-x-3">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  <span>Continue with Google</span>
+                </div>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

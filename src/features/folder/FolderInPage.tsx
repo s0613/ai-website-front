@@ -15,6 +15,7 @@ import {
   File,
   CloudUpload,
   X,
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,10 +29,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from "react-hot-toast";
+import { useToast } from "@/hooks/use-toast";
 import { FolderService, FileResponse } from "./services/FolderService";
 import { Card } from "@/components/ui/card";
 import Masonry from "react-masonry-css";
+import FolderImageDetail from "./FolderImageDetail";
+import { createPortal } from "react-dom";
 
 interface UploadResult {
   file: File;
@@ -57,8 +60,18 @@ const FolderInPage = () => {
   const [uploadResults, setUploadResults] = useState<UploadResult[]>([]);
   const [showUploadResults, setShowUploadResults] = useState(false);
 
+  // 파일 삭제 관련 상태
+  const [deleteFileId, setDeleteFileId] = useState<number | null>(null);
+  const [isFileDeleteModalOpen, setIsFileDeleteModalOpen] = useState(false);
+
+  // FolderImageDetail 관련 상태
+  const [selectedImageFile, setSelectedImageFile] = useState<FileResponse | null>(null);
+  const [showImageDetail, setShowImageDetail] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+
+  const { toast } = useToast();
 
   const fetchFiles = useCallback(async () => {
     if (!folderId) return;
@@ -91,8 +104,65 @@ const FolderInPage = () => {
     }
   }, [folderId, fetchFiles]);
 
+  // ESC 키 이벤트 리스너
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showImageDetail) {
+        closeImageDetail();
+      }
+    };
+
+    if (showImageDetail) {
+      document.addEventListener('keydown', handleEscapeKey);
+      // 모달 열릴 때 스크롤 방지
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+      // 모달 닫힐 때 스크롤 복원
+      document.body.style.overflow = 'unset';
+    };
+  }, [showImageDetail]);
+
   const handleBack = () => {
     router.push("/my/folder/my");
+  };
+
+  // 이미지 클릭 핸들러
+  const handleImageClick = (file: FileResponse) => {
+    // 이미지 파일인지 확인
+    if (file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+      setSelectedImageFile(file);
+      setShowImageDetail(true);
+    }
+  };
+
+  // FolderImageDetail 모달 닫기
+  const closeImageDetail = () => {
+    setShowImageDetail(false);
+    setSelectedImageFile(null);
+  };
+
+  // 파일 업데이트 핸들러 (FolderImageDetail에서 파일 정보가 변경될 때)
+  const handleFileUpdate = (updatedFile: FileResponse) => {
+    // 업데이트된 파일 정보를 files 배열에 반영
+    setFiles(prevFiles =>
+      prevFiles.map(file =>
+        file.id === updatedFile.id
+          ? updatedFile
+          : file
+      )
+    );
+    // 선택된 파일도 업데이트
+    setSelectedImageFile(updatedFile);
+  };
+
+  // 모달 배경 클릭 핸들러
+  const handleModalBackgroundClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      closeImageDetail();
+    }
   };
 
   const handleDeleteClick = () => {
@@ -104,24 +174,66 @@ const FolderInPage = () => {
 
     try {
       await FolderService.deleteFolder(Number(folderId));
-      toast.success("폴더가 삭제되었습니다");
+      toast({ title: "성공", description: "폴더가 삭제되었습니다", duration: 3000 });
       router.push("/my/folder");
     } catch (error) {
       console.error("폴더 삭제 오류:", error);
       if (error && typeof error === 'object' && 'response' in error && error.response) {
         const response = error.response as { data?: { message?: string }; status?: number };
         if (response.status === 500) {
-          toast.error("서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+          toast({ title: "오류", description: "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", duration: 3000, variant: "destructive" });
         } else {
-          toast.error("폴더 삭제에 실패했습니다: " + (response.data?.message || "알 수 없는 오류"));
+          toast({ title: "오류", description: "폴더 삭제에 실패했습니다: " + (response.data?.message || "알 수 없는 오류"), duration: 3000, variant: "destructive" });
         }
       } else if (error && typeof error === 'object' && 'request' in error) {
-        toast.error("서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.");
+        toast({ title: "오류", description: "서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.", duration: 3000, variant: "destructive" });
       } else {
-        toast.error("폴더 삭제에 실패했습니다");
+        toast({ title: "오류", description: "폴더 삭제에 실패했습니다", duration: 3000, variant: "destructive" });
       }
     } finally {
       setIsDeleteModalOpen(false);
+    }
+  };
+
+  // 파일 삭제 핸들러
+  const handleFileDeleteClick = (fileId: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // 이미지 클릭 이벤트 방지
+    setDeleteFileId(fileId);
+    setIsFileDeleteModalOpen(true);
+  };
+
+  const handleDeleteFile = async () => {
+    if (!deleteFileId) return;
+
+    try {
+      const result = await FolderService.deleteFile(deleteFileId);
+      if (result.success) {
+        toast({
+          title: "성공",
+          description: "파일이 삭제되었습니다",
+          duration: 3000
+        });
+        // 파일 목록에서 삭제된 파일 제거
+        setFiles(prevFiles => prevFiles.filter(file => file.id !== deleteFileId));
+      } else {
+        toast({
+          title: "오류",
+          description: result.message || "파일 삭제에 실패했습니다",
+          duration: 3000,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("파일 삭제 오류:", error);
+      toast({
+        title: "오류",
+        description: "파일 삭제 중 오류가 발생했습니다",
+        duration: 3000,
+        variant: "destructive"
+      });
+    } finally {
+      setIsFileDeleteModalOpen(false);
+      setDeleteFileId(null);
     }
   };
 
@@ -147,7 +259,7 @@ const FolderInPage = () => {
 
     try {
       await FolderService.uploadFile(Number(folderId), selectedFile);
-      toast.success(`${selectedFile.name} 파일이 업로드되었습니다`);
+      toast({ title: "성공", description: `${selectedFile.name} 파일이 업로드되었습니다`, duration: 3000 });
       await fetchFiles(); // 파일 목록 새로고침
     } catch (error) {
       console.error("파일 업로드 오류:", error);
@@ -155,9 +267,9 @@ const FolderInPage = () => {
         const response = error.response as { data?: { message?: string }; message?: string };
         const errorMessage = response.data?.message || response.message || "알 수 없는 오류";
         console.error('업로드 에러 상세:', errorMessage);
-        toast.error(`파일 업로드에 실패했습니다: ${errorMessage}`);
+        toast({ title: "오류", description: `파일 업로드에 실패했습니다: ${errorMessage}`, duration: 3000, variant: "destructive" });
       } else {
-        toast.error("파일 업로드에 실패했습니다");
+        toast({ title: "오류", description: "파일 업로드에 실패했습니다", duration: 3000, variant: "destructive" });
       }
     } finally {
       setIsUploading(false);
@@ -216,6 +328,12 @@ const FolderInPage = () => {
   const handleMultipleFileUpload = async (files: File[]) => {
     if (!folderId) return;
 
+    // 파일 개수 제한
+    if (files.length > 20) {
+      toast({ title: "오류", description: "한 번에 최대 20개의 파일만 업로드할 수 있습니다.", duration: 3000, variant: "destructive" });
+      return;
+    }
+
     setIsUploading(true);
     const results: UploadResult[] = [];
 
@@ -251,7 +369,7 @@ const FolderInPage = () => {
     const errorCount = results.filter(r => !r.success).length;
 
     if (successCount > 0) {
-      toast.success(`${successCount}개의 파일이 업로드되었습니다`);
+      toast({ title: "성공", description: `${successCount}개의 파일이 업로드되었습니다`, duration: 3000 });
       await fetchFiles(); // 파일 목록 새로고침
     }
 
@@ -455,6 +573,7 @@ const FolderInPage = () => {
               <Card
                 key={file.id}
                 className="relative cursor-pointer overflow-hidden group mb-4 break-inside-avoid transition-all duration-300 border border-white/10 hover:border-sky-500/50 bg-black/40 backdrop-blur-xl hover:bg-black/60"
+                onClick={() => handleImageClick(file)}
               >
                 <div className="relative">
                   {file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
@@ -472,6 +591,17 @@ const FolderInPage = () => {
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+
+                  {/* 파일 삭제 버튼 */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
+                    onClick={(e) => handleFileDeleteClick(file.id, e)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
                     <p className="text-sm text-white truncate font-medium">
                       {file.name}
@@ -495,7 +625,7 @@ const FolderInPage = () => {
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  className="border-gray-600 text-black hover:bg-gray-700"
                   onClick={handleCancelUpload}
                 >
                   취소
@@ -511,7 +641,7 @@ const FolderInPage = () => {
           </div>
         )}
 
-        {/* 삭제 확인 모달 */}
+        {/* 폴더 삭제 확인 모달 */}
         {isDeleteModalOpen && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
             <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
@@ -523,7 +653,7 @@ const FolderInPage = () => {
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  className="border-gray-600 text-black hover:bg-gray-700"
                   onClick={() => setIsDeleteModalOpen(false)}
                 >
                   취소
@@ -531,6 +661,40 @@ const FolderInPage = () => {
                 <Button
                   className="bg-red-500 hover:bg-red-600 text-white"
                   onClick={handleDeleteFolder}
+                >
+                  삭제
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 파일 삭제 확인 모달 */}
+        {isFileDeleteModalOpen && deleteFileId && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+              <h3 className="text-xl font-bold text-white mb-4">파일 삭제 확인</h3>
+              <p className="text-gray-300 mb-4">
+                정말로 이 파일을 삭제하시겠습니까?<br />
+                <span className="font-medium text-white">
+                  {files.find(f => f.id === deleteFileId)?.name}
+                </span><br />
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  className="border-gray-600 text-black hover:bg-gray-700"
+                  onClick={() => {
+                    setIsFileDeleteModalOpen(false);
+                    setDeleteFileId(null);
+                  }}
+                >
+                  취소
+                </Button>
+                <Button
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                  onClick={handleDeleteFile}
                 >
                   삭제
                 </Button>
@@ -602,6 +766,48 @@ const FolderInPage = () => {
           </div>
         )}
       </div>
+
+      {/* 이미지 상세 모달 */}
+      {showImageDetail && selectedImageFile && typeof window !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 flex justify-center items-center z-50 bg-black/90 backdrop-blur-sm p-4"
+          onClick={handleModalBackgroundClick}
+        >
+          <div
+            className="relative bg-black/30 backdrop-blur-md rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] overflow-hidden w-full max-w-4xl mx-auto border border-white/10"
+            style={{ maxHeight: "85vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+              onClick={closeImageDetail}
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <div className="h-full overflow-y-auto">
+              <FolderImageDetail
+                file={selectedImageFile}
+                folderName={folderName || undefined}
+                onBack={closeImageDetail}
+                onFileUpdate={handleFileUpdate}
+              />
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

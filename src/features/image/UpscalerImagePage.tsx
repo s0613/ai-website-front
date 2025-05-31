@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import Masonry from "react-masonry-css";
+import { useAuth } from "@/features/user/AuthContext";
 
 interface UploadResult {
     file: File;
@@ -48,6 +49,7 @@ interface UploadResult {
 }
 
 export default function UpscalerImagePage() {
+    const { id: userId } = useAuth();
     const [folders, setFolders] = useState<FolderResponse[]>([]);
     const [selectedFolder, setSelectedFolder] = useState<FolderResponse | null>(null);
     const [files, setFiles] = useState<FileResponse[]>([]);
@@ -81,8 +83,10 @@ export default function UpscalerImagePage() {
     const sidebarRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        loadFolders();
-    }, []);
+        if (userId) {
+            loadFolders();
+        }
+    }, [userId]);
 
     useEffect(() => {
         if (selectedFolder) {
@@ -187,6 +191,12 @@ export default function UpscalerImagePage() {
     ------------------------------------------------------------------ */
     const handleMultipleFileUpload = async (files: File[]) => {
         if (!selectedFolder) return;
+
+        // 파일 개수 제한
+        if (files.length > 20) {
+            toast.error("한 번에 최대 20개의 파일만 업로드할 수 있습니다.");
+            return;
+        }
 
         setIsUploading(true);
         const results: UploadResult[] = [];
@@ -597,7 +607,23 @@ export default function UpscalerImagePage() {
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
-                            {isLoading ? (
+                            {/* ----------- 로그인 확인 ----------- */}
+                            {!userId ? (
+                                <div className="col-span-full flex items-center justify-center h-full min-h-[400px]">
+                                    <div className="text-center">
+                                        <div className="border border-white/20 bg-black/40 backdrop-blur-xl rounded-lg p-12 max-w-md mx-auto">
+                                            <ImageIcon className="h-16 w-16 mx-auto mb-4 text-gray-500" />
+                                            <h3 className="text-xl font-semibold text-white mb-2">
+                                                로그인이 필요합니다
+                                            </h3>
+                                            <p className="text-gray-400 mb-6">
+                                                이미지 업스케일링 기능을 사용하려면<br />
+                                                먼저 로그인해주세요
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : isLoading ? (
                                 <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
                                     <div className="flex items-center justify-center h-32">
                                         <div className="text-center">

@@ -20,6 +20,16 @@
   animation: fadeOut 1.5s forwards;
 }
 
+@keyframes slideWidth {
+  0% {
+    width: 0%;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

@@ -42,6 +42,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import Masonry from "react-masonry-css";
 import axios from "axios";
+import { useAuth } from "@/features/user/AuthContext";
 
 interface VideoGenerationFolderProps {
     onSelectImage: (fileUrl: string, fileName: string) => void;
@@ -80,6 +81,7 @@ export default function VideoGenerationFolder({
     onSidebarDrop,
     sidebarRef,
 }: VideoGenerationFolderProps) {
+    const { id: userId } = useAuth();
     const [folders, setFolders] = useState<FolderResponse[]>([]);
     const [files, setFiles] = useState<FileResponse[]>([]);
     const [currentFolder, setCurrentFolder] = useState<FolderResponse | null>(
@@ -102,8 +104,10 @@ export default function VideoGenerationFolder({
 
     /* ------------------- 1) 마운트 시 폴더 목록 불러오기 ------------------- */
     useEffect(() => {
-        fetchFolders();
-    }, []);
+        if (userId) {
+            fetchFolders();
+        }
+    }, [userId]);
 
     /* ------------------- 2) 폴더 목록 조회 ------------------- */
     const fetchFolders = async () => {
@@ -347,6 +351,12 @@ export default function VideoGenerationFolder({
     const handleMultipleFileUpload = async (files: File[]) => {
         if (!currentFolder) return;
 
+        // 파일 개수 제한
+        if (files.length > 20) {
+            toast.error("한 번에 최대 20개의 파일만 업로드할 수 있습니다.");
+            return;
+        }
+
         setIsUploading(true);
         const results: UploadResult[] = [];
 
@@ -577,176 +587,192 @@ export default function VideoGenerationFolder({
                         </div>
                     )}
 
-                    {/* -------- 로딩 -------- */}
-                    {isLoadingFolder ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
-                            <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
-                                <div className="flex items-center justify-center h-32">
-                                    <div className="text-center">
-                                        <Loader2 className="h-10 w-10 mx-auto mb-2 text-sky-400 animate-spin" />
-                                        <p className="text-white">로딩 중...</p>
-                                        <p className="text-sm text-gray-400">잠시만 기다려주세요</p>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-
-                        /* -------- 오류 -------- */
-                    ) : folderError ? (
-                        // 인증 실패(401)로 인한 빈 배열이면 아무것도 렌더링하지 않음
-                        (folders.length === 0 && files.length === 0)
-                            ? null
-                            : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
-                                    <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
-                                        <div className="flex flex-col items-center justify-center h-32">
-                                            <div className="bg-red-500/20 text-red-400 rounded-full p-4 mb-4">
-                                                <AlertTriangle className="h-10 w-10" />
-                                            </div>
-                                            <h3 className="text-lg font-semibold text-white mb-2">
-                                                오류가 발생했습니다
-                                            </h3>
-                                            <p className="text-red-400 text-center mb-4">{folderError}</p>
-                                            <Button
-                                                onClick={
-                                                    currentFolder
-                                                        ? () => fetchFiles(currentFolder.id)
-                                                        : fetchFolders
-                                                }
-                                                className="bg-sky-500 hover:bg-sky-600 text-white"
-                                            >
-                                                <RefreshCw className="w-4 h-4 mr-2" />
-                                                다시 시도
-                                            </Button>
-                                        </div>
-                                    </Card>
-                                </div>
-                            )
-
-                        /* -------- 폴더 목록 -------- */
-                    ) : !currentFolder ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
-                            {folders.map((folder) => (
-                                <Card
-                                    key={folder.id}
-                                    className="group p-6 border border-white/10 bg-black/40 backdrop-blur-xl hover:bg-black/30 hover:border-sky-500/50 transition-all duration-300 cursor-pointer relative overflow-hidden"
-                                    onClick={() => handleFolderClick(folder)}
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <div className="relative flex items-center justify-between">
-                                        <div className="flex items-center gap-3 flex-1">
-                                            <Folder className="h-6 w-6 text-sky-400 group-hover:text-sky-300" />
-                                            <div>
-                                                <h3 className="font-medium text-white">
-                                                    {folder.name}
-                                                </h3>
-                                            </div>
-                                        </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-white hover:bg-black/60 relative z-10"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="bg-black/40 backdrop-blur-xl border-white/20">
-                                                <DropdownMenuItem
-                                                    className="text-red-400 hover:bg-black/60"
-                                                    onClick={(e) => handleDeleteClick(folder.id, e)}
-                                                >
-                                                    삭제
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-
-                        /* -------- 폴더 내부 파일 목록 -------- */
-                    ) : files.length === 0 ? (
-                        /* -------- 빈 폴더 placeholder -------- */
+                    {/* -------- 로그인 확인 -------- */}
+                    {!userId ? (
                         <div className="flex items-center justify-center h-full min-h-[400px]">
                             <div className="text-center">
-                                <div className="border-2 border-dashed border-gray-600 rounded-lg p-12 max-w-md mx-auto">
+                                <div className="border border-white/20 bg-black/40 backdrop-blur-xl rounded-lg p-12 max-w-md mx-auto">
                                     <ImageIcon className="h-16 w-16 mx-auto mb-4 text-gray-500" />
                                     <h3 className="text-xl font-semibold text-white mb-2">
-                                        아직 이미지가 없습니다
+                                        로그인이 필요합니다
                                     </h3>
                                     <p className="text-gray-400 mb-6">
-                                        이미지를 드래그 앤 드롭하거나<br />
-                                        업로드 버튼을 사용해 이미지를 추가하세요
+                                        비디오 생성 기능을 사용하려면<br />
+                                        먼저 로그인해주세요
                                     </p>
-                                    <Button
-                                        className="bg-sky-500 hover:bg-sky-600 text-white"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        disabled={isUploading}
-                                    >
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        이미지 선택
-                                    </Button>
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        <Masonry
-                            breakpointCols={{
-                                default: 4,
-                                1100: 3,
-                                700: 2,
-                                500: 1
-                            }}
-                            className="my-masonry-grid"
-                            columnClassName="my-masonry-grid_column"
-                        >
-                            {files.map((file) => {
-                                const isDragging = draggingImageId === file.id;
+                    ) : /* -------- 로딩 -------- */
+                        isLoadingFolder ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
+                                <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
+                                    <div className="flex items-center justify-center h-32">
+                                        <div className="text-center">
+                                            <Loader2 className="h-10 w-10 mx-auto mb-2 text-sky-400 animate-spin" />
+                                            <p className="text-white">로딩 중...</p>
+                                            <p className="text-sm text-gray-400">잠시만 기다려주세요</p>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </div>
 
-                                return (
+                            /* -------- 오류 -------- */
+                        ) : folderError ? (
+                            // 인증 실패(401)로 인한 빈 배열이면 아무것도 렌더링하지 않음
+                            (folders.length === 0 && files.length === 0)
+                                ? null
+                                : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
+                                        <Card className="p-4 border border-white/20 bg-black/40 backdrop-blur-xl">
+                                            <div className="flex flex-col items-center justify-center h-32">
+                                                <div className="bg-red-500/20 text-red-400 rounded-full p-4 mb-4">
+                                                    <AlertTriangle className="h-10 w-10" />
+                                                </div>
+                                                <h3 className="text-lg font-semibold text-white mb-2">
+                                                    오류가 발생했습니다
+                                                </h3>
+                                                <p className="text-red-400 text-center mb-4">{folderError}</p>
+                                                <Button
+                                                    onClick={
+                                                        currentFolder
+                                                            ? () => fetchFiles(currentFolder.id)
+                                                            : fetchFolders
+                                                    }
+                                                    className="bg-sky-500 hover:bg-sky-600 text-white"
+                                                >
+                                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                                    다시 시도
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    </div>
+                                )
+
+                            /* -------- 폴더 목록 -------- */
+                        ) : !currentFolder ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
+                                {folders.map((folder) => (
                                     <Card
-                                        key={file.id}
-                                        className={cn(
-                                            "relative cursor-pointer overflow-hidden group mb-4 break-inside-avoid",
-                                            "transition-all duration-300",
-                                            "border border-white/10 hover:border-sky-500/50",
-                                            "bg-black/40 backdrop-blur-xl hover:bg-black/60",
-                                            isDragging && "opacity-50 scale-95 border-sky-400"
-                                        )}
-                                        onClick={() => handleSetReferenceImage(file)}
-                                        draggable
-                                        onDragStart={(e) => handleImageDragStart(e, file)}
-                                        onDragEnd={handleImageDragEnd}
+                                        key={folder.id}
+                                        className="group p-6 border border-white/10 bg-black/40 backdrop-blur-xl hover:bg-black/30 hover:border-sky-500/50 transition-all duration-300 cursor-pointer relative overflow-hidden"
+                                        onClick={() => handleFolderClick(folder)}
                                     >
-                                        <div className="relative">
-                                            <Image
-                                                src={file.url}
-                                                alt={file.name}
-                                                width={300}
-                                                height={200}
-                                                className="w-full h-auto object-cover"
-                                                sizes="(max-width: 500px) 100vw, (max-width: 700px) 50vw, (max-width: 1100px) 33vw, 25vw"
-                                                unoptimized
-                                            />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                                                <p className="text-sm text-white truncate font-medium">
-                                                    {file.name}
-                                                </p>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="relative flex items-center justify-between">
+                                            <div className="flex items-center gap-3 flex-1">
+                                                <Folder className="h-6 w-6 text-sky-400 group-hover:text-sky-300" />
+                                                <div>
+                                                    <h3 className="font-medium text-white">
+                                                        {folder.name}
+                                                    </h3>
+                                                </div>
                                             </div>
-                                            {/* 드래그 가능 표시 */}
-                                            <div className="absolute top-2 left-2 bg-black/60 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                드래그하여 참조 이미지로 설정
-                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-white hover:bg-black/60 relative z-10"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent className="bg-black/40 backdrop-blur-xl border-white/20">
+                                                    <DropdownMenuItem
+                                                        className="text-red-400 hover:bg-black/60"
+                                                        onClick={(e) => handleDeleteClick(folder.id, e)}
+                                                    >
+                                                        삭제
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     </Card>
-                                );
-                            })}
-                        </Masonry>
-                    )}
+                                ))}
+                            </div>
+
+                            /* -------- 폴더 내부 파일 목록 -------- */
+                        ) : files.length === 0 ? (
+                            /* -------- 빈 폴더 placeholder -------- */
+                            <div className="flex items-center justify-center h-full min-h-[400px]">
+                                <div className="text-center">
+                                    <div className="border-2 border-dashed border-gray-600 rounded-lg p-12 max-w-md mx-auto">
+                                        <ImageIcon className="h-16 w-16 mx-auto mb-4 text-gray-500" />
+                                        <h3 className="text-xl font-semibold text-white mb-2">
+                                            아직 이미지가 없습니다
+                                        </h3>
+                                        <p className="text-gray-400 mb-6">
+                                            이미지를 드래그 앤 드롭하거나<br />
+                                            업로드 버튼을 사용해 이미지를 추가하세요
+                                        </p>
+                                        <Button
+                                            className="bg-sky-500 hover:bg-sky-600 text-white"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isUploading}
+                                        >
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            이미지 선택
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <Masonry
+                                breakpointCols={{
+                                    default: 4,
+                                    1100: 3,
+                                    700: 2,
+                                    500: 1
+                                }}
+                                className="my-masonry-grid"
+                                columnClassName="my-masonry-grid_column"
+                            >
+                                {files.map((file) => {
+                                    const isDragging = draggingImageId === file.id;
+
+                                    return (
+                                        <Card
+                                            key={file.id}
+                                            className={cn(
+                                                "relative cursor-pointer overflow-hidden group mb-4 break-inside-avoid",
+                                                "transition-all duration-300",
+                                                "border border-white/10 hover:border-sky-500/50",
+                                                "bg-black/40 backdrop-blur-xl hover:bg-black/60",
+                                                isDragging && "opacity-50 scale-95 border-sky-400"
+                                            )}
+                                            onClick={() => handleSetReferenceImage(file)}
+                                            draggable
+                                            onDragStart={(e) => handleImageDragStart(e, file)}
+                                            onDragEnd={handleImageDragEnd}
+                                        >
+                                            <div className="relative">
+                                                <Image
+                                                    src={file.url}
+                                                    alt={file.name}
+                                                    width={300}
+                                                    height={200}
+                                                    className="w-full h-auto object-cover"
+                                                    sizes="(max-width: 500px) 100vw, (max-width: 700px) 50vw, (max-width: 1100px) 33vw, 25vw"
+                                                    unoptimized
+                                                />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                                                    <p className="text-sm text-white truncate font-medium">
+                                                        {file.name}
+                                                    </p>
+                                                </div>
+                                                {/* 드래그 가능 표시 */}
+                                                <div className="absolute top-2 left-2 bg-black/60 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    드래그하여 참조 이미지로 설정
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    );
+                                })}
+                            </Masonry>
+                        )}
                 </div>
             </div>
 

@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { CouponService, CouponDto } from "./services/CouponService"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast"
 
 export default function CouponManagement() {
     const [coupons, setCoupons] = useState<CouponDto[]>([])
@@ -25,6 +25,7 @@ export default function CouponManagement() {
         expiresAt: "",
     })
     const [isLoading, setIsLoading] = useState(false)
+    const { toast } = useToast()
 
     const handleAddCoupon = async () => {
         try {
@@ -36,16 +37,16 @@ export default function CouponManagement() {
             })
 
             if (response.success) {
-                toast.success(response.message);
+                toast({ title: "성공", description: response.message, duration: 3000 })
                 // 쿠폰 목록 새로고침
                 await loadCoupons();
                 // 입력 폼 초기화
                 setNewCoupon({ code: "", creditAmount: 0, expiresAt: "" });
             } else {
-                toast.error(response.message);
+                toast({ title: "오류", description: response.message, duration: 3000, variant: "destructive" })
             }
         } catch (error: Error | unknown) {
-            toast.error(error instanceof Error ? error.message : "쿠폰 등록에 실패했습니다.");
+            toast({ title: "오류", description: error instanceof Error ? error.message : "쿠폰 등록에 실패했습니다.", duration: 3000, variant: "destructive" })
         } finally {
             setIsLoading(false)
         }
@@ -53,20 +54,20 @@ export default function CouponManagement() {
 
     const handleToggleCoupon = async (code: string, expired: boolean) => {
         if (expired) {
-            toast.error("만료된 쿠폰은 상태를 변경할 수 없습니다.");
+            toast({ title: "오류", description: "만료된 쿠폰은 상태를 변경할 수 없습니다.", duration: 3000, variant: "destructive" })
             return;
         }
 
         try {
             const response = await CouponService.releaseCoupon(code);
             if (response.success) {
-                toast.success(response.message);
+                toast({ title: "성공", description: response.message, duration: 3000 })
                 await loadCoupons();
             } else {
-                toast.error(response.message);
+                toast({ title: "오류", description: response.message, duration: 3000, variant: "destructive" })
             }
         } catch (error: Error | unknown) {
-            toast.error(error instanceof Error ? error.message : "쿠폰 상태 변경에 실패했습니다.");
+            toast({ title: "오류", description: error instanceof Error ? error.message : "쿠폰 상태 변경에 실패했습니다.", duration: 3000, variant: "destructive" })
         }
     }
 
@@ -90,10 +91,10 @@ export default function CouponManagement() {
             if (response.success && response.coupons) {
                 setCoupons(response.coupons);
             } else {
-                toast.error(response.message);
+                toast({ title: "오류", description: response.message, duration: 3000, variant: "destructive" })
             }
         } catch {
-            toast.error("쿠폰 목록을 불러오는데 실패했습니다.");
+            toast({ title: "오류", description: "쿠폰 목록을 불러오는데 실패했습니다.", duration: 3000, variant: "destructive" })
         }
     }
 

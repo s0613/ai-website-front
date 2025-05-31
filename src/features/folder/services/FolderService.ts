@@ -72,4 +72,35 @@ export const FolderService = {
       throw error;
     }
   },
+
+  // 파일 삭제
+  deleteFile: async (fileId: number): Promise<{ success: boolean; message?: string }> => {
+    try {
+      await apiClient.delete(`/files/${fileId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('파일 삭제 에러:', error);
+
+      // HTTP 상태 코드에 따른 에러 처리
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response: { status: number } };
+        if (axiosError.response?.status === 404) {
+          return {
+            success: false,
+            message: '파일을 찾을 수 없습니다'
+          };
+        } else if (axiosError.response?.status === 403) {
+          return {
+            success: false,
+            message: '파일 삭제 권한이 없습니다'
+          };
+        }
+      }
+
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '파일 삭제에 실패했습니다'
+      };
+    }
+  },
 };

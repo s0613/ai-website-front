@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { Bell, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GenerationNotificationService, GenerationNotificationResponse } from "@/features/admin/services/GenerationNotificationService";
-import { toast } from "react-hot-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
     Dialog,
     DialogContent,
@@ -25,6 +25,7 @@ const DotsAnimation = ({ text }: { text: string }) => {
 };
 
 export const VideoGenerationNotificationBell = () => {
+    const { toast } = useToast();
     const [notifications, setNotifications] = useState<GenerationNotificationResponse[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -67,9 +68,7 @@ export const VideoGenerationNotificationBell = () => {
                     setHasNewNotification(true);
                     // 새 알림이 있고 메뉴가 닫혀있으면 알림 표시
                     if (!isOpen) {
-                        toast("새 알림이 도착했습니다!", {
-                            icon: "🔔"
-                        });
+                        toast({ title: "새 알림이 도착했습니다!", description: undefined, duration: 3000 });
                     }
                 }
 
@@ -102,17 +101,12 @@ export const VideoGenerationNotificationBell = () => {
                                 console.log(`[알림] 비디오 생성 완료 - videoId: ${newNotif.videoId}`);
                                 // 메뉴가 닫혀있을 때만 완료 알림 표시
                                 if (!isOpen) {
-                                    toast.success(`"${newNotif.title}" 영상이 생성되었습니다! 알림을 클릭하여 확인하세요.`, {
-                                        duration: 5000
-                                    });
+                                    toast({ title: "영상 생성 완료", description: `"${newNotif.title}" 영상이 생성되었습니다! 알림을 클릭하여 확인하세요.`, duration: 5000 });
                                 }
                             } else {
                                 console.warn(`[알림] 비디오 생성 완료되었지만 videoId 없음:`, newNotif);
                                 if (!isOpen) {
-                                    toast(`"${newNotif.title}" 영상이 생성되었습니다! 내 작업물에서 확인하세요.`, {
-                                        icon: "📹",
-                                        duration: 4000
-                                    });
+                                    toast({ title: "영상 생성 완료", description: `"${newNotif.title}" 영상이 생성되었습니다! 내 작업물에서 확인하세요.`, duration: 4000 });
                                 }
                             }
                         } else if (prevNotif.status !== 'FAILED' && newNotif.status === 'FAILED') {
@@ -123,9 +117,7 @@ export const VideoGenerationNotificationBell = () => {
                                 error: newNotif.errorMessage
                             });
                             if (!isOpen) {
-                                toast.error(`"${newNotif.title}" 영상 생성이 실패했습니다.`, {
-                                    duration: 5000
-                                });
+                                toast({ title: "영상 생성 실패", description: `"${newNotif.title}" 영상 생성이 실패했습니다.`, duration: 5000, variant: "destructive" });
                             }
                         }
                     }
@@ -185,10 +177,7 @@ export const VideoGenerationNotificationBell = () => {
             fetchNotifications(); // 알림 등록 시 즉시 목록 갱신
 
             // 알림 벨 토스트 표시 - 일반화된 메시지
-            toast("작업 요청이 접수되었습니다", {
-                icon: "🔔",
-                duration: 3000
-            });
+            toast({ title: "작업 요청이 접수되었습니다", description: undefined, duration: 3000 });
 
             // 이벤트 발생 1초 후 한 번 더 확인 (백엔드 처리 시간 고려)
             setTimeout(() => {
@@ -245,9 +234,7 @@ export const VideoGenerationNotificationBell = () => {
                 console.log('[알림 클릭] 비디오 상세 보기 열기, videoId:', notification.videoId);
                 setSelectedNotificationId(notification.videoId);
                 setIsOpen(false);
-                toast.success("영상 상세 보기를 열고 있습니다.", {
-                    icon: "🎬"
-                });
+                toast({ title: "상세 보기", description: "영상 상세 보기를 열고 있습니다.", duration: 3000 });
             } else {
                 // 영상 ID가 없는 경우 - 가상 피팅이나 기타 작업 완료
                 console.log('[알림 클릭] 완료된 작업 - 내 작업물 페이지로 이동:', {
@@ -258,15 +245,9 @@ export const VideoGenerationNotificationBell = () => {
 
                 // 가상 피팅인지 확인
                 if (notification.title.includes("가상 피팅")) {
-                    toast.success("가상 피팅이 완료되었습니다! 내 작업물에서 확인하세요.", {
-                        icon: "👗",
-                        duration: 4000
-                    });
+                    toast({ title: "가상 피팅 완료", description: "가상 피팅이 완료되었습니다! 내 작업물에서 확인하세요.", duration: 4000 });
                 } else {
-                    toast.success("작업이 완료되었습니다! 내 작업물에서 확인하세요.", {
-                        icon: "✅",
-                        duration: 4000
-                    });
+                    toast({ title: "작업 완료", description: "작업이 완료되었습니다! 내 작업물에서 확인하세요.", duration: 4000 });
                 }
 
                 // 내 작업물 페이지로 이동
@@ -275,48 +256,32 @@ export const VideoGenerationNotificationBell = () => {
         } else if (notification.status === 'PROCESSING') {
             // 가상 피팅인지 확인하여 적절한 메시지 표시
             if (notification.title.includes("가상 피팅")) {
-                toast("가상 피팅이 처리 중입니다. 잠시 후 다시 확인해주세요.", {
-                    icon: "👗",
-                    duration: 3000
-                });
+                toast({ title: "가상 피팅 처리 중", description: "가상 피팅이 처리 중입니다. 잠시 후 다시 확인해주세요.", duration: 3000 });
             } else {
-                toast("작업이 아직 처리 중입니다. 잠시 후 다시 확인해주세요.", {
-                    duration: 3000
-                });
+                toast({ title: "작업 처리 중", description: "작업이 아직 처리 중입니다. 잠시 후 다시 확인해주세요.", duration: 3000 });
             }
         } else if (notification.status === 'FAILED') {
             const errorMsg = notification.errorMessage || '알 수 없는 오류가 발생했습니다.';
 
             // 가상 피팅인지 확인하여 적절한 메시지 표시
             if (notification.title.includes("가상 피팅")) {
-                toast.error(`가상 피팅 실패: ${errorMsg}`, {
-                    duration: 5000
-                });
+                toast({ title: "가상 피팅 실패", description: errorMsg, duration: 5000, variant: "destructive" });
             } else {
-                toast.error(`작업 실패: ${errorMsg}`, {
-                    duration: 5000
-                });
+                toast({ title: "작업 실패", description: errorMsg, duration: 5000, variant: "destructive" });
             }
         } else if (notification.status === 'REQUESTED') {
             // 가상 피팅인지 확인하여 적절한 메시지 표시
             if (notification.title.includes("가상 피팅")) {
-                toast("가상 피팅 요청이 대기 중입니다.", {
-                    icon: "👗",
-                    duration: 3000
-                });
+                toast({ title: "가상 피팅 대기 중", description: "가상 피팅 요청이 대기 중입니다.", duration: 3000 });
             } else {
-                toast("작업 요청이 대기 중입니다.", {
-                    duration: 3000
-                });
+                toast({ title: "작업 대기 중", description: "작업 요청이 대기 중입니다.", duration: 3000 });
             }
         } else {
             console.warn('[알림 클릭] 알 수 없는 상태:', {
                 status: notification.status,
                 notification: notification
             });
-            toast("알 수 없는 상태의 알림입니다.", {
-                icon: "❓"
-            });
+            toast({ title: "알 수 없는 상태", description: "알 수 없는 상태의 알림입니다.", duration: 3000 });
         }
     }, []);
 
@@ -377,10 +342,7 @@ export const VideoGenerationNotificationBell = () => {
                                                 !notification.videoId &&
                                                 notification.title.includes("가상 피팅")
                                             ) {
-                                                toast("가상 피팅 결과는 아래 ‘fashn’ 폴더에서 확인해주세요.", {
-                                                    icon: "👗",
-                                                    duration: 4000
-                                                });
+                                                toast({ title: "가상 피팅 결과", description: "가상 피팅 결과는 아래 'fashn' 폴더에서 확인해주세요.", duration: 4000 });
                                             } else {
                                                 handleNotificationClick(notification);
                                             }
