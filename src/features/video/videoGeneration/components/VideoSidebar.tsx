@@ -4,6 +4,13 @@ import React, { forwardRef } from "react";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
@@ -17,6 +24,11 @@ import {
   Film,
   Image as ImageIcon,
   Sparkles,
+  Settings,
+  Zap,
+  Palette,
+  Camera,
+  Wand2,
 } from "lucide-react";
 import ModelSetting from "./ModelSetting";
 import { SidebarFormData, useVideoSidebar } from "../hooks/useVideoSidebar";
@@ -341,44 +353,96 @@ const VideoSidebar = forwardRef<HTMLDivElement, VideoSidebarProps>((props, ref) 
               <label className="text-sm font-medium text-white block">
                 AI 모델 선택
               </label>
-              <select
+              <Select
                 value={endpoint}
-                onChange={(e) => updateSettings({ endpoint: e.target.value })}
-                className="w-full rounded-lg border border-white/20 bg-black/30 backdrop-blur-md p-2.5 text-sm focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none text-white"
+                onValueChange={(value) => updateSettings({ endpoint: value })}
               >
-                <option value="auto">Auto-Select - AI가 프롬프트와 이미지에 최적화된 모델 자동 선택</option>
-                {activeTab === "image" ? (
-                  <>
-                    <option value="kling">
-                      KLING - 자연스러운 동작과 고해상도, 사실적인 영상 생성
-                    </option>
-                    <option value="wan">
-                      WAN - 복잡한 동작과 영화 같은 스타일을 지원하며, 텍스트 삽입이 가능한 다재다능한 영상 생성
-                    </option>
-                    {/* <option value="hunyuan">
-                      HUNYUAN - 현실과 가상 스타일을 자유롭게 전환하며, 정교한 모션과 물리 시뮬레이션을 구현하는 영상 생성
-                    </option> */}
-                    <option value="veo2">
-                      VEO2 - 영화 같은 카메라 연출과 사실적인 움직임을 갖춘 고화질 영상 생성
-                    </option>
-                    <option value="pixverse">
-                      PIXVERSE - 고품질 이미지-비디오 변환과 다양한 스타일 옵션을 제공하는 창의적인 영상 생성
-                    </option>
-                  </>
-                ) : activeTab === "video" ? (
-                  <>
-                    <option value="hunyuan">
-                      HUNYUAN - 현실과 가상 스타일을 자유롭게 전환하며, 정교한 모션과 물리 시뮬레이션을 구현하는 영상 생성
-                    </option>
-                  </>
-                ) : (
-                  <>
-                    <option value="veo2">
-                      VEO2 - 영화 같은 카메라 연출과 사실적인 움직임을 갖춘 고화질 영상 생성
-                    </option>
-                  </>
-                )}
-              </select>
+                <SelectTrigger className="w-full rounded-lg border border-white/20 bg-black/30 backdrop-blur-md p-2.5 text-sm focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none text-white hover:border-sky-400/50 transition-colors">
+                  <SelectValue placeholder="AI 모델을 선택하세요">
+                    {endpoint === "auto" && "Auto-Select"}
+                    {endpoint === "kling" && "KLING"}
+                    {endpoint === "wan" && "WAN"}
+                    {endpoint === "veo2" && "VEO2"}
+                    {endpoint === "pixverse" && "PIXVERSE"}
+                    {endpoint === "hunyuan" && "HUNYUAN"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-black/90 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl z-50 min-w-[280px]">
+                  <SelectItem
+                    value="auto"
+                    className="text-white hover:bg-sky-500/20 focus:bg-sky-500/20 border-b border-white/10 p-2 cursor-pointer"
+                  >
+                    <div className="flex flex-col items-start text-left w-full">
+                      <div className="font-medium text-white">Auto-Select</div>
+                      <div className="text-xs text-gray-400 mt-0.5">AI가 최적의 모델을 자동 선택</div>
+                    </div>
+                  </SelectItem>
+                  {activeTab === "image" ? (
+                    <>
+                      <SelectItem
+                        value="kling"
+                        className="text-white hover:bg-white/10 focus:bg-white/10 border-b border-white/10 p-2 cursor-pointer"
+                      >
+                        <div className="flex flex-col items-start text-left w-full">
+                          <div className="font-medium text-white">KLING</div>
+                          <div className="text-xs text-gray-400 mt-0.5">고품질 비디오 생성 전문</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem
+                        value="wan"
+                        className="text-white hover:bg-white/10 focus:bg-white/10 border-b border-white/10 p-2 cursor-pointer"
+                      >
+                        <div className="flex flex-col items-start text-left w-full">
+                          <div className="font-medium text-white">WAN</div>
+                          <div className="text-xs text-gray-400 mt-0.5">빠른 속도와 안정성</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem
+                        value="veo2"
+                        className="text-white hover:bg-white/10 focus:bg-white/10 border-b border-white/10 p-2 cursor-pointer"
+                      >
+                        <div className="flex flex-col items-start text-left w-full">
+                          <div className="font-medium text-white">VEO2</div>
+                          <div className="text-xs text-gray-400 mt-0.5">구글의 차세대 비디오 모델</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem
+                        value="pixverse"
+                        className="text-white hover:bg-white/10 focus:bg-white/10 p-2 cursor-pointer"
+                      >
+                        <div className="flex flex-col items-start text-left w-full">
+                          <div className="font-medium text-white">PIXVERSE</div>
+                          <div className="text-xs text-gray-400 mt-0.5">창의적 스타일과 애니메이션</div>
+                        </div>
+                      </SelectItem>
+                    </>
+                  ) : activeTab === "video" ? (
+                    <>
+                      <SelectItem
+                        value="hunyuan"
+                        className="text-white hover:bg-white/10 focus:bg-white/10 p-2 cursor-pointer"
+                      >
+                        <div className="flex flex-col items-start text-left w-full">
+                          <div className="font-medium text-white">HUNYUAN</div>
+                          <div className="text-xs text-gray-400 mt-0.5">현실과 가상 스타일 자유 전환</div>
+                        </div>
+                      </SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem
+                        value="veo2"
+                        className="text-white hover:bg-white/10 focus:bg-white/10 p-2 cursor-pointer"
+                      >
+                        <div className="flex flex-col items-start text-left w-full">
+                          <div className="font-medium text-white">VEO2</div>
+                          <div className="text-xs text-gray-400 mt-0.5">구글의 차세대 비디오 모델</div>
+                        </div>
+                      </SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
 
               {/* Auto-Select 가이드 */}
               {endpoint === "auto" && (
