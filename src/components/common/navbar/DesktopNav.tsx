@@ -31,6 +31,12 @@ export const DesktopNav = ({
   return (
     <nav className="hidden md:flex space-x-6 text-gray-300 items-center backdrop-blur-sm bg-white/5 px-6 py-2 rounded-full border border-white/10 shadow-lg">
       <Link
+        href="/studio"
+        className="hover:text-sky-500 hover:bg-white/10 px-3 py-1.5 rounded-full transition font-medium"
+      >
+        스튜디오
+      </Link>
+      <Link
         href="/blog/blogList"
         className="hover:text-sky-500 hover:bg-white/10 px-3 py-1.5 rounded-full transition"
       >

@@ -58,6 +58,12 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-4 flex-1 justify-end">
           <div className="flex items-center gap-2">
             <Link
+              href="/studio"
+              className="text-gray-300 hover:text-sky-500 px-3 py-2 rounded-lg transition-colors duration-300 font-medium"
+            >
+              스튜디오
+            </Link>
+            <Link
               href="/blog/blogList"
               className="text-gray-300 hover:text-sky-500 px-3 py-2 rounded-lg transition-colors duration-300"
             >

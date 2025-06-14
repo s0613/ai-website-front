@@ -49,6 +49,13 @@ export const MobileMenu = ({
         <div className="flex-1 px-4 py-2">
           <nav className="space-y-1 mb-6">
             <Link
+              href="/studio"
+              className="block px-4 py-2 text-white hover:bg-white/5 rounded-lg font-medium"
+              onClick={onClose}
+            >
+              스튜디오
+            </Link>
+            <Link
               href="/blog/blogList"
               className="block px-4 py-2 text-white hover:bg-white/5 rounded-lg"
               onClick={onClose}
