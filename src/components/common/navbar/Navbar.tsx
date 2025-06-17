@@ -46,7 +46,7 @@ const Navbar = () => {
     <header className="bg-black shadow-[0_8px_30px_rgb(0,0,0,0.12)] sticky top-0 z-50 h-16">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between relative">
         <Link
-          href="/"
+          href="/studio"
           className="text-2xl font-bold text-white px-3 py-1 rounded-full flex items-center group transition-all duration-300 hover:bg-white/5"
         >
           <Sparkles className="w-5 h-5 mr-2 text-sky-500 transform group-hover:rotate-12 transition-transform duration-300" />
