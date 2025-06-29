@@ -1,18 +1,16 @@
-// hooks/useVideoGeneration.ts
-
-import { useState, useEffect } from "react";
-import { toast } from "react-hot-toast";
-import {
-  getVideoEndpointUrl
-} from "../../services/GenerateService";
-import { BillingService } from "@/features/payment/services/BillingService";
 import { useCredit } from "@/features/payment/context/CreditContext";
+import { BillingService } from "@/features/payment/services/BillingService";
+import { VideoApiService } from "../../../../app/internal/video/services/falService";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ReadonlyURLSearchParams } from "next/navigation";
-import { GenerationNotificationService } from '@/features/admin/services/GenerationNotificationService';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAuth } from "@/features/user/AuthContext";
+import { AspectRatioType, ResolutionType, DurationType } from '../types/modelSettingTypes';
+import { GenerationNotificationService } from '@/features/admin/services/GenerationNotificationService';
+import { useVideoWebSocket } from "@/app/providers";
 
-// 타입 정의 추가
 interface VideoGenerationData {
   prompt: string;
   aspectRatio: string;
@@ -28,6 +26,7 @@ interface VideoGenerationData {
   resolution?: string;
   numFrames?: number;
   negative_prompt?: string;
+  cfg_scale?: number;
   autoSelectNotificationId?: number;
 }
 
@@ -36,92 +35,17 @@ interface FileItem {
   name: string;
 }
 
-// Fal.ai 응답 구조에 맞는 새로운 타입 정의
-interface FalVideoFile {
-  url: string;
-  content_type: string;
-  file_name: string;
-  file_size: number;
-}
-
-interface FalVideoResponseData {
-  video: FalVideoFile;
-  seed?: number;
-  // 다른 필드가 있다면 추가 가능
-}
-
-// WAN, Kling 응답 타입 정의 (단순화)
-interface CustomVideoResponse {
-  videoUrl: string;
-  requestId?: string;
-}
-
 interface UseVideoGenerationProps {
   searchParams?: ReadonlyURLSearchParams | null;
 }
-
-// --- 모델별 요청 타입 정의 --- 
-// 공통 파라미터 (필요시 확장)
-interface BaseVideoRequest {
-  prompt: string;
-}
-
-// Hunyuan 요청 타입
-interface HunyuanRequest extends BaseVideoRequest {
-  image_url?: string;
-  seed?: number;
-  aspect_ratio?: string;
-  resolution?: string;
-  num_frames?: number;
-  i2v_stability?: boolean;
-}
-
-// WAN (Pro) 요청 타입
-interface WanRequest extends BaseVideoRequest {
-  imageUrl?: string; // camelCase 주의
-  seed?: number;
-  enable_safety_checker?: boolean;
-  // 라우트에서 사용되지 않는 파라미터는 제외
-}
-
-// Veo2 요청 타입
-interface Veo2Request extends BaseVideoRequest {
-  imageUrl?: string;
-  aspect_ratio?: string;
-  duration?: string;
-}
-
-// Kling 요청 타입
-interface KlingRequest extends BaseVideoRequest {
-  imageUrl?: string; // camelCase 주의
-  duration?: string;
-  aspect_ratio?: string;
-  camera_control?: string;
-  // negative_prompt, cfg_scale 등 추가 가능
-}
-
-interface PixverseRequest extends BaseVideoRequest {
-  imageUrl?: string;
-  aspect_ratio?: string;
-  resolution?: string;
-  duration?: string;
-  negative_prompt?: string;
-  style?: string;
-  seed?: number;
-}
-
-// 모든 요청 타입을 포함하는 유니온 타입
-type VideoGenerationRequestUnion =
-  | HunyuanRequest
-  | WanRequest
-  | Veo2Request
-  | KlingRequest
-  | PixverseRequest;
 
 export default function useVideoGeneration({ searchParams }: UseVideoGenerationProps = {}) {
   const { updateCredits } = useCredit();
   const router = useRouter();
   const { id: userId } = useAuth();
+  
+  // 영상 생성용 WebSocket 연결
+  const { connectForVideoGeneration, isConnected } = useVideoWebSocket();
 
   // 영상 생성 및 저장 관련 상태
   const [videoUrl, setVideoUrl] = useState("");
@@ -141,6 +65,8 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
   const [referencePrompt, setReferencePrompt] = useState("");
   const [referenceModel, setReferenceModel] = useState("");
 
+  const { toast } = useToast();
+
   // URL 쿼리 파라미터 처리
   useEffect(() => {
     if (searchParams) {
@@ -159,45 +85,43 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
 
   // VideoSidebar에서 전달받은 데이터로 영상 생성 요청
   const handleSidebarSubmit = async (data: VideoGenerationData) => {
+    console.log(`🎯 [비디오 생성] handleSidebarSubmit 시작:`, {
+      endpoint: data.endpoint,
+      activeTab,
+      hasImageFile: !!data.imageFile,
+      hasFileUrl: !!data.fileUrl,
+      prompt: data.prompt?.substring(0, 50) + '...',
+      userId: userId?.toString() || 'none'
+    });
+
     setErrorMessage("");
     setVideoUrl("");
     setUpscaledVideoUrl("");
 
-    let notificationId: number | null = null;
-
     try {
       if (!userId) {
-        toast.error("사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
+        toast({
+          title: "오류",
+          description: "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.",
+          variant: "destructive",
+        });
         router.push("/login");
         return;
       }
 
-      // Auto-Select 모드에서 전달된 알림 ID 확인
-      if (data.autoSelectNotificationId) {
-        notificationId = data.autoSelectNotificationId;
-        console.log('[비디오 생성] Auto-Select 모드: 전달받은 알림 ID 사용:', notificationId);
-      } else {
-        console.log('[비디오 생성] 일반 모드: 새 알림 생성');
-        // 일반 모드에서 새로운 알림 생성
-        const notification = await GenerationNotificationService.createNotification({
-          title: `영상 생성 (${new Date().toLocaleTimeString()})`,
-          thumbnailUrl: data.fileUrl || referenceImageUrl || '',
-        });
-        notificationId = notification.id;
-      }
+      // 영상 생성용 웹소켓 연결
+      await connectForVideoGeneration();
+      console.log('🔗 [비디오 생성] 웹소켓 연결 완료');
 
       // 현재 크레딧 확인
       const creditResponse = await BillingService.getCurrentCredit();
       if (creditResponse.currentCredit < 10) {
-        toast.error("크레딧이 부족합니다. 크레딧을 충전해주세요.");
+        toast({
+          title: "크레딧 부족",
+          description: "크레딧이 부족합니다. 크레딧을 충전해주세요.",
+          variant: "destructive",
+        });
         router.push("/payment");
-        // 실패 처리
-        if (notificationId !== null) {
-          await GenerationNotificationService.updateNotification(notificationId, {
-            status: 'FAILED',
-            userId: userId.toString()
-          });
-        }
         return;
       }
 
@@ -214,244 +138,174 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
         throw err;
       }
 
-      const endpointUrl = getVideoEndpointUrl(data.endpoint, activeTab);
-
-      // 이미지 처리 (기존과 동일)
+      // 이미지 처리
       let imageBase64 = "";
       if (data.imageFile) {
         try {
           imageBase64 = await readFileAsBase64(data.imageFile);
         } catch (error) {
           console.error("Error reading file as Base64:", error);
-          toast.error("이미지 파일을 처리하는 중 오류가 발생했습니다.");
-          // Base64 변환 실패 시 알림 상태 업데이트 및 중단
-          if (notificationId !== null) {
-            await GenerationNotificationService.updateNotification(notificationId, {
-              status: 'FAILED',
-              userId: userId.toString()
-            });
-          }
-          return;
-        }
-      }
-
-      // --- 페이로드 생성 (타입 안전하게) --- 
-      let payload: VideoGenerationRequestUnion;
-
-      switch (data.endpoint) {
-        case "hunyuan":
-          payload = {
-            prompt: data.prompt,
-            image_url: imageBase64 || data.fileUrl || undefined,
-            seed: data.seed,
-            aspect_ratio: data.aspectRatio,
-            resolution: data.resolution,
-            num_frames: data.numFrames,
-            // i2v_stability: data.i2vStability, // 타입 및 값 확인 필요
-          } as HunyuanRequest;
-          break;
-        case "wan":
-          payload = {
-            prompt: data.prompt,
-            imageUrl: imageBase64 || data.fileUrl || undefined,
-            seed: data.seed || Math.floor(Math.random() * 1000000),
-            // enable_safety_checker: data.enableSafetyChecker, // 라우트 및 Fal.ai 요청 키 확인 필요
-          } as WanRequest;
-          break;
-        case "veo2":
-          payload = {
-            prompt: data.prompt,
-            imageUrl: imageBase64 || data.fileUrl || undefined,
-            aspect_ratio: data.aspectRatio,
-            duration: data.duration,
-          } as Veo2Request;
-          break;
-        case "kling":
-          payload = {
-            prompt: data.prompt,
-            imageUrl: imageBase64 || data.fileUrl || undefined,
-            duration: data.duration,
-            aspect_ratio: data.aspectRatio,
-            camera_control: data.cameraControl,
-          } as KlingRequest;
-          break;
-        case "pixverse":
-          // Pixverse API는 duration을 "5" 또는 "8"로 받으므로 "s" 제거
-          const pixverseDuration = data.duration.replace('s', '');
-          payload = {
-            prompt: data.prompt,
-            imageUrl: imageBase64 || data.fileUrl || undefined,
-            aspect_ratio: data.aspectRatio,
-            resolution: data.resolution,
-            duration: pixverseDuration,
-            negative_prompt: data.negative_prompt,
-            style: data.style,
-            seed: data.seed,
-          } as PixverseRequest;
-          break;
-        default:
-          // 기본 또는 오류 처리
-          console.error("지원하지 않는 엔드포인트:", data.endpoint);
-          toast.error("지원하지 않는 모델입니다.");
-          return;
-      }
-
-      // *** 필수 파라미터 검증 (API 호출 전) ***
-      let hasRequiredImageUrl = false;
-      if (payload && 'imageUrl' in payload && payload.imageUrl) {
-        hasRequiredImageUrl = true;
-      }
-
-      if (!hasRequiredImageUrl) {
-        console.error(`${data.endpoint} API 호출 불가: 이미지 URL이 없습니다.`);
-        toast.error("이미지 정보가 없어 비디오 생성을 시작할 수 없습니다.");
-        if (notificationId !== null) {
-          await GenerationNotificationService.updateNotification(notificationId, {
-            status: 'FAILED',
-            userId: userId.toString()
+          toast({
+            title: "오류",
+            description: "이미지 파일을 처리하는 중 오류가 발생했습니다.",
+            variant: "destructive",
           });
+          return;
         }
+      }
+
+      // 이미지 URL 검증
+      const imageUrl = imageBase64 || data.fileUrl || '';
+      
+      if (!imageUrl) {
+        console.error(`❌ [비디오 생성] ${data.endpoint} API 호출 불가: 이미지 URL이 없습니다.`);
+        toast({
+          title: "오류",
+          description: "이미지 정보가 없어 비디오 생성을 시작할 수 없습니다.",
+          variant: "destructive",
+        });
         return;
       }
 
-      // 2. 서버에 비디오 생성 API 요청
+      // 🎯 Spring Boot에 알림을 먼저 생성하고 notificationId 받기
+      let notificationId = '';
       try {
-        // 상태: PROCESSING
-        if (notificationId !== null) {
-          await GenerationNotificationService.updateNotification(notificationId, {
-            status: 'PROCESSING',
-            userId: userId.toString()
-          });
-          // 알림 벨 이벤트 트리거 추가
-          window.dispatchEvent(new Event('open-notification-bell'));
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15분
-
-        // notificationId와 userId를 payload에 추가
-        const requestPayload = {
-          ...payload,
-          notificationId: notificationId !== null ? notificationId.toString() : undefined,
-          userId: userId.toString() // AuthContext에서 가져온 userId 사용
-        };
-
-        console.log(`[비디오 생성] 요청 전송 중: ${endpointUrl}, 알림 ID: ${notificationId || 'none'}`);
-
-        let response;
-        try {
-          response = await fetch(endpointUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestPayload),
-            signal: controller.signal, // AbortController의 signal 연결
-          });
-        } finally {
-          clearTimeout(timeoutId); // fetch가 완료되거나 실패하면 타이머 제거
-        }
-
-        // API 응답 상태 확인
-        if (!response.ok) {
-          let errorBody = { error: `API 요청 실패: ${response.status}` };
-          try {
-            errorBody = await response.json();
-          } catch (e) {
-            console.error("Failed to parse error response body:", e);
-          }
-          console.error(`API 요청 실패: ${response.status}`, errorBody);
-
-          // 실패 시 즉시 알림 상태 업데이트
-          if (notificationId !== null) {
-            await GenerationNotificationService.updateNotification(notificationId, {
-              status: 'FAILED',
-              errorMessage: errorBody.error || `API 요청 실패: ${response.status}`,
-              userId: userId.toString()
-            });
-          }
-          throw new Error(errorBody.error || `API 요청 실패: ${response.status}`);
-        }
-
-        // API 응답 처리 - 여기서는 실제 저장 대신 상태만 설정
-        const result = await response.json();
-
-        // 응답에서 비디오 URL 추출 (UI 표시용)
-        let generatedVideoUrl = "";
-
-        if (result) {
-          // WAN, Kling 모델 응답 처리 ({ videoUrl: ... })
-          if (data.endpoint === "wan" || data.endpoint === "kling") {
-            const customResponse = result as CustomVideoResponse;
-            if (customResponse && typeof customResponse.videoUrl === 'string') {
-              generatedVideoUrl = customResponse.videoUrl;
-            }
-          }
-          // Hunyuan, Veo2, Pixverse 모델 응답 처리 (Fal.ai 응답 그대로)
-          else {
-            const falResponse = result as FalVideoResponseData;
-            if (falResponse && typeof falResponse === 'object' && falResponse.video && typeof falResponse.video.url === 'string') {
-              generatedVideoUrl = falResponse.video.url;
-            }
-          }
-        }
-
-        // 미리보기 URL 설정
-        if (generatedVideoUrl) {
-          setVideoUrl(generatedVideoUrl);
-          toast.success("영상 생성 요청이 처리 중입니다. 알림을 통해 완료 여부를 확인해주세요.");
-        }
-
-        // 알림 모니터링 시작 - 비디오 자동 저장 알림
-        const notificationCheckInterval = setInterval(async () => {
-          try {
-            if (notificationId === null) {
-              clearInterval(notificationCheckInterval);
-              return;
-            }
-
-            const notifStatus = await GenerationNotificationService.getNotification(notificationId);
-            if (notifStatus.status === 'COMPLETED') {
-              clearInterval(notificationCheckInterval);
-              toast.success("영상이 생성되고 자동으로 저장되었습니다! 알림을 클릭하여 확인하세요.");
-            } else if (notifStatus.status === 'FAILED') {
-              clearInterval(notificationCheckInterval);
-              toast.error(`영상 생성 실패: ${notifStatus.errorMessage || '알 수 없는 오류'}`);
-            }
-          } catch (e) {
-            console.error("알림 상태 확인 실패:", e);
-          }
-        }, 5000); // 5초마다 확인
-
-        // 1분 후 인터벌 강제 종료 (너무 오래 확인하지 않도록)
-        setTimeout(() => {
-          clearInterval(notificationCheckInterval);
-        }, 60000);
-      } catch (err) {
-        // 생성 실패 (네트워크 오류, 타임아웃, 서버 오류 등)
-        if (notificationId !== null) {
-          await GenerationNotificationService.updateNotification(notificationId, {
-            status: 'FAILED',
-            userId: userId.toString()
-          });
-        }
-        throw err;
+        const notification = await GenerationNotificationService.createNotification({
+          title: `${data.endpoint} 모델로 영상 생성 중`,
+          thumbnailUrl: imageUrl.startsWith('data:') ? '' : imageUrl,
+          mediaCount: 1,
+        });
+        notificationId = notification.id.toString();
+        console.log(`✅ [알림 생성] Spring Boot 알림 생성 완료 - ID: ${notificationId}`);
+        
+        // 알림 생성됨을 알리는 이벤트 발생
+        window.dispatchEvent(new CustomEvent('open-notification-bell'));
+      } catch (notificationError) {
+        console.error("❌ [알림 생성] Spring Boot 알림 생성 실패:", notificationError);
+        toast({
+          title: "오류", 
+          description: "알림 생성에 실패했습니다. 영상 생성을 계속 진행합니다.",
+          variant: "destructive",
+        });
+        // 알림 생성 실패해도 영상 생성은 계속 진행
       }
+
+      console.log(`🚀 [비디오 생성] VideoApiService 요청 전송 중:`, {
+        endpoint: data.endpoint,
+        userId: userId?.toString() || 'none',
+        notificationId: notificationId || 'none',
+        hasImageUrl: !!imageUrl,
+        imageUrlLength: imageUrl.length,
+        prompt: data.prompt?.substring(0, 50) + '...',
+        seed: data.seed,
+        duration: data.duration,
+        aspectRatio: data.aspectRatio
+      });
+
+      // VideoApiService를 사용한 모델별 요청
+      let result;
+      
+      switch (data.endpoint) {
+        case "hunyuan":
+          result = await VideoApiService.createHunyuanVideo({
+            userId: userId.toString(),
+            prompt: data.prompt,
+            imageUrl,
+            notificationId: notificationId,
+            seed: data.seed,
+            aspect_ratio: data.aspectRatio as AspectRatioType,
+            resolution: data.resolution as ResolutionType,
+            num_frames: data.numFrames,
+            i2v_stability: true,
+          });
+          break;
+          
+        case "kling":
+          result = await VideoApiService.createKlingVideo({
+            userId: userId.toString(),
+            prompt: data.prompt,
+            imageUrl,
+            notificationId: notificationId,
+            seed: data.seed,
+            duration: data.duration as "5s" | "10s",
+            negative_prompt: data.negative_prompt || "blur, distort, and low quality",
+            cfg_scale: data.cfg_scale || 0.5,
+          });
+          break;
+          
+        case "veo2":
+          result = await VideoApiService.createVeo2Video({
+            userId: userId.toString(),
+            prompt: data.prompt,
+            imageUrl,
+            notificationId: notificationId,
+            seed: data.seed,
+            aspect_ratio: data.aspectRatio as AspectRatioType,
+            duration: data.duration as DurationType,
+          });
+          break;
+          
+        case "pixverse":
+          const pixverseDuration = data.duration.replace('s', '') as "5" | "8";
+          result = await VideoApiService.createPixverseVideo({
+            userId: userId.toString(),
+            prompt: data.prompt,
+            imageUrl,
+            notificationId: notificationId,
+            seed: data.seed,
+            aspect_ratio: data.aspectRatio as AspectRatioType,
+            resolution: data.resolution as ResolutionType,
+            duration: pixverseDuration,
+            negative_prompt: data.negative_prompt,
+            style: data.style as "anime" | "3d_animation" | "clay" | "comic" | "cyberpunk",
+          });
+          break;
+          
+        case "wan":
+          result = await VideoApiService.createWanVideo({
+            userId: userId.toString(),
+            prompt: data.prompt,
+            imageUrl,
+            notificationId: notificationId,
+            seed: data.seed || Math.floor(Math.random() * 1000000),
+            enableSafetyChecker: true,
+          });
+          break;
+          
+        default:
+          throw new Error(`지원하지 않는 모델: ${data.endpoint}`);
+      }
+
+      // 응답 처리 (작업 ID 기반)
+      console.log(`✅ [비디오 생성] VideoApiService 응답:`, result);
+      
+      if (result && result.jobId) {
+        // 성공적으로 작업이 시작됨
+        toast({
+          title: "영상 생성 시작",
+          description: `비디오 생성 작업이 시작되었습니다. 작업 ID: ${result.jobId}`,
+        });
+        
+        console.log(`✅ [비디오 생성] 작업 시작됨 - 모델: ${data.endpoint}, 작업 ID: ${result.jobId}, 알림 ID: ${notificationId}`);
+        
+        // WebSocket을 통해 실시간으로 완료 알림을 받을 예정
+        toast({
+          title: "진행 중",
+          description: "영상 생성 요청이 처리 중입니다. 완료되면 알림을 받게 됩니다.",
+        });
+      } else {
+        throw new Error('작업 ID를 받지 못했습니다.');
+      }
+
     } catch (error: unknown) {
       console.error("비디오 생성 전체 플로우 오류:", error);
       const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류 발생";
       setErrorMessage(errorMessage);
-      toast.error(`영상 처리 중 오류: ${errorMessage}`);
-      if (notificationId !== null && userId) {
-        try {
-          await GenerationNotificationService.updateNotification(notificationId, {
-            status: 'FAILED',
-            userId: userId.toString()
-          });
-        } catch (notifError) {
-          console.error("Failed to update notification on final error:", notifError);
-        }
-      }
+      toast({
+        title: "오류",
+        description: `영상 처리 중 오류: ${errorMessage}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -478,13 +332,20 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
 
       if (result.data?.video_upscaled) {
         setUpscaledVideoUrl(result.data.video_upscaled);
-        toast.success("비디오 업스케일링이 완료되었습니다");
+        toast({
+          title: "완료",
+          description: "비디오 업스케일링이 완료되었습니다",
+        });
       } else {
         throw new Error("업스케일링된 비디오 URL을 받지 못했습니다");
       }
     } catch (error) {
       console.error("업스케일링 오류:", error);
-      toast.error(error instanceof Error ? error.message : "업스케일링 중 오류가 발생했습니다");
+      toast({
+        title: "오류",
+        description: error instanceof Error ? error.message : "업스케일링 중 오류가 발생했습니다",
+        variant: "destructive",
+      });
     } finally {
       setIsUpscaling(false);
     }
@@ -548,6 +409,7 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
     referenceImageUrl,
     referencePrompt,
     referenceModel,
+    isConnected,
     handleSidebarSubmit,
     handleUpscaleVideo,
     handleTabChange,
@@ -560,4 +422,4 @@ export default function useVideoGeneration({ searchParams }: UseVideoGenerationP
     setStyle,
     setReferencePrompt
   };
-}
+} 

@@ -186,15 +186,129 @@ export default function ImageDetail({
     };
 
     // 다운로드 핸들러
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (!image || !image.url) return;
 
-        const link = document.createElement("a");
-        link.href = image.url;
-        link.download = `${image.fileName || "image"}.${image.format || "jpg"}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const imageUrl = upscaledImageUrl || image.url;
+        const fileName = `${image.fileName || "image"}.${image.format || "jpg"}`;
+
+        console.log("다운로드 시작:", { imageUrl, fileName });
+
+        // 방법 1: fetch를 통한 blob 다운로드 시도
+        try {
+            console.log("방법 1: fetch를 통한 다운로드 시도");
+
+            const response = await fetch(imageUrl, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache',
+            });
+
+            console.log("fetch 응답:", response.status, response.statusText);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            console.log("blob 생성 성공:", blob.size, "bytes");
+
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = fileName;
+            link.style.display = 'none';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            window.URL.revokeObjectURL(blobUrl);
+            toast.success("이미지 다운로드가 완료되었습니다");
+            return;
+        } catch (error) {
+            console.error("방법 1 실패:", error);
+        }
+
+        // 방법 2: canvas를 통한 다운로드 시도
+        try {
+            console.log("방법 2: canvas를 통한 다운로드 시도");
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = imageUrl;
+            });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+
+            ctx?.drawImage(img, 0, 0);
+
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = blobUrl;
+                    link.download = fileName;
+                    link.style.display = 'none';
+
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    window.URL.revokeObjectURL(blobUrl);
+                    toast.success("이미지 다운로드가 완료되었습니다");
+                } else {
+                    throw new Error("Canvas에서 blob 생성 실패");
+                }
+            }, `image/${image.format || 'jpeg'}`, 1.0);
+            return;
+        } catch (error) {
+            console.error("방법 2 실패:", error);
+        }
+
+        // 방법 3: 프록시를 통한 다운로드 시도
+        try {
+            console.log("방법 3: 프록시를 통한 다운로드 시도");
+
+            const response = await fetch('/internal/download-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ imageUrl, fileName }),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = blobUrl;
+                link.download = fileName;
+                link.style.display = 'none';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                window.URL.revokeObjectURL(blobUrl);
+                toast.success("이미지 다운로드가 완료되었습니다");
+                return;
+            }
+        } catch (error) {
+            console.error("방법 3 실패:", error);
+        }
+
+        // 방법 4: 마지막 대안 - 새 탭에서 열기
+        console.log("방법 4: 새 탭에서 열기");
+        toast.error("다운로드 방법을 찾지 못했습니다. 새 탭에서 이미지를 엽니다.");
+        window.open(imageUrl, '_blank');
     };
 
     // 업스케일링 처리 함수

@@ -258,8 +258,33 @@ ${existingPrompt}
             // mode에 따라 다른 응답 처리
             if (mode === 'model-recommendation') {
                 // console.log('[Gemini API] JSON 파싱 시도:', text.substring(0, 200) + '...');
-                // 마크다운 코드 블록 제거 (```json ... ```)
-                const cleanedText = text.replace(/^```json\\n|\\n```$/g, '').trim();
+                
+                // JSON 블록을 정확히 추출
+                let cleanedText = text;
+                
+                // ```json ... ``` 패턴이 있는 경우 그 안의 내용만 추출
+                const jsonBlockMatch = text.match(/```json\s*\n?([\s\S]*?)\n?\s*```/);
+                if (jsonBlockMatch) {
+                    cleanedText = jsonBlockMatch[1].trim();
+                } else {
+                    // ```json이 없는 경우 일반 ``` 블록 확인
+                    const codeBlockMatch = text.match(/```\s*\n?([\s\S]*?)\n?\s*```/);
+                    if (codeBlockMatch) {
+                        cleanedText = codeBlockMatch[1].trim();
+                    } else {
+                        // 코드 블록이 없는 경우 { 로 시작하는 JSON 찾기
+                        const jsonStartIndex = text.indexOf('{');
+                        const jsonEndIndex = text.lastIndexOf('}');
+                        if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+                            cleanedText = text.substring(jsonStartIndex, jsonEndIndex + 1).trim();
+                        } else {
+                            // 그래도 안 되면 전체 텍스트에서 마크다운 제거
+                            cleanedText = text.replace(/^```json\s*\n?/g, '').replace(/\n?\s*```$/g, '').trim();
+                            cleanedText = cleanedText.replace(/^```\s*\n?/g, '').replace(/\n?\s*```$/g, '').trim();
+                        }
+                    }
+                }
+                
                 // console.log('[Gemini API] 정제된 텍스트:', cleanedText.substring(0, 200) + '...');
                 try {
                     const parsedResponse = JSON.parse(cleanedText);

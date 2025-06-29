@@ -44,6 +44,7 @@ export default function CreationDetail({
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [hasUpscaled, setHasUpscaled] = useState(false);
   const [upscaledVideoUrl, setUpscaledVideoUrl] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // 제목 편집 관련 상태
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -184,15 +185,50 @@ export default function CreationDetail({
   };
 
   // 다운로드 핸들러
-  const handleDownload = () => {
-    if (!video || !video.url) return;
+  const handleDownload = async () => {
+    if (!video || !video.url || isDownloading) return;
 
-    const link = document.createElement("a");
-    link.href = video.url;
-    link.download = `${video.name || "video"}.mp4`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      setIsDownloading(true);
+      toast.loading("영상 다운로드 중...", { id: "download" });
+      
+      // 서버 사이드 프록시를 통해 다운로드
+      const response = await fetch('/internal/download-video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          videoUrl: video.url,
+          fileName: `${video.name || "video"}.mp4`
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("영상 다운로드에 실패했습니다");
+      }
+
+      toast.loading("파일 처리 중...", { id: "download" });
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${video.name || "video"}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // 메모리 정리
+      window.URL.revokeObjectURL(blobUrl);
+      
+      toast.success("영상 다운로드가 완료되었습니다", { id: "download" });
+    } catch (error) {
+      console.error("다운로드 오류:", error);
+      toast.error("영상 다운로드에 실패했습니다", { id: "download" });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   // 업스케일링 처리 함수
@@ -444,11 +480,25 @@ export default function CreationDetail({
             </Button>
             <Button
               onClick={handleDownload}
+              disabled={isDownloading}
               variant="outline"
-              className="py-2 gap-1.5 col-span-2"
+              className={`py-2 gap-1.5 col-span-2 ${
+                isDownloading 
+                  ? "bg-sky-500/20 hover:bg-sky-500/20 text-sky-400 border-sky-500/50" 
+                  : ""
+              }`}
             >
-              <Download className="h-4 w-4" />
-              다운로드
+              {isDownloading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  다운로드 중...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  다운로드
+                </>
+              )}
             </Button>
           </div>
         </div>

@@ -1,42 +1,30 @@
 "use client";
 
 import React from "react";
-import {
-  Image,
-  Settings,
-  Folder,
-  Heart,
-  ChevronRight,
-} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 
 interface SidebarItem {
-  icon: React.ElementType;
   label: string;
   href: string;
 }
 
 const sidebarItems: SidebarItem[] = [
   {
-    icon: Image,
     label: "작업물",
     href: "/my",
   },
   {
-    icon: Heart,
     label: "좋아요",
     href: "/my/liked",
   },
   {
-    icon: Folder,
     label: "폴더",
     href: "/my/folder/my",
   },
   {
-    icon: Settings,
     label: "설정",
     href: "/my/setting",
   },
@@ -58,7 +46,6 @@ const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
           <nav className="space-y-2">
             {sidebarItems.map((item, idx) => {
               const isActive = pathname === item.href;
-              const Icon = item.icon;
               return (
                 <Link
                   key={idx}
@@ -70,13 +57,9 @@ const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children }) => {
                       : "text-gray-400 hover:bg-white/5"
                   )}
                 >
-                  <Icon className={cn("h-5 w-5 mr-3", isActive ? "text-sky-400" : "text-gray-400")} />
                   <span className={cn("font-medium", isActive ? "text-sky-400" : "")}>
                     {item.label}
                   </span>
-                  {isActive && (
-                    <ChevronRight className="w-4 h-4 ml-auto text-sky-400" />
-                  )}
                 </Link>
               );
             })}

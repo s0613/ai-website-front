@@ -133,24 +133,25 @@ export function useVideoSidebar({
     }
   }, [referenceImageFile, referenceImageUrl]);
 
-  // endpoint 또는 activeTab이 변경될 때 aspectRatio 및 duration 기본값 조정
+  // 초기 duration 설정 (한 번만 실행)
+  useEffect(() => {
+    setDuration("5s"); // 초기값만 설정
+  }, []); // 빈 의존성 배열로 한 번만 실행
+
+  // endpoint 또는 activeTab이 변경될 때 aspectRatio 기본값 조정 (duration은 제외)
   useEffect(() => {
     let defaultAspectRatio: AspectRatioType = "16:9";
-    let defaultDuration: DurationType = "5s";
 
     if (activeTab === "image") {
       switch (endpoint) {
         case "veo2":
           defaultAspectRatio = "9:16"; // Veo2 이미지 모드 기본 비율
-          defaultDuration = "5s";    // Veo2 이미지 모드 기본 길이
           break;
         case "kling":
           defaultAspectRatio = "16:9"; // Kling 이미지 모드 기본 비율 (예시)
-          defaultDuration = "5s";    // Kling 이미지 모드 기본 길이 (예시)
           break;
         case "pixverse":
           defaultAspectRatio = "16:9"; // Pixverse 기본 비율
-          defaultDuration = "5s";    // Pixverse 기본 길이
           // Pixverse 기본 스타일을 항상 "anime"로 설정
           setPixverseStyle("anime");
           break;
@@ -160,7 +161,6 @@ export function useVideoSidebar({
       switch (endpoint) {
         case "veo2":
           defaultAspectRatio = "16:9"; // Veo2 텍스트 모드 기본 비율 (예시)
-          defaultDuration = "5s";    // Veo2 텍스트 모드 기본 길이 (예시)
           break;
         // 다른 텍스트 모델에 대한 기본값 추가
       }
@@ -169,12 +169,12 @@ export function useVideoSidebar({
       switch (endpoint) {
         case "hunyuan":
           defaultAspectRatio = "16:9";
-          defaultDuration = "5s"; // DurationType에 맞게 수정
           break;
       }
     }
+
+    // aspectRatio는 항상 업데이트하지만, duration은 사용자가 변경한 적이 없을 때만 기본값으로 설정
     setAspectRatio(defaultAspectRatio);
-    setDuration(defaultDuration);
   }, [endpoint, activeTab]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -343,15 +343,17 @@ export function useVideoSidebar({
 
           // 추천된 설정으로 제출 (endpoint는 추천된 모델명으로 전달)
           // 이때 onSubmit은 이미 생성된 알림을 업데이트하는 형태로 처리됨
+          const finalDuration = recommendation.settings.duration ?
+            (recommendation.settings.duration === "5" || recommendation.settings.duration === "8" ?
+              `${recommendation.settings.duration}s` as DurationType :
+              recommendation.settings.duration) :
+            duration;
+          console.log(`[useVideoSidebar] Auto-Select 모드 submit - endpoint: ${recommendation.model}, duration: ${finalDuration} (타입: ${typeof finalDuration})`);
           onSubmit({
             prompt: prompt,
             imageFile: imageFile,
             aspectRatio: recommendation.settings.aspectRatio || aspectRatio,
-            duration: recommendation.settings.duration ?
-              (recommendation.settings.duration === "5" || recommendation.settings.duration === "8" ?
-                `${recommendation.settings.duration}s` as DurationType :
-                recommendation.settings.duration) :
-              duration,
+            duration: finalDuration,
             endpoint: recommendation.model, // 여기서만 추천된 모델명 사용
             quality,
             style: recommendation.model === "pixverse" ? (recommendation.settings.style || "anime") : style,
@@ -408,31 +410,9 @@ export function useVideoSidebar({
       }
     }
 
-    // 일반 모드에서의 알림 처리
-    toast({
-      title: "비디오 생성 시작",
-      description: "비디오 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.",
-      duration: 5000,
-    });
-
-    // try {
-    //   const notification = await GenerationNotificationService.createNotification({
-    //     title: `영상 생성 요청 (${new Date().toLocaleTimeString()})`,
-    //     // 썸네일, mediaCount 등 필요시 추가
-    //   });
-    //   if (onNotifyProcessing) onNotifyProcessing(notification);
-    // } catch (error: unknown) {
-    //   console.error('Gemini API Error:', error);
-    //   toast({
-    //     title: "오류 발생",
-    //     description: error instanceof Error ? error.message : "프롬프트 수정 중 오류가 발생했습니다.",
-    //     variant: "destructive",
-    //     duration: 3000,
-    //   });
-    // }
-
     // 일반 모드일 때는 기존 로직 사용
     if (endpoint !== "auto") {
+      console.log(`[useVideoSidebar] 일반 모드 submit - endpoint: ${endpoint}, duration: ${duration} (타입: ${typeof duration})`);
       onSubmit({
         prompt: prompt,
         imageFile: imageFile,
@@ -444,19 +424,9 @@ export function useVideoSidebar({
         fileUrl: fileUrl,
         cameraControl,
         seed: endpoint === "hunyuan" || endpoint === "wan" ? seed : undefined,
-        resolution:
-          endpoint === "hunyuan" || endpoint === "wan" ? resolution : undefined,
-        numFrames:
-          endpoint === "hunyuan"
-            ? numFrames
-            : endpoint === "wan"
-              ? numFrames
-              : undefined,
-        framesPerSecond: endpoint === "wan" ? framesPerSecond : undefined,
-        numInferenceSteps: endpoint === "wan" ? numInferenceSteps : undefined,
+        resolution: endpoint === "hunyuan" ? resolution : undefined,
+        numFrames: endpoint === "hunyuan" ? numFrames : undefined,
         enableSafetyChecker: endpoint === "wan" ? enableSafetyChecker : undefined,
-        enablePromptExpansion:
-          endpoint === "wan" ? enablePromptExpansion : undefined,
         negative_prompt: endpoint === "pixverse" ? negativePrompt : undefined,
       });
     }

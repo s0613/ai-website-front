@@ -186,33 +186,12 @@ export default function CreationPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">내 작업물</h1>
-          <p className="text-sm text-gray-400 mt-1">
-            생성된 비디오와 이미지를 관리하세요
-          </p>
         </div>
         <Link href="/generation/video">
           <Button className="bg-sky-500 hover:bg-sky-600 text-white">
-            <Plus className="w-4 h-4 mr-2" /> 새 작업
+             새 작업
           </Button>
         </Link>
-      </div>
-
-      {/* 필터 영역 */}
-      <div className="flex justify-end mb-6">
-        <Select
-          value={selectedFilter}
-          onValueChange={(value) => setSelectedFilter(value as VideoType)}
-        >
-          <SelectTrigger className="w-[180px] bg-black/40 backdrop-blur-xl border-white/20 text-white">
-            <SelectValue placeholder="필터" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">모든 작업물</SelectItem>
-            <SelectItem value="TEXT">텍스트 기반</SelectItem>
-            <SelectItem value="IMAGE">이미지 기반</SelectItem>
-            <SelectItem value="VIDEO">영상 기반</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* 컨텐츠 영역 */}
@@ -237,7 +216,7 @@ export default function CreationPage() {
             </p>
             <Link href="/generation/video">
               <Button className="bg-sky-500 hover:bg-sky-600 text-white">
-                <Plus className="w-4 h-4 mr-2" /> 새 작업 시작하기
+                새 작업 시작하기
               </Button>
             </Link>
           </div>

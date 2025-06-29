@@ -3,7 +3,7 @@
 import React, { Suspense, useState, useRef } from "react";
 import VideoSidebar from "./VideoSidebar";
 import VideoGenerationFolder from "./VideoGenerationFolder";
-import useVideoGeneration from "../hooks/useVideoGeneration";
+import { useVideoGeneration } from "../hooks";
 import { toast } from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
 import { SidebarFormData } from "../hooks/useVideoSidebar";

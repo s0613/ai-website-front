@@ -127,12 +127,11 @@ export class GenerationNotificationService {
         }
     }
 
+
     /**
      * ③ 단일 알림 조회
      */
-    static async getNotification(
-        id: number,
-    ): Promise<GenerationNotificationResponse> {
+    static async getNotification(id: number): Promise<GenerationNotificationResponse> {
         try {
             const { data } = await apiClient.get<GenerationNotificationResponse>(
                 `${this.BASE_PATH}/${id}`,

@@ -21,17 +21,14 @@ export interface ImageHunyuanModelSettings extends BaseModelSettings {
 
 // 이미지-비디오 Wan 모델 설정
 export interface ImageWanModelSettings extends BaseModelSettings {
-    numFrames?: number;
-    framesPerSecond?: 8 | 16 | 24;
-    numInferenceSteps?: 20 | 30 | 40;
     enableSafetyChecker?: boolean;
-    enablePromptExpansion?: boolean;
 }
 
 // 이미지-비디오 Kling 모델 설정
 export interface ImageKlingModelSettings extends BaseModelSettings {
     duration?: "5s" | "10s";
-    cameraControl?: CameraControlType;
+    negative_prompt?: string;
+    cfg_scale?: number;
 }
 
 // 이미지-비디오 Veo2 모델 설정

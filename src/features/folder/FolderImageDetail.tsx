@@ -94,17 +94,45 @@ export default function FolderImageDetail({
     };
 
     // 다운로드 핸들러
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (!file.url) return;
 
-        const link = document.createElement("a");
-        link.href = file.url;
-        const format = file.name.split('.').pop()?.toLowerCase() || "jpg";
-        link.download = `${file.name}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success("다운로드가 시작되었습니다");
+        const imageUrl = file.url;
+        const fileName = file.name || 'image';
+
+        try {
+            console.log("프록시를 통한 다운로드 시도");
+
+            const response = await fetch('/internal/download-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ imageUrl, fileName }),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = blobUrl;
+                link.download = fileName;
+                link.style.display = 'none';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                window.URL.revokeObjectURL(blobUrl);
+                toast.success("다운로드가 완료되었습니다");
+                return;
+            } else {
+                throw new Error(`다운로드 API 응답 오류: ${response.status}`);
+            }
+        } catch (error) {
+            console.error("다운로드 실패:", error);
+            toast.error("다운로드에 실패했습니다");
+        }
     };
 
     // 파일 포맷 추출
@@ -226,8 +254,7 @@ export default function FolderImageDetail({
                         </Button>
                         <Button
                             onClick={onBack}
-                            variant="outline"
-                            className="py-2 gap-1.5 border-white/20 text-white hover:bg-black/60"
+                            className="py-2 gap-1.5 bg-white text-black hover:bg-gray-200 border-0"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             폴더로 돌아가기

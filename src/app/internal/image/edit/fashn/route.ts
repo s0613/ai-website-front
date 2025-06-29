@@ -28,14 +28,20 @@ export async function POST(req: NextRequest) {
         const moderation_level = formData.get('moderation_level') as string || "permissive";
         const seed = Number(formData.get('seed')) || 42;
         const num_samples = Number(formData.get('num_samples')) || 1;
-        const segmentation_free = formData.get('segmentation_free') !== 'false';
+        const segmentation_free = formData.get('segmentation_free') === 'true';
+        const output_format = formData.get('output_format') as string || "png";
 
-        console.log('Received params:', {
+        console.log('🔍 Received params:', {
             model_image_url,
             garment_image_url,
             category,
             mode,
-            garment_photo_type
+            garment_photo_type,
+            moderation_level,
+            seed,
+            num_samples,
+            segmentation_free,
+            output_format
         });
 
         // 필수 파라미터 검증
@@ -46,16 +52,46 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // category 유효성 검증
+        // category 유효성 검증 (fal-ai 문서에 맞춤)
         const validCategories = ["tops", "bottoms", "one-pieces", "auto"];
         if (!validCategories.includes(category)) {
             return NextResponse.json(
-                { error: "Invalid category. Must be one of: tops, bottoms, one-pieces, auto" },
+                { error: `Invalid category '${category}'. Must be one of: ${validCategories.join(', ')}` },
                 { status: 400 }
             );
         }
 
+        // mode 유효성 검증
+        const validModes = ["performance", "balanced", "quality"];
+        if (!validModes.includes(mode)) {
+            return NextResponse.json(
+                { error: `Invalid mode '${mode}'. Must be one of: ${validModes.join(', ')}` },
+                { status: 400 }
+            );
+        }
+
+        // garment_photo_type 유효성 검증
+        const validGarmentPhotoTypes = ["auto", "model", "flat-lay"];
+        if (!validGarmentPhotoTypes.includes(garment_photo_type)) {
+            return NextResponse.json(
+                { error: `Invalid garment_photo_type '${garment_photo_type}'. Must be one of: ${validGarmentPhotoTypes.join(', ')}` },
+                { status: 400 }
+            );
+        }
+
+        // output_format 유효성 검증
+        const validOutputFormats = ["png", "jpeg"];
+        if (!validOutputFormats.includes(output_format)) {
+            return NextResponse.json(
+                { error: `Invalid output_format '${output_format}'. Must be one of: ${validOutputFormats.join(', ')}` },
+                { status: 400 }
+            );
+        }
+
+        console.log('✅ All parameters validated successfully');
+
         // Fashn API 호출
+        console.log('🚀 Calling Fashn API...');
         const result = await fal.subscribe("fal-ai/fashn/tryon/v1.5", {
             input: {
                 model_image: model_image_url,
@@ -67,14 +103,17 @@ export async function POST(req: NextRequest) {
                 seed,
                 num_samples,
                 segmentation_free,
+                output_format,
             },
             logs: true,
             onQueueUpdate: (update) => {
                 if (update.status === "IN_PROGRESS") {
-                    console.log(update.logs.map((log) => log.message));
+                    console.log('📝 Progress:', update.logs.map((log) => log.message));
                 }
             },
         });
+
+        console.log('✅ Fashn API call successful:', result);
 
         // 결과 이미지 URL 반환
         return NextResponse.json({

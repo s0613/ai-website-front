@@ -34,7 +34,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/pages/admin/api/admin/image/route.js"
-  ],
+, "src/features/image/FashnImagePage.tsx"  ],
   "exclude": [
     "node_modules"
   ]
